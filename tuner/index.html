@@ -206,6 +206,19 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 .wrap > .panel { flex: 1 1 auto; align-content: space-evenly; }
 </style>
 
+<style>/* iPad・パソコンの広い画面では、幅を広げて中身も大きくする（スマホはこれまでどおり） */
+@media (min-width: 700px) {
+  .wrap { max-width: 760px; }
+  .note { font-size: 150px; min-height: 140px; }
+  svg.meter { max-width: 560px; }
+  .tones button { padding: 20px 8px; }
+  .tones button b { font-size: 40px; }
+  .strings button b { font-size: 32px; }
+  .btn { font-size: 20px; padding: 12px 36px; }
+  .help, .sub { font-size: 15px; }
+}
+</style>
+
 <style>.wrap > nav { display: none; } .wrap { padding-block: 10px 32px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
