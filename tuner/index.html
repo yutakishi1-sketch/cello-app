@@ -201,6 +201,11 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }
 </style>
 
+<style>/* 画面の縦いっぱいに広げる：枠が残りの高さを使い、中身は上下に均等に並べる（左右と同じように上下にも余白をとる） */
+.wrap { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+.wrap > .panel { flex: 1 1 auto; align-content: space-evenly; }
+</style>
+
 <style>.wrap > nav { display: none; } .wrap { padding-block: 10px 32px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
