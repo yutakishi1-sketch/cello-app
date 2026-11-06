@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ドヴォルザークへの道</title>
+<meta name="theme-color" content="#080c16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="チェロ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+/* アプリの外枠：上は余白だけ、下に5つのタブ。各ページは中の窓（iframe）で開いたままにして、切り替えても止まらない */
+:root { color-scheme: dark; --bar: #080c16; --bg: #0a0f1a; --ink: #ebe7dc; --muted: #8f95a1; --gold: #c9a54e; --frame: #3a3322; --line: #22304a; --panel: #0f1727;
+  --f-body: "Hiragino Sans", system-ui, sans-serif; --f-display: "Hiragino Mincho ProN", "Yu Mincho", serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--f-body); overflow: hidden; }
+.app { position: fixed; inset: 0; display: grid; grid-template-rows: env(safe-area-inset-top, 0px) minmax(0, 1fr) auto; }
+.top { background: var(--bar); }
+.views { position: relative; min-height: 0; }
+.views iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+.views iframe[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+nav.tabs { background: var(--bar); border-top: 1px solid var(--frame); padding: 4px max(6px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-left, 0px)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 40px; }
+nav.tabs button { all: unset; display: grid; justify-items: center; align-content: center; gap: 1px; min-height: 54px; cursor: pointer; color: var(--muted); font-size: 10.5px; letter-spacing: .02em; -webkit-tap-highlight-color: transparent; }
+nav.tabs button img { width: 26px; height: 26px; object-fit: contain; opacity: .45; }
+nav.tabs button[aria-current="page"] { color: var(--gold); font-weight: 700; }
+nav.tabs button[aria-current="page"] img { opacity: 1; }
+nav.tabs .gear { font-size: 20px; color: var(--muted); }
+nav.tabs button:focus-visible { outline: 2px solid var(--gold); outline-offset: -4px; }
+dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--frame); padding: 20px; width: min(92vw, 440px); }
+dialog::backdrop { background: rgba(0,0,0,.6); }
+dialog h2 { margin: 0 0 10px; font-family: var(--f-display); font-size: 18px; }
+dialog p { margin: 6px 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+dialog input { width: 100%; background: #14203a; color: var(--ink); border: 1px solid var(--line); padding: 8px; font-size: 14px; }
+dialog .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+dialog button { font: inherit; font-size: 14px; padding: 8px 14px; border: 1px solid #6e5a2c; background: #14203a; color: var(--ink); cursor: pointer; }
+dialog button.main { background: var(--gold); color: #120d05; border-color: var(--gold); font-weight: 700; }
+dialog .st { font-size: 13px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"></div>
+  <div class="views" id="views"></div>
+  <nav class="tabs" aria-label="ページの切り替え">
+    <button type="button" data-v="road"><img src="road/art/ui/pin.png" alt="">道</button>
+    <button type="button" data-v="score"><img src="road/art/ui/score.png" alt="">楽譜</button>
+    <button type="button" data-v="finger"><img src="finger/art/lyre.png" alt="">運指</button>
+    <button type="button" data-v="metro"><img src="road/art/ui/hourglass.png" alt="">メトロノーム</button>
+    <button type="button" data-v="tuner"><img src="road/art/ui/bell.png" alt="">調弦</button>
+    <button type="button" class="gear" id="gear" aria-label="記録の送り先の設定">⚙</button>
+  </nav>
+</div>
+
+<dialog id="settings">
+  <h2>記録の送り先</h2>
+  <p>練習やレッスンの記録はこのスマホに保存されます。下に送り先（Google スプレッドシートの受け口）を入れると、同じ記録がスプレッドシートにも写り、Claude が読めるようになります。</p>
+  <input id="sync-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" aria-label="送り先のURL">
+  <p class="st" id="sync-st"></p>
+  <div class="row">
+    <button type="button" class="main" id="sync-save">保存して送る</button>
+    <button type="button" id="sync-all">全部を送り直す</button>
+    <button type="button" id="close">閉じる</button>
+  </div>
+  <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
+</dialog>
+
+<script src="shim.js"></script>
+<script>
+const VIEWS = { road: "road/index.html", score: "score/index.html", finger: "finger/index.html", metro: "metro/index.html", tuner: "tuner/index.html" };
+const frames = {}, box = document.getElementById("views");
+function show(route) {
+  const [v, anchor] = (route || "road").split(":"), name = VIEWS[v] ? v : "road";
+  if (!frames[name]) { const f = document.createElement("iframe"); f.title = name; f.src = VIEWS[name] + (anchor ? "#" + anchor : ""); box.append(f); frames[name] = f; }
+  else if (anchor) frames[name].contentWindow.location.hash = anchor;
+  Object.entries(frames).forEach(([k, f]) => { f.hidden = k !== name; });
+  document.querySelectorAll("nav.tabs button[data-v]").forEach(b => { if (b.dataset.v === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  try { localStorage.setItem("cello-app:view", name); } catch {}
+}
+function go(route) { if (location.hash.slice(1) !== route) history.replaceState(null, "", "#" + route); show(route); }
+document.querySelectorAll("nav.tabs button[data-v]").forEach(b => b.addEventListener("click", () => go(b.dataset.v)));
+addEventListener("message", e => { if (e.origin === location.origin && e.data && typeof e.data.celloGo === "string") go(e.data.celloGo); });
+addEventListener("hashchange", () => show(location.hash.slice(1)));
+let start = location.hash.slice(1); if (!start) { try { start = localStorage.getItem("cello-app:view") || "road"; } catch { start = "road"; } }
+show(start);
+
+// 記録の送り先
+const dlg = document.getElementById("settings"), urlIn = document.getElementById("sync-url"), st = document.getElementById("sync-st");
+function status() {
+  const last = celloSync.last(), n = celloSync.pending();
+  st.textContent = (celloSync.url() ? "送り先：設定済み" : "送り先：まだありません（記録はこのスマホにだけ保存）") + (last ? "／最後に送った日時 " + new Date(last).toLocaleString("ja-JP") : "") + (n ? "／未送信 " + n + "件" : "");
+}
+document.getElementById("gear").addEventListener("click", () => { urlIn.value = celloSync.url(); status(); dlg.showModal(); });
+document.getElementById("close").addEventListener("click", () => dlg.close());
+document.getElementById("sync-save").addEventListener("click", async () => { celloSync.setUrl(urlIn.value); await celloSync.flush(); status(); });
+document.getElementById("sync-all").addEventListener("click", async () => { await celloSync.sendAll(); status(); });
+
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("オフライン用の準備に失敗しました", e)));
+</script>
+</body>
+</html>
