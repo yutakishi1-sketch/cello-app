@@ -293,27 +293,53 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
 
-  // ── 音（弓で弾いたような柔らかい音を WebAudio で） ──
   let ctx = null;
+  // ── 音（チェロらしい弓の音を WebAudio で） ──
+  // 弓でこする弦の振動はのこぎり波に近い。そこに少しずらしたもう1本を重ね、
+  // チェロの胴の響き（低い共鳴）と弓の擦れる音を足し、高い倍音はやわらかく抑える。
+  // 前の音は高い倍音を強く削っていたため、管楽器のように聞こえていた
+  const BODY = [[105, 5, 1.4], [220, 6, 2.2], [480, 3, 2.5], [1150, 2.5, 3]];   // [周波数Hz, 強さdB, 鋭さQ]
+  let noiseBuf = null;
   function play(si, s) {
     if (!S.sound) return;
     try {
       ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
       if (ctx.state === 'suspended') ctx.resume();
       const f = (S.a4 / 2) * Math.pow(2, (STRINGS[si].fromA3 + s) / 12);
-      const t = ctx.currentTime;
-      const osc = ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = f;
-      const vib = ctx.createOscillator(); vib.frequency.value = 5.2;
-      const vg = ctx.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.006, t + 0.4);
-      vib.connect(vg).connect(osc.frequency);
-      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(2400, f * 7); lp.Q.value = 0.8;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.22, t + 0.09);
-      g.gain.setValueAtTime(0.22, t + 0.9);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
-      osc.connect(lp).connect(g).connect(ctx.destination);
-      osc.start(t); vib.start(t); osc.stop(t + 1.65); vib.stop(t + 1.65);
+      const t = ctx.currentTime, dur = 1.6, end = t + dur;
+      // 音量：弓が弦をとらえる瞬間に少し強く、そのあと落ち着いて伸び、最後にすっと離す
+      const out = ctx.createGain();
+      out.gain.setValueAtTime(0.0001, t);
+      out.gain.linearRampToValueAtTime(0.24, t + 0.05);
+      out.gain.linearRampToValueAtTime(0.18, t + 0.22);
+      out.gain.setValueAtTime(0.18, end - 0.4);
+      out.gain.exponentialRampToValueAtTime(0.0001, end);
+      // ビブラートは少し遅れてかかる（弾き始めはまっすぐ）
+      const vib = ctx.createOscillator(); vib.frequency.value = 5.4;
+      const vg = ctx.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.setValueAtTime(0, t + 0.35); vg.gain.linearRampToValueAtTime(f * 0.0045, t + 0.75);
+      vib.connect(vg);
+      const mix = ctx.createGain(); mix.gain.value = 0.5;
+      const oscs = [0, 5].map(cents => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = cents;
+        vg.connect(o.frequency); o.connect(mix); return o;
+      });
+      // 胴の響き
+      let node = mix;
+      BODY.forEach(([fr, gain, q]) => { const p = ctx.createBiquadFilter(); p.type = 'peaking'; p.frequency.value = fr; p.gain.value = gain; p.Q.value = q; node.connect(p); node = p; });
+      const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 2600; shelf.gain.value = -9;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000; lp.Q.value = 0.5;
+      node.connect(shelf).connect(lp).connect(out);
+      // 弓の擦れる音（ごく小さく）
+      if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 2), ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      const ns = ctx.createBufferSource(); ns.buffer = noiseBuf;
+      const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = Math.min(3500, f * 5); nf.Q.value = 0.9;
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, t); ng.gain.linearRampToValueAtTime(0.05, t + 0.03); ng.gain.linearRampToValueAtTime(0.012, t + 0.25);
+      ng.gain.setValueAtTime(0.012, end - 0.4); ng.gain.exponentialRampToValueAtTime(0.0001, end);
+      ns.connect(nf).connect(ng).connect(out);
+      out.connect(ctx.destination);
+      oscs.forEach(o => { o.start(t); o.stop(end + 0.05); });
+      vib.start(t); vib.stop(end + 0.05); ns.start(t); ns.stop(end);
     } catch (e) { console.error('音を鳴らせませんでした', e); }
   }
   function ping(node) { node.classList.remove('ping'); void node.offsetWidth; node.classList.add('ping'); }
