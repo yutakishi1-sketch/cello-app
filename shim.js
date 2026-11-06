@@ -8,10 +8,11 @@
   let pid = "p1";
   try { pid = rawGet.call(localStorage, PKEY) || "p1"; } catch { /* 保存できない環境では1人で使う */ }
   if (pid !== "p1") {
-    const keyOf = k => (k === PKEY || k === PLIST) ? k : pid + "|" + k;
-    S.getItem = function (k) { return rawGet.call(this, keyOf(String(k))); };
-    S.setItem = function (k, v) { return rawSet.call(this, keyOf(String(k)), v); };
-    S.removeItem = function (k) { return rawDel.call(this, keyOf(String(k))); };
+    // 印を付けるのは localStorage だけ（sessionStorage はそのまま）
+    const keyOf = (store, k) => (store !== localStorage || k === PKEY || k === PLIST) ? k : pid + "|" + k;
+    S.getItem = function (k) { return rawGet.call(this, keyOf(this, String(k))); };
+    S.setItem = function (k, v) { return rawSet.call(this, keyOf(this, String(k)), v); };
+    S.removeItem = function (k) { return rawDel.call(this, keyOf(this, String(k))); };
   }
   const readRaw = (k, d) => { try { const v = JSON.parse(rawGet.call(localStorage, k)); return v ?? d; } catch { return d; } };
   window.celloProfiles = {

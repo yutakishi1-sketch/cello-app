@@ -40,6 +40,13 @@ dialog .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 dialog button { font: inherit; font-size: 14px; padding: 8px 14px; border: 1px solid #6e5a2c; background: #14203a; color: var(--ink); cursor: pointer; }
 dialog button.main { background: var(--gold); color: #120d05; border-color: var(--gold); font-weight: 700; }
 dialog .st { font-size: 13px; color: var(--ink); }
+dialog { max-height: 88vh; overflow-y: auto; }
+dialog details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
+dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
+#welcome ol { margin: 8px 0 4px; padding-left: 1.4em; font-size: 14px; line-height: 1.8; }
+#welcome ol b { color: var(--gold); }
+#welcome .safe { border: 1px solid var(--frame); padding: 8px 10px; margin: 10px 0; font-size: 13px; line-height: 1.7; }
+#welcome input { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -52,9 +59,23 @@ dialog .st { font-size: 13px; color: var(--ink); }
     <button type="button" data-v="finger"><img src="finger/art/lyre.png" alt="">運指</button>
     <button type="button" data-v="metro"><img src="road/art/ui/hourglass.png" alt="">メトロノーム</button>
     <button type="button" data-v="tuner"><img src="road/art/ui/bell.png" alt="">調弦</button>
-    <button type="button" class="gear" id="gear" aria-label="記録の送り先の設定">⚙</button>
+    <button type="button" class="gear" id="gear" aria-label="設定（使う人・記録の控え）">⚙</button>
   </nav>
 </div>
+
+<dialog id="welcome" aria-labelledby="welcome-h">
+  <h2 id="welcome-h">ようこそ</h2>
+  <p>チェロの練習を続けるためのアプリです。下の5つのタブで切り替えます。</p>
+  <ol>
+    <li><b>道</b>：目標の曲までの道のりと、毎日の練習・レッスンの記録</li>
+    <li><b>楽譜</b>：音の鳴る楽譜。書き込みもできます</li>
+    <li><b>運指・メトロノーム・調弦</b>：練習の道具</li>
+  </ol>
+  <div class="safe">記録は<b>このスマホの中だけ</b>に保存され、どこにも送られません。機種変更や消えたときに備えて、ときどき ⚙ の「書き出す」で控えを取ってください。</div>
+  <input id="welcome-name" type="text" placeholder="呼び名（あとで変えられます）" aria-label="呼び名">
+  <p id="welcome-home" hidden>ホーム画面に置くと、アプリのように開けます：Safari の共有ボタン →「ホーム画面に追加」。</p>
+  <div class="row"><button type="button" class="main" id="welcome-go">はじめる</button></div>
+</dialog>
 
 <dialog id="settings">
   <h2>使う人</h2>
@@ -69,17 +90,27 @@ dialog .st { font-size: 13px; color: var(--ink); }
     <button type="button" id="who-rename">名前を変える</button>
   </div>
   <p class="st" id="who-st"></p>
-  <h2 style="margin-top:16px">記録の送り先</h2>
+  <h2 style="margin-top:16px">記録の控え</h2>
+  <p>いまの人の記録を1つのファイルに書き出します。機種変更のときは、新しいスマホで「読み込む」を押してそのファイルを選びます。</p>
+  <div class="row">
+    <button type="button" class="main" id="bk-out">書き出す</button>
+    <button type="button" id="bk-in">読み込む</button>
+    <input type="file" id="bk-file" accept="application/json,.json" hidden>
+  </div>
+  <p class="st" id="bk-st"></p>
+  <details>
+  <summary>スプレッドシートにも写す（くわしい人向け）</summary>
   <p>練習やレッスンの記録はこのスマホに保存されます。下に送り先（Google スプレッドシートの受け口）を入れると、同じ記録がスプレッドシートにも写り、Claude が読めるようになります。</p>
   <input id="sync-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" aria-label="送り先のURL">
   <p class="st" id="sync-st"></p>
   <div class="row">
     <button type="button" class="main" id="sync-save">保存して送る</button>
     <button type="button" id="sync-all">全部を送り直す</button>
-    <button type="button" id="close">閉じる</button>
   </div>
+  </details>
+  <div class="row"><button type="button" id="close">閉じる</button></div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：e5458cb34881</p>
+  <p>アプリの版：5754a108f18f</p>
 </dialog>
 
 <script src="shim.js"></script>
@@ -128,6 +159,75 @@ document.getElementById("who-rename").addEventListener("click", () => {
 document.getElementById("close").addEventListener("click", () => dlg.close());
 document.getElementById("sync-save").addEventListener("click", async () => { celloSync.setUrl(urlIn.value); await celloSync.flush(); status(); });
 document.getElementById("sync-all").addEventListener("click", async () => { await celloSync.sendAll(); status(); });
+
+// 記録の控え：いまの人の分だけを1つのファイルにする。送り先（合言葉つき）と送信待ちは入れない
+const bkSt = document.getElementById("bk-st"), bkFile = document.getElementById("bk-file");
+const SKIP = new Set(["cello-app:profile", "cello-app:profiles", "cello-app:sync-url", "cello-app:sync-queue", "cello-app:last-sync", "cello-app:view"]);
+// localStorage は shim.js が「いまの人」の印を自動で付け外しする。key() で一覧を取るときだけ、印を自分で見る
+function myKeys() {
+  const pid = celloProfiles.current(), out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const raw = localStorage.key(i); let k = raw;
+    if (pid === "p1") { if (/^p[0-9a-z]+\|/.test(raw)) continue; }
+    else { if (!raw.startsWith(pid + "|")) continue; k = raw.slice(pid.length + 1); }
+    if (!SKIP.has(k)) out.push([k, raw]);
+  }
+  return out;
+}
+document.getElementById("bk-out").addEventListener("click", async () => {
+  const me = celloProfiles.list().find(p => p.id === celloProfiles.current()), data = {};
+  myKeys().forEach(([k]) => { data[k] = localStorage.getItem(k); });
+  const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+  const name = "cello-kiroku-" + stamp + ".json";
+  const blob = new Blob([JSON.stringify({ app: "cello", kind: "backup", v: 1, at: d.toISOString(), who: me ? me.name : "", data })], { type: "application/json" });
+  try {
+    const file = new File([blob], name, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "チェロの記録の控え" }); bkSt.textContent = "控えを渡しました（「ファイルに保存」がおすすめです）"; return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    bkSt.textContent = "「" + name + "」を書き出しました";
+  } catch (e) { if (e && e.name === "AbortError") { bkSt.textContent = "書き出しをやめました"; return; } console.warn(e); bkSt.textContent = "書き出せませんでした（" + (e && e.message || e) + "）"; }
+});
+let pending = null;
+document.getElementById("bk-in").addEventListener("click", () => {
+  if (pending) { // 2回目の「読み込む」で上書きする
+    const p = pending; pending = null;
+    try {
+      myKeys().forEach(([k]) => localStorage.removeItem(k));
+      Object.entries(p.data).forEach(([k, v]) => { if (typeof v === "string" && !SKIP.has(k)) localStorage.setItem(k, v); });
+      location.reload();
+    } catch (e) { console.warn(e); bkSt.textContent = "読み込めませんでした（保存領域がいっぱいかもしれません）"; }
+    return;
+  }
+  bkFile.value = ""; bkFile.click();
+});
+bkFile.addEventListener("change", async () => {
+  const f = bkFile.files && bkFile.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (!j || j.app !== "cello" || j.kind !== "backup" || typeof j.data !== "object") throw new Error("このアプリの控えではありません");
+    pending = j;
+    bkSt.textContent = "「" + (j.who || "名前なし") + "」の控え（" + new Date(j.at).toLocaleString("ja-JP") + "）。いまの人の記録をこの控えで置き換えます。よければもう一度「読み込む」を押してください。";
+  } catch (e) { pending = null; bkSt.textContent = "読み込めませんでした：" + (e && e.message || "ファイルが壊れています"); }
+});
+
+// はじめての人への案内（記録がまだ何もない人にだけ、1回）
+(() => {
+  const W = "cello-app:welcomed";
+  let seen = false, empty = true;
+  try { seen = !!localStorage.getItem(W); empty = myKeys().every(([k]) => k === "cello-app:db" && (localStorage.getItem(k) || "{}").length <= 2); } catch {}
+  if (seen) return;
+  if (!empty) { try { localStorage.setItem(W, "1"); } catch {} return; }
+  const w = document.getElementById("welcome"), nm = document.getElementById("welcome-name");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  document.getElementById("welcome-home").hidden = !!standalone;
+  document.getElementById("welcome-go").addEventListener("click", () => {
+    const name = nm.value.trim();
+    if (name) celloProfiles.save(celloProfiles.list().map(p => p.id === celloProfiles.current() ? { ...p, name } : p));
+    try { localStorage.setItem(W, "1"); } catch (e) { console.warn("案内を見た印を保存できませんでした", e); }
+    w.close();
+  });
+  w.showModal();
+})();
 
 // 新しい版が届いたら1回だけ読み込み直す。開き直したときにも新しい版がないか確かめる
 if ("serviceWorker" in navigator) {
