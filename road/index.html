@@ -105,7 +105,7 @@ section.block.more { padding-block: 64px 8px; }
 .about > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px 14px; padding: 14px 18px; border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
 .about > summary::-webkit-details-marker { display: none; }
 .about-t { font-family: var(--f-display); font-weight: 700; font-size: 18px; }
-.about-h { font-size: 12.5px; color: var(--gold); font-weight: 700; }
+.about-h { font-family: var(--f-latin); letter-spacing: .08em; font-size: 14px; color: var(--gold); font-weight: 700; }
 .about[open] .about-h { visibility: hidden; }
 .about > .sec-lead { text-align: center; margin: 18px auto 24px; max-width: 40em; }
 .sec-head { display: grid; justify-items: center; gap: 4px; margin: 0 auto 34px; max-width: 40em; text-align: center; }
@@ -254,24 +254,28 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 .fold > summary { list-style: none; cursor: pointer; }
 .fold > summary::-webkit-details-marker { display: none; }
 .fold[open] > .fold-sum { border-color: transparent; background: none; }
-.fold-h::after { content: "閉じる ▴"; display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--gold); }
+.fold-h::after { content: "Close ▴"; font-family: var(--f-latin); letter-spacing: .08em; display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--gold); }
 /* 閉じているときは、1行の細い帯 */
 .fold:not([open]) > .fold-sum { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 14px; margin: 0; padding: 12px 16px; max-width: none; border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
 .fold:not([open]) .fold-sum .sec-lead, .fold:not([open]) .fold-sum .divider { display: none; }
 .fold:not([open]) .fold-sum .sec-no { font-size: 14px; }
 .fold:not([open]) .fold-sum h2 { font-size: 18px; letter-spacing: .04em; }
-.fold:not([open]) .fold-h::after { content: "開く ▾"; margin-top: 0; }
+.fold:not([open]) .fold-h::after { content: "Open ▾"; margin-top: 0; font-size: 14px; }
+/* 閉じた帯は、左に印・文字は左寄せ・Open は右端 */
+.fold:not([open]) > .fold-sum, .about > summary { justify-content: flex-start; align-items: center; text-align: left; }
+.fold:not([open]) > .fold-sum::before, .about > summary::before { content: ""; flex: none; width: 9px; height: 9px; margin: 0 6px 0 4px; border: 1.5px solid var(--gold); transform: rotate(45deg); }
+.fold:not([open]) .fold-h, .about-h { margin-left: auto; }
 section.block.fold-sec-closed { padding-block: 10px 0; }
 section.block.more { padding-block: 10px 0; }
-#about .about > summary { padding: 12px 16px; }
+#about .about > summary { padding: 12px 16px; gap: 4px 14px; }
 #about .about > summary .sec-no { font-size: 14px; }
 #about .about-t { font-size: 18px; }
 /* スマホでは、閉じた帯を横1列に収める（飾りの英字を外し、見出しの大きさをそろえて小さめに） */
 @media (max-width: 520px) {
-  .fold:not([open]) > .fold-sum, .about > summary { flex-wrap: nowrap; gap: 10px; padding: 11px 12px; }
+  .fold:not([open]) > .fold-sum, .about > summary, #about .about > summary { flex-wrap: nowrap; gap: 10px; padding: 11px 12px; }
   .fold:not([open]) .fold-sum .sec-no, .about > summary .sec-no { display: none; }
   .fold:not([open]) .fold-sum h2, #about .about-t { font-size: 15.5px; letter-spacing: .02em; white-space: nowrap; }
-  .fold:not([open]) .fold-h::after, .about-h { font-size: 12px; white-space: nowrap; }
+  .fold:not([open]) .fold-h::after, .about-h { font-size: 13px; white-space: nowrap; }
 }
 /* ── 作曲家の読み物 ── */
 .composers { padding: 18px 22px; display: grid; gap: 8px; }
@@ -677,7 +681,7 @@ footer { padding-block: 84px 48px; }
   <section class="block more" id="about">
     <div class="inner">
       <details class="about">
-        <summary><span class="sec-no">Chronicle</span><span class="about-t">ドヴォルザークという人（読み物）</span><span class="about-h">開く ▾</span></summary>
+        <summary><span class="sec-no">Chronicle</span><span class="about-t">ドヴォルザークという人</span><span class="about-h">Open ▾</span></summary>
         <p class="sec-lead">村の肉屋の息子から、オーケストラのヴィオラ弾きを経て、世界の作曲家へ。どこにいても故郷ボヘミアの歌を胸に書き続けた人です。</p>
       <div class="chron ornate">
         <img class="emblem" src="art/ui/bow.png" alt="">
