@@ -210,7 +210,8 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 .pr-item input { appearance: none; width: 15px; height: 15px; margin: 4px 0 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); cursor: pointer; }
 .pr-item input:checked { background: var(--gold); }
 .pr-item:has(input:checked) { background: linear-gradient(90deg, rgba(201,165,78,.14), var(--panel-2) 70%); }
-.pr-no { width: 9em; justify-self: start; margin-left: 30px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 3px 8px; font-size: 13px; }
+.pr-item input.pr-no { display: block; appearance: auto; width: 10em; height: auto; transform: none; margin: 6px 0 2px; cursor: text; }
+.pr-no { width: 9em; justify-self: start; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 3px 8px; font-size: 13px; }
 .pr-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px dashed var(--line); padding-top: 10px; font-size: 13px; }
 .pr-tier { display: inline-flex; align-items: center; gap: 8px; }
 .pr-mini { width: 30px; height: 30px; object-fit: contain; }
@@ -265,6 +266,13 @@ section.block.more { padding-block: 10px 0; }
 #about .about > summary { padding: 12px 16px; }
 #about .about > summary .sec-no { font-size: 14px; }
 #about .about-t { font-size: 18px; }
+/* スマホでは、閉じた帯を横1列に収める（飾りの英字を外し、見出しの大きさをそろえて小さめに） */
+@media (max-width: 520px) {
+  .fold:not([open]) > .fold-sum, .about > summary { flex-wrap: nowrap; gap: 10px; padding: 11px 12px; }
+  .fold:not([open]) .fold-sum .sec-no, .about > summary .sec-no { display: none; }
+  .fold:not([open]) .fold-sum h2, #about .about-t { font-size: 15.5px; letter-spacing: .02em; white-space: nowrap; }
+  .fold:not([open]) .fold-h::after, .about-h { font-size: 12px; white-space: nowrap; }
+}
 /* ── 作曲家の読み物 ── */
 .composers { padding: 18px 22px; display: grid; gap: 8px; }
 .cmp { border-bottom: 1px solid var(--line); }
@@ -289,7 +297,8 @@ section.block.more { padding-block: 10px 0; }
 /* ── 道具箱（別ページへの入口） ── */
 .kit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .kit-card { display: grid; gap: 4px; align-content: start; padding: 14px 16px 12px; text-decoration: none; color: var(--ink); min-width: 0; background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px #2b2618; }
-.kit-card b { font-family: var(--f-display); font-weight: 700; font-size: 17px; color: var(--gold); letter-spacing: .06em; }
+.kit-card b { font-family: var(--f-display); font-weight: 700; font-size: 17px; color: var(--gold); letter-spacing: .06em; white-space: nowrap; }
+@media (max-width: 520px) { .kit-card b { font-size: 15.5px; letter-spacing: .02em; } }
 .kit-card b::after { content: " ↗"; font-family: var(--f-latin); font-size: 14px; color: var(--gold-dim); }
 .kit-card span { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
 .kit-card:hover { border-color: var(--gold); }
@@ -1256,11 +1265,13 @@ function renderToday() {
       cb.addEventListener("change", () => { const set = new Set(rec.items || []); cb.checked ? set.add(p.id) : set.delete(p.id); saveDay(date, { items: [...set], rest: false }); });
       const tx = el("span"); tx.append(label); const hint = p.id === "current" && cur ? cur.task : p.hint; if (hint) tx.append(el("small", null, hint));
       lab.append(cb, tx); g.append(lab);
+      // ウェルナーの番号は、その項目の枠の中（文字の下）に置いて左端をそろえる
       if (p.id === "werner") {
         const no = el("input"); no.type = "text"; no.id = "pr-no"; no.className = "pr-no"; no.placeholder = "例：No.12"; no.value = rec.no || "";
         no.setAttribute("aria-label", "ウェルナーの番号");
         no.addEventListener("change", () => { saveDay(date, { no: no.value.trim() }); if (no.value.trim() && date === todayStr()) saveWerner({ no: no.value.trim() }); });
-        g.append(no);
+        no.addEventListener("click", e => e.stopPropagation());
+        tx.append(no);
       }
     });
     box.append(g);
