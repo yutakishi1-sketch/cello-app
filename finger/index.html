@@ -513,6 +513,20 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
 })();
 </script>
 
+<style>/* iPad・パソコンの広い画面では、幅を広げて指板も大きくする（スマホはこれまでどおり） */
+@media (min-width: 700px) {
+  .wrap { max-width: 760px; }
+  .fb { --rowh: 58px !important; grid-template-columns: 52px repeat(4, minmax(0, 1fr)); }
+  .fb .sn { font-size: 20px; height: 32px; }
+  .dot.f { width: 50px !important; height: 50px !important; font-size: 27px !important; }
+  .dot.e { width: 52px !important; height: 52px !important; }
+  .dot.open { font-size: 22px; }
+  .now .dot { width: 76px; height: 76px; font-size: 38px; }
+  .now .big, .info .big { font-size: 56px; }
+  .fingers .dot { width: 56px; height: 56px; font-size: 30px; }
+  .info p, .hand p, .pcard p { font-size: 15px; }
+}
+</style>
 
 <style>.topbar { display: none; } .tabs { top: 0; bottom: auto; border-top: 0; border-bottom: 1px solid var(--frame); padding-bottom: 0; } .tabs .wrap { padding-block: 2px 4px; } .tabs a { min-height: 46px; } main { padding-block: 62px 24px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
