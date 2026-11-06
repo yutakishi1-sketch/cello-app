@@ -76,6 +76,15 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .controls button.ghost { background: none; color: var(--gold); border: 1px solid var(--gold-dim); font-weight: 500; }
 .meter { font-family: var(--f-fine); font-size: 13px; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
 .sheet { background: var(--paper); color: var(--ink); border: 1px solid var(--frame); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px #2b2618; padding: 8px 6px; overflow-x: auto; }
+/* 書き込み：楽譜の上に透明な紙を重ね、指やペンでなぞる。メモは曲ごとに残す */
+.sheet { position: relative; }
+.ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.ink.on { pointer-events: auto; touch-action: none; cursor: crosshair; outline: 1px dashed var(--gold-dim); outline-offset: -1px; }
+.ink-tools { padding: 2px 0; }
+.ink-c { width: 30px !important; min-height: 30px !important; height: 30px; padding: 0 !important; border-radius: 50%; background: var(--c) !important; border: 2px solid var(--line) !important; }
+.ink-c[aria-pressed="true"] { border-color: var(--ink) !important; box-shadow: 0 0 0 2px var(--gold); }
+.memo { width: 100%; min-height: 3.2em; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 8px 10px; font: inherit; font-size: 14px; line-height: 1.7; resize: vertical; box-sizing: border-box; }
+.memo::placeholder { color: var(--muted); }
 /* 楽譜は白抜き: 五線と音符は羊皮紙の白、指番号は金、弦の名前は淡い金 */
 .sheet .abcjs-annotation.fg { fill: var(--gold-hi); font-weight: 700; }
 .sheet .abcjs-annotation { fill: var(--gold-soft); }
@@ -472,6 +481,64 @@ function playSong(song, btn, opts) {
   playing = { nodes, btn, timer: setTimeout(() => { const again = opts.loop(); stopAll(); if (again) playSong(song, btn, opts); }, (total + 0.3) * 1000) };
 }
 
+// 楽譜への書き込み。線は楽譜の幅・高さに対する割合で持つので、画面の大きさが変わってもずれない
+function setupInk(id, sheet, pen, tools, memo) {
+  const key = "score-notes:" + id;
+  let notes = { strokes: [], memo: "" };
+  try { notes = JSON.parse(localStorage.getItem(key)) || notes; } catch (e) { /* 読めないときは空から始める */ }
+  const save = () => { try { localStorage.setItem(key, JSON.stringify(notes)); } catch (e) { console.warn("書き込みを保存できませんでした", e); } };
+  memo.value = notes.memo || "";
+  let mt = 0; memo.addEventListener("input", () => { clearTimeout(mt); mt = setTimeout(() => { notes.memo = memo.value; save(); }, 400); });
+  const COLORS = [["#e0c272", "金"], ["#ebe7dc", "白"], ["#7fb4ff", "青"]];
+  let color = COLORS[0][0], canvas = null, g = null, cur = null, on = false;
+  COLORS.forEach(([c, label]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "ink-c"; b.style.setProperty("--c", c);
+    b.setAttribute("aria-label", label + "で書く"); b.setAttribute("aria-pressed", String(c === color));
+    b.addEventListener("click", () => { color = c; tools.querySelectorAll(".ink-c").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+    tools.append(b);
+  });
+  const undo = document.createElement("button"); undo.type = "button"; undo.className = "ghost"; undo.textContent = "1つ戻す";
+  undo.addEventListener("click", () => { notes.strokes.pop(); save(); draw(); });
+  const clear = document.createElement("button"); clear.type = "button"; clear.className = "ghost"; clear.textContent = "全部消す";
+  let armed = 0;   // 確認の画面は出せないので、2回押しで消す
+  clear.addEventListener("click", () => {
+    if (!armed) { clear.textContent = "もう一度押すと全部消す"; armed = setTimeout(() => { armed = 0; clear.textContent = "全部消す"; }, 3000); return; }
+    clearTimeout(armed); armed = 0; clear.textContent = "全部消す"; notes.strokes = []; save(); draw();
+  });
+  tools.append(undo, clear);
+  function draw() {
+    if (!g) return;
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    g.lineCap = "round"; g.lineJoin = "round";
+    notes.strokes.forEach(st => {
+      g.strokeStyle = st.c; g.lineWidth = Math.max(1.5, st.w * canvas.width);
+      g.beginPath(); st.p.forEach(([x, y], i) => i ? g.lineTo(x * canvas.width, y * canvas.height) : g.moveTo(x * canvas.width, y * canvas.height));
+      if (st.p.length === 1) g.lineTo(st.p[0][0] * canvas.width + 0.1, st.p[0][1] * canvas.height);
+      g.stroke();
+    });
+  }
+  function fit() {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1, w = sheet.clientWidth, h = sheet.clientHeight;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); draw();
+  }
+  const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+  function attach() {
+    canvas = document.createElement("canvas"); canvas.className = "ink" + (on ? " on" : ""); canvas.setAttribute("aria-hidden", "true");
+    sheet.append(canvas); g = canvas.getContext("2d");
+    canvas.addEventListener("pointerdown", e => { if (!on) return; e.preventDefault(); canvas.setPointerCapture(e.pointerId); cur = { c: color, w: 0.0045, p: [at(e)] }; notes.strokes.push(cur); draw(); });
+    canvas.addEventListener("pointermove", e => { if (!cur) return; e.preventDefault(); cur.p.push(at(e).map(v => Math.round(v * 10000) / 10000)); draw(); });
+    const end = () => { if (cur) { cur = null; save(); } };
+    canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+    new ResizeObserver(fit).observe(sheet); fit();
+  }
+  pen.addEventListener("click", () => {
+    on = !on; pen.setAttribute("aria-pressed", String(on)); pen.textContent = on ? "✎ 書き込みを終える" : "✎ 書き込む";
+    pen.classList.toggle("on", on); tools.hidden = !on; if (canvas) canvas.classList.toggle("on", on);
+  });
+  return { attach };
+}
+
 const ok = !!window.ABCJS;
 if (!ok) $("fallback").hidden = false;
 SONGS.forEach(s => {
@@ -499,7 +566,15 @@ SONGS.forEach(s => {
   const clickLab = document.createElement("label"); const click = document.createElement("input"); click.type = "checkbox"; click.id = "click-" + s.id; clickLab.append(click, "メトロノーム");
   const loopLab = document.createElement("label"); const loop = document.createElement("input"); loop.type = "checkbox"; loop.id = "loop-" + s.id; loopLab.append(loop, "くり返し");
   ctr.append(btn, speed, reset, clickLab, loopLab); body.append(ctr);
+  // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
+  const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
+  ctr.append(pen);
+  const inkTools = document.createElement("div"); inkTools.className = "controls ink-tools"; inkTools.hidden = true; body.append(inkTools);
   const sheet = document.createElement("div"); sheet.className = "sheet"; sheet.id = "sheet-" + s.id; body.append(sheet);
+  const memo = document.createElement("textarea"); memo.className = "memo"; memo.id = "memo-" + s.id; memo.rows = 2;
+  memo.placeholder = "この曲のメモ（先生に言われたこと・弾き方の注意など）"; memo.setAttribute("aria-label", s.title + "のメモ");
+  body.append(memo);
+  const ink = setupInk(s.id, sheet, pen, inkTools, memo);
   main.append(sec);
   // 閉じたままの曲は文字の幅が測れないので、開いたときに初めて楽譜を描く
   let ready = false, base = 80;
@@ -510,6 +585,7 @@ SONGS.forEach(s => {
         sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); }); }
       catch (e) { console.error(s.id, e); }
     }
+    ink.attach();   // 楽譜を描いたあとに、透明な紙を重ねる
     btn.disabled = !s.tune;
     const mt = meterOf(s); base = s.tune ? Math.round(s.tune.getBpm()) : 80;
     const dotted = Math.abs(mt.beat - 0.375) < 1e-6, beatSym = dotted ? "♩." : "♩";
