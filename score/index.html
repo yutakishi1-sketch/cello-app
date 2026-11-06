@@ -46,11 +46,14 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .toc a:hover { border-color: var(--gold); color: var(--gold); }
 /* 曲は1曲ずつ開け閉めする（縦に長くなりすぎないように）。楽譜は開いたときに初めて描く */
 .song { display: block; scroll-margin-top: 60px; }
+.song:not([open]) { display: none; }
+.toc .song { border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); padding: 10px 0 14px; margin: 2px 0 6px; }
+.toc a.on { border-color: var(--gold); background: var(--gold); color: var(--on-gold); font-weight: 700; }
 .song > summary { list-style: none; cursor: pointer; }
 .song > summary::-webkit-details-marker { display: none; }
 .song-head::before { content: ""; flex: none; align-self: center; width: 9px; height: 9px; margin: 0 4px 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); }
-.song-head::after { content: "Open ▾"; margin-left: auto; font-family: var(--f-latin); font-weight: 700; letter-spacing: .08em; font-size: 14px; color: var(--gold); white-space: nowrap; }
-.song[open] > .song-head::after { content: "Close ▴"; }
+.song-head::after { content: "Close ▴"; margin-left: auto; font-family: var(--f-latin); font-weight: 700; letter-spacing: .08em; font-size: 14px; color: var(--gold); white-space: nowrap; }
+
 .song[open] > .song-head::before { background: var(--gold); }
 .song-body { display: grid; gap: 10px; padding-top: 10px; }
 .song > .song-head { flex-wrap: nowrap; align-items: center; }
@@ -100,7 +103,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
     <p class="lead">練習表の曲のうち、著作権の切れた曲をチェロ用に書き起こしたものです。全部第1ポジション、音符の上の数字が指番号（0＝開放弦）、下が弦です。<br><a href="https://claude.ai/artifact/6fdtu9w1SfjjCJWArFDatt">練習表へ戻る</a></p>
   </header>
   <nav class="toc" id="toc" aria-label="曲の目次"><img class="corner tl" src="art/corner.png" alt=""><img class="corner tr" src="art/corner.png" alt=""><img class="corner bl" src="art/corner.png" alt=""><img class="corner br" src="art/corner.png" alt=""></nav>
-  <main id="songs" style="display:grid;gap:14px"></main>
+  <main id="songs" hidden></main>
   <p class="foot" id="fallback" hidden>楽譜の表示部品を読み込めませんでした。時間をおいて開き直してください。</p>
   <p class="foot">どの曲もパブリックドメインの旋律を、初心者のチェロ向けに調と音域を選び直したものです。カノンの低音のやさしい版（2分音符・1オクターブ上）は<a href="https://claude.ai/artifact/J11qb7dDwnQzn2vVs6TPqB">別ページ</a>にあります。</p>
 </div>
@@ -503,7 +506,10 @@ SONGS.forEach(s => {
     range.min = String(Math.max(30, Math.round(base * 0.5))); range.max = String(Math.round(base * 1.6)); range.step = "1"; range.value = String(base);
     val.textContent = range.value;
   };
-  sec.addEventListener("toggle", () => { if (sec.open) prepare(); else if (playing && playing.btn === btn) stopAll(); });
+  sec.addEventListener("toggle", () => {
+    if (sec.open) prepare(); else if (playing && playing.btn === btn) stopAll();
+    const link = toc.querySelector('.toc-row a[href="#' + s.id + '"]'); if (link) link.classList.toggle("on", sec.open);
+  });
   const opts = () => ({ bpm: Number(range.value), click: click.checked, loop: () => loop.checked });
   const restartIfPlaying = () => { if (playing && playing.btn === btn) playSong(s, btn, opts()); };
   range.addEventListener("input", () => { val.textContent = range.value; });
@@ -518,12 +524,18 @@ function openSong(hash) {
   if (!hash || !/^#[A-Za-z0-9_-]+$/.test(hash)) return;
   const target = document.querySelector(HASH_ALIAS[hash] || hash);
   if (!target || !target.classList.contains("song")) return;
+  document.querySelectorAll(".song[open]").forEach(d => { if (d !== target) d.open = false; });
+  const link = toc.querySelector('.toc-row a[href="#' + target.id + '"]');
+  if (link) link.closest(".toc-row").after(target);   // 目次の枠の中、その段のすぐ下に出す
   target.open = true;
-  setTimeout(() => target.scrollIntoView({ block: "start" }), 60);
+  setTimeout(() => (link ? link.closest(".toc-row") : target).scrollIntoView({ block: "start" }), 60);
 }
 toc.addEventListener("click", e => {
-  const a = e.target.closest("a[href^='#']"); if (!a) return;
-  e.preventDefault(); openSong(a.getAttribute("href"));
+  const a = e.target.closest(".toc-row a[href^='#']"); if (!a) return;
+  e.preventDefault();
+  const target = document.querySelector(a.getAttribute("href"));
+  if (target && target.open) { target.open = false; return; }
+  openSong(a.getAttribute("href"));
   try { history.replaceState(null, "", a.getAttribute("href")); } catch (err) { /* 書き換えられない画面でも開くだけはする */ }
 });
 addEventListener("hashchange", () => openSong(location.hash));
