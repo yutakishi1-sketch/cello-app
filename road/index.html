@@ -194,8 +194,10 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 .pr-box h4 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
 .pr-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .focus-list { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
-.focus-list li { display: flex; gap: 8px; align-items: center; }
-.focus-list input { flex: 1 1 auto; min-width: 0; background: var(--panel-2); color: var(--ink); border: 1px solid var(--gold-dim); padding: 6px 10px; font-size: 15px; font-weight: 700; }
+.focus-list li { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; min-width: 0; }
+.focus-list li .btn { flex: 0 0 auto; white-space: nowrap; font-size: 13px; letter-spacing: .04em; padding: 5px 10px; margin-left: auto; }
+.focus-list textarea { flex: 1 1 140px; min-width: 0; resize: none; line-height: 1.5; font-family: inherit; background: var(--panel-2); color: var(--ink); border: 1px solid var(--gold-dim); padding: 6px 10px; font-size: 15px; font-weight: 700; }
+@media (max-width: 520px) { .focus-list textarea { flex-basis: 100%; } }
 .pr-group { display: grid; gap: 6px; }
 .pr-cat { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--gold-soft); letter-spacing: .06em; margin-top: 4px; }
 .pr-ico { width: 20px; height: 20px; object-fit: contain; }
@@ -1202,8 +1204,10 @@ function renderFocus() {
   const ol = el("ol", "focus-list");
   focus.items.forEach((f, i) => {
     const li = el("li");
-    const t = el("input"); t.type = "text"; t.value = f.text; t.id = "focus-" + i; t.setAttribute("aria-label", "課題" + (i + 1));
-    t.addEventListener("change", () => { focus.items[i] = { ...f, text: t.value.trim() || f.text }; saveFocus(); renderPractice(); });
+    // 長い課題も全文が見えるよう、2行まで折り返す欄にする（改行は入れない）
+    const t = el("textarea"); t.rows = 2; t.value = f.text; t.id = "focus-" + i; t.setAttribute("aria-label", "課題" + (i + 1));
+    t.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); t.blur(); } });
+    t.addEventListener("change", () => { focus.items[i] = { ...f, text: t.value.replace(/\s*\n\s*/g, " ").trim() || f.text }; saveFocus(); renderPractice(); });
     const grad = el("button", "btn ghost", "できた・卒業"); grad.type = "button";
     grad.addEventListener("click", () => {
       focus.grads = [{ text: f.text, until: todayStr(), since: f.since || "" }, ...(focus.grads || [])];
