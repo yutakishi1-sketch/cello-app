@@ -163,6 +163,11 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 /* ── 目指す曲を選ぶ ── */
 .plan { padding: 28px; display: grid; gap: 26px; }
 .levels { display: grid; gap: 22px; }
+.pick-find { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 14px; }
+.pick-find input[type=search] { flex: 1 1 260px; min-width: 0; padding: 9px 12px; font: inherit; font-size: var(--fs-body); color: var(--ink, #e8e2d0); background: rgba(255,255,255,.04); border: 1px solid var(--gold-dim); }
+.pick-only { font-size: var(--fs-sm); display: inline-flex; align-items: center; gap: 6px; }
+.pick-count { font-size: var(--fs-sm); color: var(--gold-soft); }
+.level[hidden] { display: none; }
 .level h3 { margin: 0 0 10px; font-family: var(--f-display); font-weight: 700; font-size: var(--fs-md); color: var(--gold); letter-spacing: .04em; }
 .level .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
 .pick { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 4px 10px; padding: 12px 14px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; align-content: start; }
@@ -686,6 +691,11 @@ footer { padding-block: 84px 48px; }
         <p class="sec-lead">ドヴォルザークの曲と、チェロの名曲をレベル別に並べました。やりたい曲に印を付けると、先にやっておく関門が自動で道に入り、期限までに間に合うかを判定します。</p>
       <span class="fold-h" aria-hidden="true"></span></summary>
       <div class="plan ornate">
+        <div class="pick-find">
+          <input type="search" id="pick-q" placeholder="曲名・作曲家で探す（例：バッハ、白鳥、タンゴ）" autocomplete="off">
+          <label class="pick-only"><input type="checkbox" id="pick-book"> 楽譜帳にある曲だけ</label>
+          <span class="pick-count" id="pick-count"></span>
+        </div>
         <div class="levels" id="levels"></div>
         <div class="verdict" id="verdict"></div>
       </div>
@@ -905,6 +915,66 @@ CATALOG.forEach(c => { if (!c.composer) c.composer = "ドヴォルザーク"; })
     "faure-elegie": "rondo", "rachmaninoff-vocalise": "rondo", "haydn-c": "concerto2", "elgar-concerto": "concerto2", "popper-rhapsody": "concerto2" };
   Object.entries(after).forEach(([id, prev]) => { const i = ORDER.indexOf(prev); ORDER.splice(i + 1, 0, id); });
 })();
+
+// ── もっと広く：チェロで弾ける名曲（2026-11-07 追加。楽譜帳にある曲は楽譜帳へ、無い曲は原曲の楽譜へ）
+const MORE = [
+  {"id": "bach-musette", "lv": 1, "composer": "バッハ", "name": "ミュゼット ニ長調", "era": "バロック", "year": "1725ごろ", "intro": "バグパイプをまねた、明るく弾む小品。ピアノの発表会や教本でよく聞く曲です。", "pd": true, "score": "bach-musette"},
+  {"id": "flies-wiegenlied", "lv": 1, "composer": "フリース（伝モーツァルト）", "name": "子守歌", "era": "古典派", "year": "1796", "intro": "長く「モーツァルトの子守歌」として親しまれてきた、ゆったり揺れる歌。オルゴールでおなじみです。", "pd": true, "score": "flies-wiegenlied"},
+  {"id": "bach-minuet-g", "lv": 1, "composer": "バッハ（ペツォールト作とも）", "name": "メヌエット ト長調", "era": "バロック", "year": "1725ごろ", "intro": "「ラバーズ・コンチェルト」の元にもなった、誰もが知る3拍子の踊りの曲。", "pd": true, "score": "minuet"},
+  {"id": "beethoven-joy", "lv": 1, "composer": "ベートーヴェン", "name": "歓喜の歌（交響曲第9番より）", "era": "古典派", "year": "1824", "intro": "年末の「第九」で歌われる合唱の旋律。ゆったり大きく歌えば、チェロでもよく響きます。", "pd": true, "score": "joy"},
+  {"id": "pachelbel-canon", "lv": 1, "composer": "パッヘルベル", "name": "カノン（チェロの低音）", "era": "バロック", "year": "1680年ごろ", "intro": "結婚式で定番の「パッヘルベルのカノン」。チェロは8つの音をくり返して、全体を支えます。", "pd": true, "score": "canon-easy1"},
+  {"id": "lully-gavotte", "lv": 1, "composer": "リュリ", "name": "ガヴォット", "era": "バロック", "year": "17世紀後半", "intro": "フランス王ルイ14世の宮廷音楽家の曲。弦楽器の教本で最初のころに弾く、素朴な踊りです。", "pd": true, "score": "https://imslp.org/index.php?search=Lully%20Gavotte"},
+  {"id": "weber-hunters", "lv": 1, "composer": "ウェーバー", "name": "狩人の合唱（歌劇「魔弾の射手」より）", "era": "ロマン派", "year": "1821", "intro": "角笛を思わせる元気な合唱曲。運動会や音楽の授業で耳にしたことがあるかもしれません。", "pd": true, "score": "https://imslp.org/index.php?search=Der%20Freisch%C3%BCtz%20Weber"},
+  {"id": "tchaikovsky-old-french", "lv": 1, "composer": "チャイコフスキー", "name": "古いフランスの歌（子供のアルバムより）", "era": "ロマン派", "year": "1878", "intro": "子どものために書いたピアノ曲集の1曲。少し寂しく素朴な旋律で、チェロの低い音によく合います。", "pd": true, "score": "https://imslp.org/index.php?search=Children%27s%20Album%20Tchaikovsky"},
+  {"id": "schumann-happy-farmer", "lv": 2, "composer": "シューマン", "name": "楽しき農夫（子供のためのアルバムより）", "era": "ロマン派", "year": "1848", "intro": "ピアノの左手が歌う、元気で楽しい曲。もともと低い音域の旋律なので、チェロにぴったりです。", "pd": true, "score": "schumann-happy-farmer"},
+  {"id": "satie-gymnopedie", "lv": 2, "composer": "サティ", "name": "ジムノペディ 第1番", "era": "近現代", "year": "1888", "intro": "CM やカフェでよく流れる、ゆったりと漂うピアノ曲。長い音を静かに歌う練習になります。", "pd": true, "score": "gymnopedie"},
+  {"id": "bach-jesu-joy", "lv": 2, "composer": "バッハ", "name": "主よ、人の望みの喜びよ", "era": "バロック", "year": "1723", "intro": "3つずつ流れる旋律が有名なカンタータの1曲。結婚式やクリスマスの音楽会の定番です。", "pd": true, "score": "bach-jesu-joy"},
+  {"id": "handel-largo", "lv": 2, "composer": "ヘンデル", "name": "ラルゴ「オンブラ・マイ・フ」", "era": "バロック", "year": "1738", "intro": "「懐かしい木陰よ」と歌うオペラのアリア。ウイスキーの CM で有名になりました。", "pd": true, "score": "handel-largo"},
+  {"id": "gounod-ave-maria", "lv": 2, "composer": "バッハ／グノー", "name": "アヴェ・マリア", "era": "ロマン派", "year": "1859", "intro": "バッハのピアノ曲に、グノーが祈りの旋律を重ねた曲。結婚式や教会でよく演奏されます。", "pd": true, "score": "gounod-ave-maria"},
+  {"id": "beethoven-minuet-g", "lv": 2, "composer": "ベートーヴェン", "name": "メヌエット ト長調", "era": "古典派", "year": "1796", "intro": "ピアノの発表会でおなじみの、上品な3拍子の踊り。弦楽器の教本にもよく入っています。", "pd": true, "score": "https://imslp.org/index.php?search=6%20Minuets%20WoO%2010%20Beethoven"},
+  {"id": "brahms-waltz", "lv": 2, "composer": "ブラームス", "name": "ワルツ 作品39の15", "era": "ロマン派", "year": "1865", "intro": "「ブラームスのワルツ」として知られる、やさしく揺れる短い曲。オルゴールの定番でもあります。", "pd": true, "score": "https://imslp.org/index.php?search=16%20Waltzes%20Op.39%20Brahms"},
+  {"id": "hoffstetter-serenade", "lv": 2, "composer": "ホフシュテッター（伝ハイドン）", "name": "セレナーデ", "era": "古典派", "year": "1760年代", "intro": "長く「ハイドンのセレナーデ」と呼ばれてきた、軽やかでかわいらしい曲です。", "pd": true, "score": "https://imslp.org/index.php?search=String%20Quartet%20Op.3%20No.5%20Hoffstetter"},
+  {"id": "offenbach-barcarolle", "lv": 2, "composer": "オッフェンバック", "name": "舟歌（歌劇「ホフマン物語」より）", "era": "ロマン派", "year": "1881", "intro": "ヴェネツィアのゴンドラの揺れを思わせる、6/8拍子の美しい二重唱。映画やCMでもよく使われます。", "pd": true, "score": "https://imslp.org/index.php?search=Les%20contes%20d%27Hoffmann"},
+  {"id": "pergolesi-nina", "lv": 2, "composer": "伝ペルゴレージ", "name": "ニーナ（3日たっても）", "era": "バロック", "year": "18世紀", "intro": "声楽の入門でよく歌われるイタリアの古い歌。短調のしっとりした旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Tre%20giorni%20son%20che%20Nina"},
+  {"id": "mendelssohn-wings", "lv": 2, "composer": "メンデルスゾーン", "name": "歌の翼に", "era": "ロマン派", "year": "1834", "intro": "夢のような南の国へ誘う歌曲。ゆったりした6/8拍子で、長い息で歌う練習になります。", "pd": true, "score": "https://imslp.org/index.php?search=Auf%20Fl%C3%BCgeln%20des%20Gesanges"},
+  {"id": "massenet-elegie", "lv": 2, "composer": "マスネ", "name": "エレジー（悲歌）", "era": "ロマン派", "year": "1872", "intro": "失われた春を嘆く、短くもの悲しい歌。チェロ版もよく演奏されます。", "pd": true, "score": "https://imslp.org/index.php?search=%C3%89l%C3%A9gie%20Massenet"},
+  {"id": "grieg-morning", "lv": 2, "composer": "グリーグ", "name": "朝（「ペール・ギュント」より）", "era": "ロマン派", "year": "1875", "intro": "目覚まし時計や CM でおなじみの、夜明けの旋律。同じ形がくり返されるので覚えやすい曲です。", "pd": true, "score": "https://imslp.org/index.php?search=Peer%20Gynt%20Suite%20No.1%20Grieg"},
+  {"id": "schubert-ave-maria", "lv": 3, "composer": "シューベルト", "name": "アヴェ・マリア", "era": "ロマン派", "year": "1825", "intro": "シューベルトの代表的な歌曲。ゆったりした伴奏の上で、長い祈りの旋律を歌います。", "pd": true, "score": "https://imslp.org/index.php?search=Ellens%20dritter%20Gesang%20Schubert"},
+  {"id": "schubert-serenade", "lv": 3, "composer": "シューベルト", "name": "セレナーデ（白鳥の歌より）", "era": "ロマン派", "year": "1828", "intro": "夜に恋人へ歌いかける、少し切ない歌曲。チェロで弾かれることも多い名旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Schwanengesang%20Schubert"},
+  {"id": "massenet-meditation", "lv": 3, "composer": "マスネ", "name": "タイスの瞑想曲", "era": "ロマン派", "year": "1894", "intro": "オペラの間奏曲で、ヴァイオリンの名曲として有名。チェロでも深く響きます。", "pd": true, "score": "https://imslp.org/index.php?search=Tha%C3%AFs%20Massenet"},
+  {"id": "faure-sicilienne", "lv": 3, "composer": "フォーレ", "name": "シシリエンヌ", "era": "ロマン派", "year": "1898", "intro": "もとはチェロとピアノのために書かれた、揺れるような舞曲。フォーレの中でも特に親しまれています。", "pd": true, "score": "https://imslp.org/index.php?search=Sicilienne%20Op.78%20Faur%C3%A9"},
+  {"id": "bach-arioso", "lv": 3, "composer": "バッハ", "name": "アリオーソ", "era": "バロック", "year": "1729", "intro": "カンタータの序曲で、チェロ独奏の定番。静かに祈るような旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Ich%20steh%20mit%20einem%20Fu%C3%9F%20im%20Grabe%20BWV%20156"},
+  {"id": "gluck-melody", "lv": 3, "composer": "グルック", "name": "メロディ（精霊の踊り）", "era": "古典派", "year": "1774", "intro": "オペラ「オルフェオとエウリディーチェ」の、天国の野を描く静かな旋律。", "pd": true, "score": "https://imslp.org/index.php?search=Orfeo%20ed%20Euridice%20Gluck"},
+  {"id": "vivaldi-winter", "lv": 3, "composer": "ヴィヴァルディ", "name": "「冬」第2楽章（四季より）", "era": "バロック", "year": "1725", "intro": "「四季」の冬の、暖炉のそばのような穏やかな楽章。誰もが一度は聞いたことのある旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Le%20quattro%20stagioni%20Vivaldi"},
+  {"id": "bach-suite3-bourree", "lv": 3, "composer": "バッハ", "name": "無伴奏チェロ組曲第3番 ブーレ", "era": "バロック", "year": "1720年ごろ", "intro": "無伴奏組曲の中で特に弾きやすく、明るい舞曲。発表会でよく弾かれます。", "pd": true, "score": "https://imslp.org/index.php?search=Cello%20Suite%20No.3%20BWV%201009"},
+  {"id": "debussy-clair", "lv": 3, "composer": "ドビュッシー", "name": "月の光", "era": "近現代", "year": "1905", "intro": "映画や CM で使われることの多いピアノの名曲。チェロ編曲でも、夜の静けさが出ます。", "pd": true, "score": "https://imslp.org/index.php?search=Suite%20bergamasque%20Debussy"},
+  {"id": "boccherini-minuet", "lv": 3, "composer": "ボッケリーニ", "name": "メヌエット（弦楽五重奏曲より）", "era": "古典派", "year": "1771", "intro": "チェロの名手ボッケリーニの、上品で軽やかなメヌエット。テレビやCMでもおなじみです。", "pd": true, "score": "https://imslp.org/index.php?search=String%20Quintet%20G.275%20Boccherini"},
+  {"id": "piazzolla-libertango", "lv": 3, "composer": "ピアソラ", "name": "リベルタンゴ", "era": "近現代", "year": "1974", "intro": "ヨーヨー・マの演奏で一気に広まったタンゴ。強いリズムが特徴です（著作権が残っているので、楽譜は正規版を買って使います）。", "pd": false, "score": "https://ja.wikipedia.org/wiki/%E3%83%AA%E3%83%99%E3%83%AB%E3%82%BF%E3%83%B3%E3%82%B4"},
+  {"id": "piazzolla-oblivion", "lv": 3, "composer": "ピアソラ", "name": "オブリビオン（忘却）", "era": "近現代", "year": "1982", "intro": "ゆったりと哀しく歌うタンゴ。チェロ版の録音も多い名曲です（著作権が残っているので、楽譜は正規版を買って使います）。", "pd": false, "score": "https://en.wikipedia.org/wiki/Oblivion_(Piazzolla)"},
+  {"id": "brahms-hungarian5", "lv": 4, "composer": "ブラームス", "name": "ハンガリー舞曲 第5番", "era": "ロマン派", "year": "1869", "intro": "テンポが急に変わる、情熱的な踊りの曲。映画やテレビでもよく流れます。", "pd": true, "score": "https://imslp.org/index.php?search=Hungarian%20Dances%20Brahms"},
+  {"id": "bruch-kol-nidrei", "lv": 4, "composer": "ブルッフ", "name": "コル・ニドライ", "era": "ロマン派", "year": "1881", "intro": "ユダヤの祈りの歌をもとにした、チェロと管弦楽の名曲。低い音から高い音まで深く歌います。", "pd": true, "score": "https://imslp.org/index.php?search=Kol%20Nidrei%20Bruch"},
+  {"id": "mendelssohn-song-without-words", "lv": 4, "composer": "メンデルスゾーン", "name": "無言歌 ニ長調 作品109", "era": "ロマン派", "year": "1845", "intro": "チェロのために書かれた「歌詞のない歌」。のびやかで温かい旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Lied%20ohne%20Worte%20Op.109%20Mendelssohn"},
+  {"id": "tchaikovsky-nocturne", "lv": 4, "composer": "チャイコフスキー", "name": "ノクターン 作品19の4（チェロ版）", "era": "ロマン派", "year": "1888", "intro": "ピアノ曲をチャイコフスキー自身がチェロ用に直した、夜想曲。哀愁のある旋律です。", "pd": true, "score": "https://imslp.org/index.php?search=Nocturne%20Op.19%20No.4%20Tchaikovsky"},
+  {"id": "saint-saens-concerto1", "lv": 5, "composer": "サン＝サーンス", "name": "チェロ協奏曲 第1番", "era": "ロマン派", "year": "1872", "intro": "切れ目なく続く、情熱的で華やかな協奏曲。コンクールでもよく弾かれる定番です。", "pd": true, "score": "https://imslp.org/index.php?search=Cello%20Concerto%20No.1%20Saint-Sa%C3%ABns"},
+  {"id": "beethoven-sonata3", "lv": 5, "composer": "ベートーヴェン", "name": "チェロ・ソナタ 第3番", "era": "古典派", "year": "1808", "intro": "チェロとピアノが対等に語り合う、ソナタの最高峰の1つ。", "pd": true, "score": "https://imslp.org/index.php?search=Cello%20Sonata%20No.3%20Op.69%20Beethoven"},
+  {"id": "schubert-arpeggione", "lv": 5, "composer": "シューベルト", "name": "アルペジオーネ・ソナタ", "era": "ロマン派", "year": "1824", "intro": "今は無い楽器のために書かれ、チェロで弾かれるようになった名曲。歌心と技巧の両方が要ります。", "pd": true, "score": "https://imslp.org/index.php?search=Arpeggione%20Sonata%20Schubert"},
+  {"id": "rimsky-bumblebee", "lv": 5, "composer": "リムスキー＝コルサコフ", "name": "熊蜂の飛行", "era": "ロマン派", "year": "1900", "intro": "蜂の羽音を描いた、超高速の曲。腕前を見せるアンコールの定番です。", "pd": true, "score": "https://imslp.org/index.php?search=Flight%20of%20the%20Bumblebee"}
+];
+const MORE_NEEDS = { 1: ["longtone", "amazing"], 2: ["shift"], 3: ["shift", "vibrato"], 4: ["vibrato", "highpos"], 5: ["highpos", "thumb"] };
+const MORE_WEEKS = { 1: 4, 2: 8, 3: 12, 4: 20, 5: 40 };
+const MORE_AFTER = { 1: "humoresque", 2: "mother", 3: "american", 4: "rondo", 5: "concerto2" };
+MORE.forEach(m => {
+  const inBook = !/^https?:/.test(m.score), score = inBook ? SB + "#" + m.score : m.score;
+  const label = inBook ? "楽譜帳で開く（音つき）" : !m.pd ? "曲の紹介（楽譜は市販の正規版を）" : "原曲の楽譜を探す（IMSLP）";
+  POOL[m.id] = { kind: "BOSS", title: m.name, op: m.composer, trains: m.intro, weeks: MORE_WEEKS[m.lv], score, scoreLabel: label, pd: m.pd,
+    task: m.intro, checks: [inBook ? "楽譜帳の楽譜で、音を聞いた" : m.pd ? "原曲の楽譜を用意した（IMSLP など）" : "正規の楽譜を用意した（市販の曲集など）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: `${m.composer}の名曲。弾ければ、レパートリーがまた1つ増えます。`, today: ["楽譜で主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] };
+  CATALOG.push({ id: m.id, lv: m.lv, composer: m.composer, name: m.name, src: [m.composer, m.era, m.year].filter(Boolean).join(" ・ "), text: m.intro, needs: MORE_NEEDS[m.lv] });
+  WERNER_OF[m.id] = m.lv <= 1 ? 1 : m.lv <= 3 ? 2 : 3;
+});
+[...MORE].reverse().forEach(m => { const i = ORDER.indexOf(MORE_AFTER[m.lv]); ORDER.splice(i + 1, 0, m.id); });
+// 楽譜帳に書き起こした曲は、IMSLP の検索ではなく楽譜帳を開く
+["brahms-lullaby", "gossec-gavotte", "bach-air", "elgar-salut", "bach-prelude", "saint-saens-swan", "schumann-traumerei", "faure-apres", "rachmaninoff-vocalise", "tchaikovsky-andante", "american", "bach-musette", "schumann-happy-farmer", "flies-wiegenlied", "handel-largo", "gounod-ave-maria", "bach-jesu-joy"].forEach(id => { if (POOL[id]) { POOL[id].score = SB + "#" + id; POOL[id].scoreLabel = "楽譜帳で開く（音つき）"; POOL[id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; } });
 
 // ── 作曲家たちの読み物（人となりと、チェロとの関わり）
 const COMPOSERS = [
@@ -1589,12 +1659,26 @@ async function savePlan() {
   catch (e) { $("msg").textContent = "選んだ曲を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
 }
 function applyPlan() { STATIONS = buildRoute(); layoutRoad(); render(); }
+// 目標の曲を探す（ひらがな・カタカナ・全角半角の違いはそろえて比べる）
+const normQ = v => String(v || "").normalize("NFKC").toLowerCase().replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60)).replace(/[\s・＝=]/g, "");
+const pickQuery = () => normQ($("pick-q")?.value);
+const pickBookOnly = () => !!$("pick-book")?.checked;
+function pickMatch(c) {
+  if (pickBookOnly() && !(POOL[c.id]?.score || "").startsWith(SB)) return false;
+  const q = pickQuery(); if (!q) return true;
+  return normQ([c.composer, c.name, c.src, c.text].join(" ")).includes(q);
+}
+document.addEventListener("input", e => { if (e.target.id === "pick-q" || e.target.id === "pick-book") renderPlan(); });
 function renderPlan() {
   const lv = $("levels"); lv.innerHTML = "";
+  let shownCount = 0;
   [1, 2, 3, 4, 5].forEach(n => {
     const box = el("div", "level"); box.append(el("h3", null, LV_NAME[n]));
     const cards = el("div", "cards");
-    CATALOG.filter(c => c.lv === n).forEach(c => {
+    const shown = CATALOG.filter(c => c.lv === n && pickMatch(c));
+    if (!shown.length) box.hidden = true;
+    shownCount += shown.length;
+    shown.forEach(c => {
       const lab = el("label", "pick"), cb = el("input"); cb.type = "checkbox"; cb.id = "pick-" + c.id; cb.checked = targets.includes(c.id);
       cb.addEventListener("change", () => {
         targets = CATALOG.filter(x => x.id === c.id ? cb.checked : targets.includes(x.id)).map(x => x.id);
@@ -1604,11 +1688,13 @@ function renderPlan() {
       const pre = c.needs.filter(id => POOL[id] && id !== c.id).map(id => POOL[id].title);
       if (pre.length) { const nd = el("div", "needs"); nd.append(el("span", null, "先に：" + pre.join("・"))); d.append(nd); }
       const m = el("div", "meta"); m.append(el("span", null, "この曲だけで約" + months(POOL[c.id].weeks * pace) + "か月"));
-      m.append(!POOL[c.id].score ? el("span", "no", "楽譜はこれから作れます") : POOL[c.id].score.startsWith(SB) ? el("span", "has", "楽譜あり（楽譜帳・音つき）") : el("span", "has", "原曲の楽譜（IMSLP）"));
+      m.append(!POOL[c.id].score ? el("span", "no", "楽譜はこれから作れます") : POOL[c.id].score.startsWith(SB) ? el("span", "has", "楽譜あり（楽譜帳・音つき）") : (POOL[c.id].pd === false ? el("span", "no", "楽譜は市販（著作権あり）") : el("span", "has", "原曲の楽譜（IMSLP）")));
       d.append(m); lab.append(cb, d); cards.append(lab);
     });
     box.append(cards); lv.append(box);
   });
+  const pc = $("pick-count"); if (pc) pc.textContent = pickQuery() || pickBookOnly() ? `${shownCount}曲 / 全${CATALOG.length}曲` : `全${CATALOG.length}曲`;
+  if (!shownCount) lv.append(el("p", "no", "見つかりませんでした。別のことばで探してみてください。"));
   const v = $("verdict"); v.innerHTML = "";
   const need = totalWeeks(targets), done = new Date(); done.setDate(done.getDate() + Math.round(need * 7));
   const sum = el("div", "vd-sum");
