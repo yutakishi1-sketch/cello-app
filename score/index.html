@@ -118,6 +118,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+<script src="art/cello-voice.js"></script>
 <script>
 const STAGE = ["0段 ならし", "1段 いまの曲", "2段 次の一歩", "3段 力をつける", "4段 目標曲", "5段 上のポジションへ"];
 const SONGS = [
@@ -622,8 +623,9 @@ STAGE.forEach((name, i) => {
   toc.append(row);
 });
 
-let ctx = null, playing = null;
+let ctx = null, playing = null, playSeq = 0;
 function stopAll() {
+  playSeq++;
   if (!playing) return;
   playing.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
   clearTimeout(playing.timer); playing.btn.textContent = "▶ 鳴らす"; playing.btn.classList.remove("on"); playing = null;
@@ -643,12 +645,21 @@ function tone(t, d, freq, type, vol) {
   o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d);
   return o;
 }
-function playSong(song, btn, opts) {
+// 旋律は本物のチェロの録音で鳴らす（art/cello-voice.js）。録音を読めないときは、これまでの作った音で鳴らす
+async function playSong(song, btn, opts) {
   stopAll();
   let seq;
   try { seq = song.tune.setUpAudio({}); } catch (e) { btn.disabled = true; btn.textContent = "音を出せません"; return; }
   try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); }
   catch (e) { btn.disabled = true; btn.textContent = "音を出せません"; return; }
+  const my = ++playSeq, midis = [];
+  (seq.tracks || []).forEach(track => track.forEach(ev => { if (ev.cmd === "note" && ev.pitch != null) midis.push(ev.pitch); }));
+  let voice = false;
+  if (window.CelloVoice) {
+    if (!CelloVoice.ready()) btn.textContent = "読み込み中…";
+    voice = await CelloVoice.prepare(ctx, midis);
+    if (my !== playSeq) { if (!playing) btn.textContent = "▶ 鳴らす"; return; }   // 読み込み中に止められた
+  }
   const mt = meterOf(song);
   const whole = 60 / opts.bpm / mt.beat;
   const pickup = song.tune.getPickupLength ? song.tune.getPickupLength() : 0;
@@ -659,7 +670,7 @@ function playSong(song, btn, opts) {
   (seq.tracks || []).forEach(track => track.forEach(ev => {
     if (ev.cmd !== "note" || ev.pitch == null) return;
     const d = ev.duration * whole;
-    nodes.push(tone(t0 + ev.start * whole, d, 440 * Math.pow(2, (ev.pitch - 69) / 12), "triangle", 0.3));
+    nodes.push((voice && CelloVoice.note(ctx, ev.pitch, t0 + ev.start * whole, d, { gain: 1.4 })) || tone(t0 + ev.start * whole, d, 440 * Math.pow(2, (ev.pitch - 69) / 12), "triangle", 0.3));
     end = Math.max(end, ev.start + ev.duration);
   }));
   if (opts.click) {
@@ -797,7 +808,7 @@ SONGS.forEach(s => {
   range.addEventListener("change", restartIfPlaying);
   click.addEventListener("change", restartIfPlaying);
   reset.addEventListener("click", () => { range.value = String(base); val.textContent = range.value; restartIfPlaying(); });
-  btn.addEventListener("click", () => (playing && playing.btn === btn) ? stopAll() : playSong(s, btn, opts()));
+  btn.addEventListener("click", () => (playing && playing.btn === btn) || btn.textContent === "読み込み中…" ? (stopAll(), btn.textContent = "▶ 鳴らす") : playSong(s, btn, opts()));
 });
 const HASH_ALIAS = { "#canonmelody": "#canon-melody" };   // 前の目印で開いても新しい段へ
 // 目次や目印で曲を指したら、その曲を開いてそこへ移る
