@@ -217,6 +217,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       <button type="button" class="btn main" id="next">次へ</button>
     </div>
     <p class="hint">「次へ」を押すたびに次の音が鳴ります。メダルを押すともう一度。</p>
+    <p class="hint">チェロの音：FluidR3 GM（Frank Wen、CC BY 3.0）</p>
   </section>
 
   <!-- ポジション -->
@@ -249,6 +250,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   </div>
 </nav>
 
+<script src="art/cello-samples.js"></script>
 <script>
 (() => {
   const NAMES = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
@@ -300,7 +302,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   // 前の音は高い倍音を強く削っていたため、管楽器のように聞こえていた
   const BODY = [[105, 5, 1.4], [220, 6, 2.2], [480, 3, 2.5], [1150, 2.5, 3]];   // [周波数Hz, 強さdB, 鋭さQ]
   let noiseBuf = null;
-  function play(si, s) {
+  function playSynth(si, s) {
     if (!S.sound) return;
     try {
       ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
@@ -341,6 +343,34 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       oscs.forEach(o => { o.start(t); o.stop(end + 0.05); });
       vib.start(t); vib.stop(end + 0.05); ns.start(t); ns.stop(end);
     } catch (e) { console.error('音を鳴らせませんでした', e); }
+  }
+  // ── 本物のチェロの録音で鳴らす（読み込めないときは上の作った音で鳴らす） ──
+  // 録音は FluidR3 GM（CC BY 3.0）。A=440 で録られているので、A=442 のときは少しだけ速く再生して高さを合わせる
+  const sampleBuf = {};
+  async function sampleFor(midi) {
+    if (sampleBuf[midi]) return sampleBuf[midi];
+    const url = window.CELLO_SAMPLES && window.CELLO_SAMPLES[midi];
+    if (!url) return null;
+    const bin = atob(url.slice(url.indexOf(',') + 1)), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    sampleBuf[midi] = await new Promise((ok, ng) => ctx.decodeAudioData(bytes.buffer, ok, ng));
+    return sampleBuf[midi];
+  }
+  async function play(si, s) {
+    if (!S.sound) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') ctx.resume();
+      const midi = 57 + STRINGS[si].fromA3 + s;   // A3 = 57
+      const buf = await sampleFor(midi);
+      if (!buf) { playSynth(si, s); return; }
+      const t = ctx.currentTime, dur = Math.min(1.8, buf.duration);
+      const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = S.a4 / 440;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.9, t + 0.02);
+      g.gain.setValueAtTime(0.9, t + dur - 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(g).connect(ctx.destination); src.start(t); src.stop(t + dur + 0.02);
+    } catch (e) { console.error('録音の音を鳴らせなかったので、作った音で鳴らします', e); playSynth(si, s); }
   }
   function ping(node) { node.classList.remove('ping'); void node.offsetWidth; node.classList.add('ping'); }
 
