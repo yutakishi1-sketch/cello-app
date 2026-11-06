@@ -1,0 +1,1870 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<script src="../shim.js"></script>
+<script src="../seed.js"></script>
+</head>
+<body>
+<title>ドヴォルザークへの道</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<style>
+/* 構成: 夜の古城へ続く道（絵＝Gemini、道の上の関門＝自分の進み具合）→ ステータス → 3体の門番（紋章＝ChatGPT）→ ドヴォルザークという人 → 関門の一覧と攻略メモ → 今日のクエスト → 決まり → 先生へ。
+   古典的な金の枠（Gemini で作った角飾り・飾り線・封印・アイコン）で囲み、題名は太い明朝、補足は細い明朝と古典的な欧文で強弱をつける。暗い1テーマに固定 */
+:root {
+  color-scheme: dark;
+  --bg: #0a0f1a;      /* 夜の青: 家路の郷愁 */
+  --panel: #0f1727;
+  --panel-2: #14203a;
+  --ink: #ebe7dc;
+  --muted: #8f95a1;
+  --line: #22304a;
+  --frame: #3a3322;
+  --gold: #c9a54e;
+  --gold-soft: #a8894a;
+  --gold-dim: #6e5a2c;
+  --garnet: #7fa6e6;   /* 門番の色＝サファイアの青（配色は金と夜の青に統一） */
+  --garnet-deep: #13213f;
+  --ok: #6fcf8e; --ok-bg: #12301d;
+  --through: #b9d46a; --through-bg: #283013;
+  --doing: #e8964a; --doing-bg: #34200e;   /* いまここ＝灯りの琥珀（金と見分ける） */
+  --todo: #8a95a8; --todo-bg: #18233a;
+  --f-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-fine: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+  --f-latin: "Cormorant Garamond", "Garamond", "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.75; font-variant-numeric: lining-nums; }
+.inner { max-width: 1040px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+a { color: var(--gold); }
+button, input, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, .gate:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.nw { white-space: nowrap; }
+.latin { font-family: var(--f-latin); font-weight: 600; letter-spacing: .14em; }
+
+/* ── 古典的な枠（角飾りは JS で4つ置く） ── */
+.ornate { position: relative; background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 4px var(--bg), inset 0 0 0 5px #2b2618; }
+.ornate > .corner { position: absolute; width: 54px; height: 54px; pointer-events: none; z-index: 1; }
+.ornate > .corner.tl { top: -9px; left: -9px; }
+.ornate > .corner.tr { top: -9px; right: -9px; transform: scaleX(-1); }
+.ornate > .corner.bl { bottom: -9px; left: -9px; transform: scaleY(-1); }
+.ornate > .corner.br { bottom: -9px; right: -9px; transform: scale(-1, -1); }
+.ornate.small > .corner { width: 36px; height: 36px; }
+.divider { display: block; width: min(360px, 80%); height: auto; margin: 6px auto 0; opacity: .9; }
+
+/* ── ヒーロー ── */
+.hero { position: relative; height: clamp(560px, 60vw, 760px); overflow: hidden; background: #060a14; }
+.stage { position: absolute; inset: 0; }
+.stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; display: block; max-width: none; }
+.stage .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6,10,20,.1) 0%, rgba(6,10,20,0) 45%, rgba(6,10,20,.55) 100%), linear-gradient(180deg, rgba(6,10,20,.35) 0%, rgba(6,10,20,0) 22%, rgba(6,10,20,0) 70%, rgba(6,10,20,.8) 100%); }
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gate { cursor: pointer; }
+.hero .inner { position: relative; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; padding-block: 28px 28px; pointer-events: none; }
+.hero .inner > * { pointer-events: auto; }
+.kicker { font-family: var(--f-latin); font-weight: 600; font-size: 15px; letter-spacing: .26em; color: #b9b3a6; }
+.kicker b { color: var(--gold); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: #b9b3a6; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; transform: rotate(45deg); display: inline-block; border: 1.5px solid var(--gold); }
+.hero-left { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.title { writing-mode: vertical-rl; font-family: var(--f-display); font-weight: 800; font-size: min(60px, 4.6vw); line-height: 1.12; letter-spacing: .14em; white-space: nowrap; margin: 0; color: var(--ink); text-shadow: 0 2px 0 #000, 0 0 28px rgba(0, 0, 0, .85); }
+.title small { display: block; font-family: var(--f-fine); font-size: .27em; font-weight: 600; letter-spacing: .34em; color: var(--gold); margin-inline-start: .8em; }
+
+/* ── ステータス ── */
+.status { padding-block: 34px 0; }
+.hud { display: grid; grid-template-columns: auto minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 18px 28px; align-items: center; padding: 22px 28px; }
+.seal { position: relative; width: 84px; height: 84px; display: grid; place-items: center; }
+.seal img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.seal b { position: relative; font-family: var(--f-latin); font-weight: 700; font-size: 30px; color: #2a1d08; line-height: 1; margin-top: 14px; }
+.seal small { position: absolute; top: 18px; font-family: var(--f-latin); font-weight: 700; font-size: 11px; letter-spacing: .2em; color: #3a2a0c; }
+.who { display: grid; gap: 6px; min-width: 0; }
+.who .rank { font-family: var(--f-display); font-weight: 700; font-size: 21px; line-height: 1.3; }
+.who .next { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
+.gauge { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.gauge .lab { font-family: var(--f-latin); font-weight: 700; font-size: 13px; letter-spacing: .16em; color: var(--muted); }
+.bar { height: 8px; background: #19243a; border: 1px solid var(--frame); position: relative; overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.bar.hp i { background: linear-gradient(90deg, #1d3a6e, #3a6bbd); }
+.gauge .num { font-family: var(--f-latin); font-weight: 700; font-size: 15px; font-variant-numeric: lining-nums tabular-nums; }
+.eta { display: grid; min-width: 0; border-left: 1px solid var(--line); padding-left: 22px; }
+.eta .k { font-family: var(--f-fine); font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.eta .k img { width: 12px; height: auto; }
+.eta .v { font-family: var(--f-display); font-weight: 700; font-size: 23px; line-height: 1.3; }
+.eta .v { letter-spacing: .04em; }
+.eta .v em { font-style: normal; color: var(--gold); margin: 0 .14em; }
+.eta .d { font-family: var(--f-latin); font-weight: 600; font-size: 14px; letter-spacing: .06em; color: var(--muted); }
+
+/* ── セクション見出し（中央・飾り線） ── */
+section.block { padding-block: 84px 8px; }
+section.block.more { padding-block: 64px 8px; }
+.about > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px 14px; padding: 14px 18px; border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
+.about > summary::-webkit-details-marker { display: none; }
+.about-t { font-family: var(--f-display); font-weight: 700; font-size: 18px; }
+.about-h { font-size: 12.5px; color: var(--gold); font-weight: 700; }
+.about[open] .about-h { visibility: hidden; }
+.about > .sec-lead { text-align: center; margin: 18px auto 24px; max-width: 40em; }
+.sec-head { display: grid; justify-items: center; gap: 4px; margin: 0 auto 34px; max-width: 40em; text-align: center; }
+.sec-no { font-family: var(--f-latin); font-weight: 600; font-style: italic; font-size: 17px; letter-spacing: .2em; color: var(--gold); }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8vw, 34px); line-height: 1.35; margin: 0; text-wrap: balance; letter-spacing: .06em; }
+.sec-lead { font-family: var(--f-fine); color: var(--muted); margin: 8px 0 0; font-size: 14px; line-height: 1.9; }
+
+/* ── 門番 ── */
+.bosses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+.boss { padding: 24px 22px; display: grid; gap: 10px; align-content: start; min-width: 0; background: linear-gradient(180deg, var(--garnet-deep), var(--panel) 48%); }
+.boss .crest { justify-self: center; width: 124px; height: auto; }
+.boss .crest.gate-only { width: 84px; opacity: .9; margin-block: 12px; }
+.boss .tagline { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.boss .tagline .latin { font-size: 14px; color: var(--garnet); }
+.boss .tagline .op { font-family: var(--f-latin); font-style: italic; font-size: 14px; color: var(--muted); }
+.boss h3 { font-family: var(--f-display); font-weight: 700; font-size: 23px; line-height: 1.35; margin: 0; }
+.boss .src { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
+.boss p { margin: 0; font-family: var(--f-fine); font-size: 14px; line-height: 1.9; }
+.boss .defeated { font-family: var(--f-latin); font-weight: 700; letter-spacing: .2em; color: var(--ok); }
+.helps { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 4px; }
+.helps .h { font-size: 12px; color: var(--gold-soft); letter-spacing: .06em; }
+.helps a { display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink); text-decoration: none; }
+.helps a:hover { color: var(--gold); }
+.helps a .mk { font-family: var(--f-latin); font-weight: 700; color: var(--muted); font-size: 14px; width: 1.6em; }
+.helps a.done .mk { color: var(--ok); }
+.incipit { background: #e3dcc8; color: #1a1a1a; padding: 6px 4px 0; min-width: 0; overflow: hidden; }
+.incipit svg { display: block; max-width: 100%; height: auto; }
+.listen { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; }
+.btn { font-family: var(--f-latin); font-weight: 700; letter-spacing: .1em; font-size: 15px; color: #120d05; background: linear-gradient(180deg, #e0c272, var(--gold)); border: 0; padding: 5px 16px; cursor: pointer; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.pending { display: inline-block; font-size: 12px; font-weight: 700; color: var(--doing); background: var(--doing-bg); padding: 1px 8px; }
+.boss .when { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--muted); font-family: var(--f-fine); }
+.boss .when b { font-family: var(--f-display); font-weight: 700; font-size: 17px; color: var(--ink); }
+
+/* ── ドヴォルザークという人 ── */
+.chron { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px 40px; padding: 34px 36px; align-items: start; }
+.chron .emblem { width: 120px; height: auto; justify-self: center; margin-top: 8px; }
+.timeline { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--frame); }
+.timeline li { position: relative; display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 14px; padding: 7px 0 7px 20px; }
+.timeline li::before { content: ""; position: absolute; left: -5px; top: 17px; width: 9px; height: 9px; transform: rotate(45deg); background: var(--gold); }
+.timeline li.mark::before { background: var(--garnet); }
+.timeline .y { font-family: var(--f-latin); font-weight: 700; font-size: 19px; color: var(--gold); line-height: 1.6; }
+.timeline .t { font-family: var(--f-fine); font-size: 14px; line-height: 1.85; }
+.timeline .t b { font-family: var(--f-body); font-weight: 700; color: #c6d6f3; }
+.moods { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; border-top: 1px solid var(--line); padding-top: 24px; }
+.mood h3 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.mood .en { font-family: var(--f-latin); font-style: italic; font-size: 15px; color: var(--gold-soft); }
+.mood p { margin: 6px 0 0; font-family: var(--f-fine); font-size: 13.5px; line-height: 1.9; color: #cfcabe; }
+
+/* ── 目指す曲を選ぶ ── */
+.plan { padding: 28px; display: grid; gap: 26px; }
+.levels { display: grid; gap: 22px; }
+.level h3 { margin: 0 0 10px; font-family: var(--f-display); font-weight: 700; font-size: 16px; color: var(--gold); letter-spacing: .04em; }
+.level .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.pick { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 4px 10px; padding: 12px 14px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; align-content: start; }
+.pick:has(input:checked) { border-color: var(--gold); background: linear-gradient(180deg, rgba(201,165,78,.12), var(--panel-2) 70%); }
+.pick input { appearance: none; width: 14px; height: 14px; margin: 5px 0 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); cursor: pointer; }
+.pick input:checked { background: var(--gold); }
+.pick > div { min-width: 0; display: grid; gap: 3px; }
+.pick .nm { font-weight: 700; font-size: 15px; line-height: 1.45; }
+.pick .src { font-family: var(--f-fine); font-size: 12px; color: var(--muted); }
+.pick .tx { font-family: var(--f-fine); font-size: 13px; line-height: 1.75; color: #cfcabe; }
+.pick .needs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.pick .needs span { font-size: 11.5px; border: 1px solid var(--gold-dim); color: var(--gold-soft); padding: 0 6px; }
+.pick .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.pick .meta .has { color: var(--ok); } .pick .meta .no { color: var(--doing); }
+.verdict { border-top: 1px solid var(--frame); padding-top: 20px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px 28px; align-items: start; }
+.vd-sum { display: grid; gap: 4px; }
+.vd-sum .k { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
+.vd-sum .v { font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1.4; }
+.vd-sum .v em { font-style: normal; color: var(--gold); margin: 0 .14em; }
+.vd-sum .route { font-size: 12.5px; color: var(--muted); line-height: 1.8; }
+.vd-judge { display: grid; gap: 10px; }
+.vd-judge label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.vd-judge input[type=date] { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 4px 8px; font-size: 14px; color-scheme: dark; }
+.judge { padding: 12px 14px; border: 1px solid; font-size: 14px; line-height: 1.8; }
+.judge b { font-size: 15px; }
+.judge.ok { border-color: #2f6b45; background: var(--ok-bg); color: #bfeccb; }
+.judge.warn { border-color: #6b5a1f; background: #2c250c; color: #f1dc95; }
+.judge.bad { border-color: #7a3038; background: #2e1216; color: #f2c0c5; }
+.judge.none { border-color: var(--line); color: var(--muted); }
+.judge ul { margin: 6px 0 0; padding-left: 1.2em; }
+/* ── 毎日の練習 ── */
+.practice { padding: 26px 28px; display: grid; gap: 22px; }
+.pr-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px 28px; }
+.pr-box { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.pr-box h4 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
+.pr-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.focus-list { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
+.focus-list li { display: flex; gap: 8px; align-items: center; }
+.focus-list input { flex: 1 1 auto; min-width: 0; background: var(--panel-2); color: var(--ink); border: 1px solid var(--gold-dim); padding: 6px 10px; font-size: 15px; font-weight: 700; }
+.pr-group { display: grid; gap: 6px; }
+.pr-cat { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--gold-soft); letter-spacing: .06em; margin-top: 4px; }
+.pr-ico { width: 20px; height: 20px; object-fit: contain; }
+.pr-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; padding: 7px 10px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 14px; }
+.pr-item.focus { border-color: var(--gold-dim); }
+.pr-item small { display: block; font-size: 12px; color: var(--muted); font-family: var(--f-fine); }
+.pr-item input { appearance: none; width: 15px; height: 15px; margin: 4px 0 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); cursor: pointer; }
+.pr-item input:checked { background: var(--gold); }
+.pr-item:has(input:checked) { background: linear-gradient(90deg, rgba(201,165,78,.14), var(--panel-2) 70%); }
+.pr-no { width: 9em; justify-self: start; margin-left: 30px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 3px 8px; font-size: 13px; }
+.pr-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px dashed var(--line); padding-top: 10px; font-size: 13px; }
+.pr-tier { display: inline-flex; align-items: center; gap: 8px; }
+.pr-mini { width: 30px; height: 30px; object-fit: contain; }
+.pr-note { margin: 0; font-size: 12px; color: var(--muted); font-family: var(--f-fine); }
+.cal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cal-head b { font-family: var(--f-display); font-weight: 700; font-size: 17px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-w { text-align: center; font-size: 11px; color: var(--muted); }
+.cal-d { position: relative; aspect-ratio: 1; min-width: 0; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; padding: 0; display: grid; place-items: center; }
+.cal-d.today { border-color: var(--doing); }
+.cal-d.sel { box-shadow: inset 0 0 0 2px var(--gold); }
+.cal-d.future { opacity: .45; cursor: default; }
+.cal-n { position: absolute; top: 2px; left: 4px; font-family: var(--f-latin); font-weight: 700; font-size: 12px; color: var(--muted); }
+.cal-stamp { width: 78%; height: 78%; object-fit: contain; }
+.cal-bell { position: absolute; right: 2px; bottom: 2px; width: 30%; height: auto; }
+.gr-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.pr-min { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pr-min .pr-cat { margin: 0 6px 0 0; }
+.chip-min { font-size: 12.5px; padding: 3px 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; }
+.chip-min.on { border-color: var(--gold); color: #120d05; background: var(--gold); font-weight: 700; }
+.pr-min .pr-no { margin-left: 0; width: 7em; }
+.gr-stats div { display: grid; padding: 10px 12px; border: 1px solid var(--line); background: var(--panel-2); }
+.gr-stats .k { font-size: 12px; color: var(--muted); font-family: var(--f-fine); }
+.gr-stats b { font-family: var(--f-display); font-weight: 700; font-size: 22px; color: var(--gold); }
+.gr-top { margin: 0; padding-left: 1.2em; font-size: 13.5px; display: grid; gap: 2px; }
+.gr-line { margin: 0; font-size: 13.5px; }
+.gr-ms { display: flex; flex-wrap: wrap; gap: 10px; }
+.ms { position: relative; width: 58px; height: 58px; display: grid; place-items: center; opacity: .28; filter: grayscale(1); }
+.ms.on { opacity: 1; filter: none; }
+.ms img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ms b { position: relative; font-family: var(--f-latin); font-weight: 700; font-size: 17px; color: #2a1d08; margin-top: 10px; }
+.ms small { position: absolute; bottom: 9px; font-size: 9px; font-weight: 700; color: #3a2a0c; }
+.celebrate { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 50; display: grid; justify-items: center; gap: 6px; padding: 22px 30px; background: rgba(10,15,26,.94); border: 1px solid var(--gold); text-align: center; max-width: min(90vw, 360px); }
+.celebrate b { font-family: var(--f-display); font-size: 22px; color: var(--gold); }
+.celebrate span { font-size: 14px; }
+.cb-stamp { width: 110px; height: 110px; object-fit: contain; }
+.celebrate.show .cb-stamp { animation: stampIn .6s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes stampIn { from { transform: scale(2.2) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(-6deg); opacity: 1; } }
+/* ── 開け閉めできる節 ── */
+.fold > summary { list-style: none; cursor: pointer; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold[open] > .fold-sum { border-color: transparent; background: none; }
+.fold-h::after { content: "閉じる ▴"; display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--gold); }
+/* 閉じているときは、1行の細い帯 */
+.fold:not([open]) > .fold-sum { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 14px; margin: 0; padding: 12px 16px; max-width: none; border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); }
+.fold:not([open]) .fold-sum .sec-lead, .fold:not([open]) .fold-sum .divider { display: none; }
+.fold:not([open]) .fold-sum .sec-no { font-size: 14px; }
+.fold:not([open]) .fold-sum h2 { font-size: 18px; letter-spacing: .04em; }
+.fold:not([open]) .fold-h::after { content: "開く ▾"; margin-top: 0; }
+section.block.fold-sec-closed { padding-block: 10px 0; }
+section.block.more { padding-block: 10px 0; }
+#about .about > summary { padding: 12px 16px; }
+#about .about > summary .sec-no { font-size: 14px; }
+#about .about-t { font-size: 18px; }
+/* ── 作曲家の読み物 ── */
+.composers { padding: 18px 22px; display: grid; gap: 8px; }
+.cmp { border-bottom: 1px solid var(--line); }
+.cmp:last-child { border-bottom: 0; }
+.cmp > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 12px 4px; }
+.cmp > summary::-webkit-details-marker { display: none; }
+.cmp > summary b { font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.cmp > summary b::before { content: "◆ "; color: var(--gold-dim); font-size: .7em; vertical-align: 2px; }
+.cmp[open] > summary b::before { color: var(--gold); }
+.cmp-l { font-family: var(--f-latin); font-style: italic; font-size: 15px; color: var(--muted); }
+.cmp-body { display: grid; gap: 6px; padding: 0 4px 16px 22px; }
+.cmp-body h4 { margin: 6px 0 0; font-size: 12.5px; font-weight: 700; color: var(--gold-soft); letter-spacing: .06em; }
+.cmp-body p { margin: 0; font-family: var(--f-fine); font-size: 14.5px; line-height: 1.9; }
+.cmp-pieces { display: flex; flex-wrap: wrap; gap: 8px; }
+.cmp-tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--gold-soft); border: 1px solid var(--gold-dim); padding: 0 6px; margin-right: 8px; vertical-align: 2px; }
+/* ── ページの切り替えバー ── */
+.topnav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: rgba(8,12,22,.92); border-bottom: 1px solid var(--frame); backdrop-filter: blur(4px); }
+.tn-in { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding-block: 8px; font-size: 13px; }
+.tn-in a { color: var(--ink); text-decoration: none; white-space: nowrap; }
+.tn-in a:hover { color: var(--gold); }
+.tn-sep { flex: 1 1 auto; }
+/* ── 道具箱（別ページへの入口） ── */
+.kit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.kit-card { display: grid; gap: 4px; align-content: start; padding: 14px 16px 12px; text-decoration: none; color: var(--ink); min-width: 0; background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px #2b2618; }
+.kit-card b { font-family: var(--f-display); font-weight: 700; font-size: 17px; color: var(--gold); letter-spacing: .06em; }
+.kit-card b::after { content: " ↗"; font-family: var(--f-latin); font-size: 14px; color: var(--gold-dim); }
+.kit-card span { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.kit-card:hover { border-color: var(--gold); }
+@media (max-width: 760px) { .kit { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* ── 教本とレッスン ── */
+.lesson { padding: 26px 28px; display: grid; gap: 22px; }
+.ls-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px 28px; }
+.ls-box { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ls-box h4 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
+.ls-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 13.5px; }
+.ls-row select, .ls-row input, .lesson textarea { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 4px 8px; font-size: 14px; color-scheme: dark; }
+.lesson textarea { width: 100%; resize: vertical; line-height: 1.7; }
+#ls-book .books { display: grid; gap: 6px; margin-top: 4px; }
+#ls-book .bk { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); }
+#ls-book .bk b { font-family: var(--f-display); font-weight: 700; color: var(--muted); }
+#ls-book .bk.now { border-color: var(--gold); background: rgba(201,165,78,.08); }
+#ls-book .bk.now b { color: var(--gold); }
+#ls-book .bk span { font-family: var(--f-fine); color: #cfcabe; line-height: 1.7; }
+#ls-book .bk small { display: block; color: var(--muted); font-family: var(--f-body); font-size: 11.5px; }
+#ls-book .wview { display: grid; gap: 8px; }
+#ls-book .wnow { display: flex; align-items: baseline; gap: 4px; }
+#ls-book .wnow b { font-family: var(--f-display); font-size: 20px; color: var(--gold); }
+#ls-book .wnow span { color: var(--muted); font-size: 13px; }
+#ls-book .wnow em { margin-left: auto; font-style: normal; font-family: var(--f-latin); font-weight: 700; font-size: 26px; color: var(--ink); }
+#ls-book .wbar { display: flex; gap: 3px; height: 12px; }
+#ls-book .wbar i { position: relative; flex: 0 0 auto; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+#ls-book .wbar i b { position: absolute; inset: 0 auto 0 0; background: var(--gold-dim); }
+#ls-book .wbar i.cur { border-color: var(--gold); }
+#ls-book .wbar i.cur b { background: var(--gold); }
+#ls-book .wcur { margin: 0; font-size: 13px; color: var(--ink); }
+#ls-book .empty { margin: 0; font-size: 13px; color: var(--muted); }
+#ls-book .wgoal { display: grid; gap: 2px; padding: 8px 12px; border: 1px solid var(--line); border-left: 4px solid var(--muted); font-size: 13px; }
+#ls-book .wgoal b { font-family: var(--f-display); font-size: 15px; }
+#ls-book .wgoal small { font-size: 12.5px; color: var(--muted); }
+#ls-book .wgoal.ok { border-left-color: var(--ok); background: var(--ok-bg); }
+#ls-book .wgoal.ok small { color: var(--ok); }
+#ls-book .wgoal.wait { border-left-color: var(--gold); background: rgba(201,165,78,.08); }
+#ls-book .wgoal.wait small { color: var(--gold); }
+#ls-book .wgoal.late { border-left-color: var(--doing); background: var(--doing-bg); }
+#ls-book .wgoal.late small { color: var(--doing); }
+#ls-book #ls-pos { width: 4.5em; }
+#ls-book .wedit { border-top: 1px dashed var(--line); padding-top: 6px; }
+#ls-book .wedit summary { cursor: pointer; font-size: 13px; color: var(--gold); padding: 6px 0; }
+#ls-book .wedit h5 { margin: 10px 0 4px; font-size: 12.5px; color: var(--gold-soft); letter-spacing: .06em; }
+#ls-book .wch { display: grid; gap: 6px; margin-bottom: 8px; }
+#ls-book .wrow { display: grid; grid-template-columns: minmax(0, 1.4fr) 4em 4em minmax(0, 1.3fr) 32px; gap: 6px; align-items: center; }
+#ls-book .wrow.wh span { font-size: 11px; color: var(--muted); }
+#ls-book .wch input, #ls-book .wtie select { min-width: 0; width: 100%; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 4px 6px; font-size: 14px; color-scheme: dark; }
+#ls-book .wrm { width: 32px; height: 32px; background: none; border: 1px solid var(--line); color: var(--muted); cursor: pointer; }
+#ls-book .wtie { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 6px 8px; align-items: center; font-size: 12.5px; }
+@media (max-width: 520px) { #ls-book .wrow { grid-template-columns: minmax(0, 1fr) 3.6em 3.6em 32px; padding-bottom: 6px; border-bottom: 1px dashed var(--line); } #ls-book .wrow.wh { display: none; } #ls-book .wrow input[type=date] { grid-column: 1 / -2; } #ls-book .wtie { grid-template-columns: minmax(0, 1fr); } }
+#ls-next .count { font-family: var(--f-display); font-weight: 700; font-size: 24px; }
+#ls-next .count em { font-style: normal; color: var(--gold); margin: 0 .14em; }
+.ask { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-family: var(--f-fine); font-size: 14.5px; line-height: 1.8; user-select: all; }
+.ls-mine { font-size: 12.5px; color: var(--muted); }
+#copy { justify-self: start; }
+#ls-log ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+#ls-log li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; font-size: 13.5px; border-top: 1px dashed var(--line); padding-top: 6px; }
+#ls-log li b { font-family: var(--f-latin); font-weight: 700; font-size: 15px; color: var(--gold); }
+#ls-log .empty { font-size: 13px; color: var(--muted); }
+.wbook { display: inline-block; white-space: nowrap; font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--line); padding: 0 6px; margin-left: 8px; vertical-align: 2px; }
+.wbook.lock { color: var(--doing); border-color: var(--doing-bg); background: var(--doing-bg); }
+/* ── 関門の一覧 ── */
+.board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 20px; padding: 18px 26px; border-bottom: 1px solid var(--frame); background: var(--panel-2); }
+.board-head .latin { font-size: 15px; color: var(--gold); }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.opts fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.opts label { display: inline-flex; align-items: center; gap: 5px; padding: 1px 10px; border: 1px solid var(--line); cursor: pointer; color: var(--ink); }
+.opts label:has(input:checked) { border-color: var(--gold); color: var(--gold); }
+.opts input { margin: 0; accent-color: var(--gold); }
+.rows { list-style: none; margin: 0; padding: 0; }
+.row { display: grid; grid-template-columns: 64px 40px minmax(0, 1fr) 128px 92px; gap: 2px 14px; padding: 16px 26px; border-bottom: 1px solid var(--line); align-items: start; position: relative; }
+.row:last-child { border-bottom: 0; }
+.row > div { min-width: 0; }
+.row .no { font-family: var(--f-latin); line-height: 1; color: var(--muted); }
+.row .no small { display: block; font-weight: 700; font-size: 11px; letter-spacing: .22em; }
+.row .no b { font-weight: 600; font-size: 34px; font-variant-numeric: lining-nums tabular-nums; }
+.row .ico { width: 36px; height: 36px; object-fit: contain; margin-top: 4px; }
+.row .nm { font-weight: 700; font-size: 16px; line-height: 1.5; }
+.row .op { font-family: var(--f-latin); font-style: italic; font-size: 15px; color: var(--garnet); }
+.row .tr { font-family: var(--f-fine); font-size: 13.5px; color: #cfcabe; }
+.row .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-top: 6px; font-size: 12.5px; }
+.row .meta a { font-weight: 700; }
+.row .meta .cnt { font-family: var(--f-latin); font-weight: 700; font-size: 14px; color: var(--muted); letter-spacing: .06em; }
+.row .meta .cnt.full { color: var(--ok); }
+.row .eta-c { text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+.row .eta-c b { display: block; font-family: var(--f-latin); font-weight: 700; font-size: 20px; line-height: 1.2; letter-spacing: .04em; }
+.row .eta-c span { font-family: var(--f-fine); font-size: 12px; color: var(--muted); }
+.row .st { text-align: right; }
+.row.boss-row { background: linear-gradient(90deg, var(--garnet-deep), transparent 70%); }
+.row.boss-row .no { color: var(--garnet); }
+.row.boss-row .nm { font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.row.done .no { color: var(--ok); }
+.row.done .nm, .row.done .tr { opacity: .7; }
+.row.here { box-shadow: inset 4px 0 0 var(--doing); background: linear-gradient(90deg, rgba(232,150,74,.08), transparent 60%); }
+.now-tag { display: inline-block; white-space: nowrap; font-family: var(--f-latin); font-weight: 700; font-size: 12px; letter-spacing: .14em; color: #0a0d12; background: var(--doing); padding: 0 7px; margin-left: 8px; vertical-align: 2px; animation: blink 1.8s steps(2, start) infinite; }
+@keyframes blink { 50% { opacity: .4; } }
+.sealmark { position: absolute; right: 118px; top: 50%; width: 64px; height: 64px; transform: translateY(-50%) rotate(-10deg); opacity: .8; pointer-events: none; display: grid; place-items: center; }
+.sealmark img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sealmark span { position: relative; font-family: var(--f-latin); font-weight: 700; font-size: 11px; letter-spacing: .16em; color: #2a1d08; margin-top: 18px; }
+.chip { font-size: 13px; font-weight: 700; border: 1px solid currentColor; padding: 3px 11px; cursor: pointer; white-space: nowrap; background: none; }
+.chip[data-s="clear"] { background: var(--ok-bg); color: var(--ok); }
+.chip[data-s="through"] { background: var(--through-bg); color: var(--through); }
+.chip[data-s="doing"] { background: var(--doing-bg); color: var(--doing); }
+.chip[data-s="todo"] { background: var(--todo-bg); color: var(--todo); }
+.chip:disabled { cursor: default; opacity: .75; }
+.toggle { background: none; border: 0; color: var(--gold); font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 0; }
+.detail { grid-column: 3 / -1; margin-top: 10px; padding: 16px 18px; background: var(--bg); border: 1px solid var(--frame); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 24px; }
+.detail h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
+.detail .task { font-family: var(--f-display); font-weight: 600; font-size: 15.5px; line-height: 1.6; margin-bottom: 12px; }
+.detail .boost { display: flex; gap: 10px; align-items: flex-start; font-family: var(--f-fine); font-size: 13.5px; line-height: 1.85; }
+.detail .boost img { width: 24px; height: auto; flex: none; margin-top: 2px; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checks label { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; font-size: 13.5px; cursor: pointer; }
+.checks input { appearance: none; width: 13px; height: 13px; margin: 5px 0 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); cursor: pointer; background: none; }
+.checks input:checked { background: var(--gold); }
+.checks label:has(input:checked) span { color: var(--muted); text-decoration: line-through; }
+.tune { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; margin-top: 14px; }
+.tune button { width: 28px; height: 28px; border: 1px solid var(--gold-dim); background: none; color: var(--gold); cursor: pointer; font-weight: 700; }
+.tune b { font-family: var(--f-latin); font-size: 19px; min-width: 2em; text-align: center; }
+.tune .reset { width: auto; padding: 0 10px; font-size: 12px; font-weight: 500; }
+.note-box { grid-column: 1 / -1; }
+.note-box textarea { width: 100%; min-height: 64px; resize: vertical; background: var(--panel); color: var(--ink); border: 1px solid var(--line); padding: 8px 10px; font-size: 13.5px; line-height: 1.7; }
+.note-box .saved { font-size: 12px; color: var(--muted); min-height: 1em; }
+.board-foot { padding: 14px 26px; font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); }
+
+/* ── 今日のクエスト ── */
+.quest { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.quest-l { padding: 30px; display: grid; gap: 8px; align-content: start; border-right: 1px solid var(--line); }
+.quest-l .lbl { font-family: var(--f-latin); font-weight: 700; letter-spacing: .18em; font-size: 15px; color: var(--doing); display: flex; align-items: center; gap: 8px; }
+.quest-l .lbl img { width: 16px; height: auto; }
+.quest-l .nt { font-family: var(--f-display); font-weight: 700; font-size: clamp(26px, 4vw, 34px); line-height: 1.3; }
+.quest-l p { margin: 0; font-family: var(--f-fine); }
+.advance { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.advance .btn { font-size: 16px; padding: 7px 20px; }
+.btn.ghost { background: none; color: var(--gold); border: 1px solid var(--gold-dim); clip-path: none; }
+.btn:disabled { opacity: .45; cursor: default; }
+.adv-note { font-size: 12.5px; color: var(--muted); }
+.quest-r { padding: 30px; display: grid; gap: 12px; align-content: start; }
+.quest-r .latin { font-size: 15px; color: var(--muted); }
+.objs { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.objs label { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 14px; cursor: pointer; padding: 7px 10px; border: 1px solid var(--line); background: var(--panel-2); }
+.objs input { appearance: none; width: 15px; height: 15px; margin: 5px 0 0; border: 1.5px solid var(--gold); transform: rotate(45deg); cursor: pointer; }
+.objs input:checked { background: var(--gold); }
+.objs label:has(input:checked) span { color: var(--muted); text-decoration: line-through; }
+.complete { font-family: var(--f-latin); font-weight: 700; font-size: 20px; letter-spacing: .24em; color: var(--gold); min-height: 1.4em; }
+.next-up { font-family: var(--f-fine); font-size: 13.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 12px; margin: 0; }
+.next-up b { color: var(--ink); font-family: var(--f-body); }
+.rules { margin-top: 30px; padding: 22px 28px; display: grid; gap: 10px; }
+.rules .latin { font-size: 15px; color: var(--gold); text-align: center; }
+.rules ol { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; font-family: var(--f-fine); font-size: 14px; line-height: 1.85; }
+.rules b { color: var(--ink); font-family: var(--f-body); font-weight: 700; }
+
+/* ── 先生へ ── */
+.npc { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 28px; align-items: end; padding: 28px 30px; }
+.npc .who-l { font-family: var(--f-latin); font-weight: 700; letter-spacing: .16em; font-size: 15px; color: var(--gold); margin-bottom: 6px; }
+.say { font-family: var(--f-fine); font-weight: 600; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.9; margin: 0; user-select: all; }
+.say::after { content: " ▼"; color: var(--gold); font-size: .7em; animation: blink 1.2s steps(2, start) infinite; }
+
+footer { padding-block: 84px 48px; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px 32px; border-top: 1px solid var(--line); padding-top: 20px; font-size: 13px; color: var(--muted); }
+.foot nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.foot nav a { font-weight: 700; }
+.foot .latin { font-style: italic; }
+.msg { font-size: 13px; color: var(--muted); min-height: 1em; margin: 14px 0 0; }
+
+@media (max-width: 760px) {
+  .hero { height: auto; display: flex; flex-direction: column; }
+  .hero .inner { order: 0; height: auto; grid-template-columns: minmax(0, 1fr); padding-block: 22px 14px; gap: 12px; }
+  .hero-left { gap: 10px; }
+  .title { writing-mode: horizontal-tb; font-size: min(34px, 7.8vw); letter-spacing: .04em; white-space: nowrap; }
+  .title small { margin: 8px 0 0; font-size: min(13px, 3.4vw); letter-spacing: .16em; white-space: normal; }
+  .stage { position: relative; order: 1; aspect-ratio: 4 / 3; }
+  .stage img { object-position: 35% 50%; }
+  .hud { grid-template-columns: auto minmax(0, 1fr); padding: 20px; }
+  .eta { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 10px; grid-column: 1 / -1; }
+  .bosses { grid-template-columns: minmax(0, 1fr); }
+  .verdict { grid-template-columns: minmax(0, 1fr); }
+  .ls-grid { grid-template-columns: minmax(0, 1fr); }
+  .pr-grid { grid-template-columns: minmax(0, 1fr); }
+  .tn-in { font-size: 12px; gap: 4px 12px; }
+  .practice { padding: 22px 16px; }
+  .gr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lesson { padding: 22px 18px; }
+  .plan { padding: 22px 18px; }
+  .chron { grid-template-columns: minmax(0, 1fr); padding: 26px 20px; }
+  .chron .emblem { width: 80px; }
+  .moods { grid-template-columns: minmax(0, 1fr); }
+  .row { grid-template-columns: 44px minmax(0, 1fr) auto; padding: 14px; }
+  .row .ico { display: none; }
+  .row .no b { font-size: 26px; }
+  .row .no small { font-size: 9px; letter-spacing: .12em; }
+  .row .eta-c { grid-column: 2; grid-row: 2; text-align: left; display: flex; gap: 8px; align-items: baseline; }
+  .row .eta-c b { display: inline; font-size: 16px; }
+  .row .st { grid-column: 3; grid-row: 1; }
+  .sealmark { right: 10px; top: auto; bottom: 8px; transform: rotate(-10deg); width: 52px; height: 52px; }
+  .detail { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr); }
+  .quest { grid-template-columns: minmax(0, 1fr); }
+  .quest-l { border-right: 0; border-bottom: 1px solid var(--line); padding: 22px; }
+  .quest-r { padding: 22px; }
+  .npc { grid-template-columns: minmax(0, 1fr); }
+  .ornate > .corner { width: 40px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) { .now-tag, .say::after, .celebrate.show .cb-stamp { animation: none; } }
+</style>
+
+<nav class="topnav" aria-label="ページの切り替え">
+  <div class="inner tn-in">
+    <a href="#practice-sec">今日の練習</a><a href="#tools-sec">道具箱</a><a href="#stage-sec">関門</a><a href="#plan-sec">目標の曲</a><a href="#lesson-sec">レッスン</a>
+    <span class="tn-sep" aria-hidden="true"></span>
+    <a href="https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj" target="_blank" rel="noopener">楽譜帳 ↗</a><a href="https://claude.ai/artifact/JKa7TVRz2XjCEPKV3qoyKX" target="_blank" rel="noopener">運指 ↗</a><a href="https://claude.ai/artifact/HnwDJT7kZBXT8n8uDEeomZ" target="_blank" rel="noopener">メトロノーム ↗</a><a href="https://claude.ai/artifact/JLKfEUDVVCBNLj22oGrLqt" target="_blank" rel="noopener">調弦 ↗</a>
+  </div>
+</nav>
+<header class="hero" aria-label="ドヴォルザークへの道">
+  <div class="stage" id="stage">
+    <img src="art/castle-1920.jpg" alt="夜のボヘミアの城と、灯りのともる登り道">
+    <div class="shade" aria-hidden="true"></div>
+    <svg id="road" role="group" aria-label="城への道と11の関門"></svg>
+  </div>
+  <div class="inner">
+    <div class="hero-left">
+      <div class="kicker"><span class="nw">Quest ・ Antonín Dvořák</span> <span class="nw"><b>1841–1904</b></span></div>
+      <div class="legend" aria-hidden="true"><span><i style="background: var(--gold)"></i>クリア</span><span><i style="background: var(--doing); border-color: var(--doing)"></i>いまここ</span><span><i style="border-color: var(--garnet)"></i>門番</span><span>道の上の関門を押すと攻略メモへ</span></div>
+    </div>
+    <h1 class="title">ドヴォルザークへの道<small id="subtitle">十一の関門を越え、プラハの城へ</small></h1>
+  </div>
+</header>
+
+<section class="status">
+  <div class="inner"><div class="hud ornate" id="hud"></div></div>
+</section>
+
+<main>
+  <section class="block" id="practice-sec">
+    <div class="inner">
+      <div class="sec-head">
+        <span class="sec-no">Daily</span>
+        <h2>今日の練習に、<span class="nw">スタンプを</span></h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">できたことに印を付けると、カレンダーにスタンプが押されます。1つで銅、3つで銀、5つで金。チェックの候補は、先生と相談して入れ替えていきましょう。</p>
+      </div>
+      <div class="practice ornate">
+        <div class="pr-box" id="pr-focus"></div>
+        <div class="pr-grid">
+          <div class="pr-box" id="pr-today"></div>
+          <div class="pr-box" id="pr-cal"></div>
+        </div>
+        <div class="pr-box" id="pr-growth"></div>
+      </div>
+    </div>
+  </section>
+  <div class="celebrate" id="celebrate" role="status" aria-live="polite" hidden></div>
+  <section class="block" id="quest-sec">
+    <div class="inner">
+      <div class="sec-head">
+        <span class="sec-no">Quest Log</span>
+        <h2>今日の15分</h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">3つ終えたらクエスト達成。疲れた日は1つだけでも進んだことにします。チェックは毎日リセットされ、この端末にだけ残ります。</p>
+      </div>
+      <div class="quest ornate" id="quest"></div>
+      <div class="rules ornate small">
+        <span class="latin">Rules ・ 続けるための決まり</span>
+        <ol>
+          <li><b>1回15〜20分で十分。</b>長く弾くより、間を空けずに触るほうが上達します。</li>
+          <li><b>週2日は休む。</b>休みも計画のうち。見込みは休む前提で計算しています。</li>
+          <li><b>疲れた日は開放弦を2分だけ。</b>それでも今日のクエストは1つ達成です。</li>
+          <li><b>1週間あいても、やり直しにはならない。</b>前の関門を1回弾いてから戻れば大丈夫です。</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="lesson-sec">
+    <div class="inner">
+      <div class="sec-head">
+        <span class="sec-no">Lesson</span>
+        <h2>教本とレッスンに、<span class="nw">道を合わせる</span></h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">レッスンで合格した教本の番号（No.）を入れると、何％進んだか・いまどの章か・章の期限に間に合うかが出ます。関門は、その章まで進むと挑戦できるようになります。</p>
+      </div>
+      <div class="lesson ornate">
+        <div class="ls-grid">
+          <div class="ls-box" id="ls-book"></div>
+          <div class="ls-box" id="ls-next"></div>
+        </div>
+        <div class="ls-box">
+          <h4>次のレッスンで先生に聞くこと</h4>
+          <ul class="ask" id="say"></ul>
+          <label class="ls-mine" for="ls-mine">自分で聞きたいこと（1行に1つ）</label>
+          <textarea id="ls-mine" rows="2" placeholder="例：右手の親指の位置がこれで合っているか"></textarea>
+          <button type="button" class="btn" id="copy">文をコピー</button>
+        </div>
+        <div class="ls-box" id="ls-log"></div>
+      </div>
+    </div>
+  </section>
+  <section class="block" id="tools-sec">
+    <div class="inner">
+      <details class="fold" id="fold-tools-sec" data-default="open" open>
+        <summary class="sec-head fold-sum">
+        <span class="sec-no">Tools</span>
+        <h2>道具箱</h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">練習の道具は、それぞれ別のページです。新しいタブで開くので、このページと行き来できます。</p>
+      <span class="fold-h" aria-hidden="true"></span></summary>
+      <div class="kit">
+        <a class="kit-card" href="https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj" target="_blank" rel="noopener"><b>楽譜帳</b><span>道の曲の楽譜。音を鳴らして確かめられる</span></a>
+        <a class="kit-card" href="https://claude.ai/artifact/JKa7TVRz2XjCEPKV3qoyKX" target="_blank" rel="noopener"><b>運指</b><span>どの指でどこを押さえるかを指板で見る</span></a>
+        <a class="kit-card" href="https://claude.ai/artifact/HnwDJT7kZBXT8n8uDEeomZ" target="_blank" rel="noopener"><b>メトロノーム</b><span>速さ・拍子・8分の刻み。よく使う速さはボタン1つ</span></a>
+        <a class="kit-card" href="https://claude.ai/artifact/JLKfEUDVVCBNLj22oGrLqt" target="_blank" rel="noopener"><b>調弦</b><span>C・G・D・A の基準の音と、マイクで測る針</span></a>
+      </div>
+      </details>
+    </div>
+  </section>
+  <section class="block" id="stage-sec">
+    <div class="inner">
+      <details class="fold" id="fold-stage-sec" data-default="closed">
+        <summary class="sec-head fold-sum">
+        <span class="sec-no">Stage Select</span>
+        <h2><span id="stage-count">11</span>の関門と、<span class="nw">攻略メモ</span></h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">右のボタンで「未着手 → 練習中 → 通せた → クリア」。「攻略メモ」を開くと、課題・チェックリスト・門番への効き目・目安の週数の調整・メモがあります。</p>
+      <span class="fold-h" aria-hidden="true"></span></summary>
+      <div class="board ornate">
+        <div class="board-head">
+          <span class="latin">Route ・ 古時計 → プラハ城</span>
+          <div class="opts">
+            <span>練習の量</span>
+            <fieldset id="pace">
+              <label><input type="radio" name="pace" id="pace-light" value="1.8">週2〜3日・15分</label>
+              <label><input type="radio" name="pace" id="pace-normal" value="1.25" checked>週4〜5日・20分</label>
+              <label><input type="radio" name="pace" id="pace-heavy" value="1">ほぼ毎日30分</label>
+            </fieldset>
+            <label><input type="checkbox" id="fold-done">クリアした関門をたたむ</label>
+          </div>
+        </div>
+        <ol class="rows" id="rows"></ol>
+        <div class="board-foot">見込みは、仕事をしながらレッスン月2回で続ける大人の初心者を想定したおおまかな目安です。週数は関門ごとに調整できます。楽譜はすべて楽譜帳で、音を聴きながら見られます。</div>
+      </div>
+      <p class="msg" id="msg"></p>
+      </details>
+    </div>
+  </section>
+
+  <section class="block" id="gate-sec">
+    <div class="inner">
+      <details class="fold" id="fold-gate-sec" data-default="closed">
+        <summary class="sec-head fold-sum">
+        <span class="sec-no">Gatekeepers</span>
+        <h2>城の門を守る、<span class="nw">3つの旋律</span></h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">選んだドヴォルザークの曲を「門番」として並べた一覧です。体力ゲージはクリアに近づくほど減ります。「この門番に効く関門」を先に越えておくと、挑みやすくなります。</p>
+      <span class="fold-h" aria-hidden="true"></span></summary>
+      <div class="bosses" id="bosses"></div>
+      </details>
+    </div>
+  </section>
+
+  <section class="block" id="plan-sec">
+    <div class="inner">
+      <details class="fold" id="fold-plan-sec" data-default="closed">
+        <summary class="sec-head fold-sum">
+        <span class="sec-no">Quest Board</span>
+        <h2>目指す曲を、<span class="nw">自分で選ぶ</span></h2>
+        <img class="divider" src="art/ui/divider.png" alt="">
+        <p class="sec-lead">ドヴォルザークの曲と、チェロの名曲をレベル別に並べました。やりたい曲に印を付けると、先にやっておく関門が自動で道に入り、期限までに間に合うかを判定します。</p>
+      <span class="fold-h" aria-hidden="true"></span></summary>
+      <div class="plan ornate">
+        <div class="levels" id="levels"></div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+      </details>
+    </div>
+  </section>
+  <section class="block more" id="about">
+    <div class="inner">
+      <details class="about">
+        <summary><span class="sec-no">Chronicle</span><span class="about-t">ドヴォルザークという人（読み物）</span><span class="about-h">開く ▾</span></summary>
+        <p class="sec-lead">村の肉屋の息子から、オーケストラのヴィオラ弾きを経て、世界の作曲家へ。どこにいても故郷ボヘミアの歌を胸に書き続けた人です。</p>
+      <div class="chron ornate">
+        <img class="emblem" src="art/ui/bow.png" alt="">
+        <ol class="timeline">
+          <li><span class="y">1841</span><span class="t">プラハの北の村ネラホゼヴェスに生まれる。家は肉屋と宿屋。村の楽団でヴァイオリンを覚える。</span></li>
+          <li><span class="y">1862</span><span class="t">プラハの劇場オーケストラでヴィオラを弾きながら、ひそかに作曲を続ける。のちにスメタナがこの楽団の指揮者になる。</span></li>
+          <li><span class="y">1878</span><span class="t">ブラームスの後押しで出版された「スラヴ舞曲集」が大当たりし、一躍有名に。</span></li>
+          <li class="mark"><span class="y">1880</span><span class="t"><b>門番Ⅲ「我が母の教えたまいし歌」</b>を含む歌曲集「ジプシーの歌」を書く。</span></li>
+          <li class="mark"><span class="y">1893</span><span class="t">ニューヨークの音楽院の院長として渡米中に、故郷を思いながら<b>門番Ⅰ「家路」</b>の交響曲「新世界より」を書く。</span></li>
+          <li class="mark"><span class="y">1894</span><span class="t">夏休みにボヘミアへ帰り、<b>門番Ⅱ「ユーモレスク」</b>を含むピアノ曲集を書く。</span></li>
+          <li><span class="y">1895</span><span class="t">チェロ協奏曲 ロ短調を完成。チェロ弾きにとって最高峰の1曲で、この道の「その先」にある曲です。</span></li>
+          <li><span class="y">1904</span><span class="t">プラハで亡くなる。62歳。</span></li>
+        </ol>
+        <div class="moods">
+          <div class="mood"><h3>郷愁</h3><span class="en">Homesickness</span><p>遠いアメリカで故郷を思った「家路」が代表。ゆっくり、弱い音で、遠くを見るように弾きます。</p></div>
+          <div class="mood"><h3>民謡の素朴さ</h3><span class="en">Bohemian folk</span><p>村の踊りや歌がもとになった旋律。「ユーモレスク」の弾むリズムは、肩の力を抜いて楽しく。</p></div>
+          <div class="mood"><h3>静かな祈り</h3><span class="en">Devotion</span><p>信心深く、家族を大事にした人でした。「我が母」は、声を張らずに温かく歌います。</p></div>
+        </div>
+      </div>
+      </details>
+    </div>
+  </section>
+
+
+  <section class="block more" id="composers-sec">
+    <div class="inner">
+      <details class="fold" id="fold-composers-sec" data-default="closed">
+        <summary class="sec-head fold-sum"><span class="sec-no">Composers</span><h2>作曲家たちの読み物</h2><img class="divider" src="art/ui/divider.png" alt=""><p class="sec-lead">チェロの名曲を書いた人たちの、人となりとチェロとの関わり。名前を押すと開きます。気になる曲は、ここから目標に入れられます。</p><span class="fold-h" aria-hidden="true"></span></summary>
+        <div class="composers ornate" id="composers"></div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="inner">
+    <div class="foot">
+      <nav>
+        <a href="https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj" target="_blank" rel="noopener">楽譜帳（音つき・全曲）→</a>
+      </nav>
+      <span class="latin">Nelahozeves 1841 — Praha 1904</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+<script>
+const SB = "https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj";
+const TRACKER = "https://claude.ai/artifact/6fdtu9w1SfjjCJWArFDatt";
+const ICON = { STAGE: "art/ui/score.png", TRAINING: "art/ui/bow.png", EVENT: "art/ui/bell.png", BOSS: "art/ui/gate.png" };
+const KIND = { STAGE: "Stage", TRAINING: "Training", EVENT: "Lesson", BOSS: "Boss" };
+const CREST_OF = { largo8: 1, largo: 1, humoresque: 2, mother: 3 };
+const GENERIC_CHECKS = ["楽譜を用意した", "前半を通せる", "全体を通せる", "3回続けて止まらない"];
+const GENERIC_TODAY = ["楽譜を用意する（Claude に頼めば書けます）", "難しい小節だけをゆっくり", "通して1回"];
+// weeks = クリアまでのおおよその週数（「ほぼ毎日30分」のとき）。標準は仕事と両立する「週4〜5日・20分」で×1.25
+// すべての関門の素材。選んだ曲と、その曲に必要な関門だけを並べて道を作る
+const POOL = {
+  kodokei: { kind: "STAGE", title: "大きな古時計", trains: "スラーで音をつなぐ。長めの曲を最後まで", weeks: 4, score: SB + "#kodokei",
+    task: "最後まで止まらずに弾く。スラーで音を切らない。",
+    checks: ["スラーの2音を1弓でつなげる", "つまずく小節を ♩=60 で3回続けて弾ける", "止まってもいいので最後まで通せる", "3回続けて止まらずに通せる"],
+    boost: "長い曲を最後まで弾ききる体力は、すべての門番戦の土台になります。",
+    today: ["開放弦で弓をまっすぐ、4拍ずつ2分", "つまずく小節だけを ♩=60 で3回", "最後に通して1回。止まっても最後まで"] },
+  longtone: { kind: "TRAINING", title: "弱い音のロングトーン", trains: "小さい音のまま、かすれずに長く保つ", weeks: 3,
+    task: "弱い音のまま、かすれずに8拍保つ。",
+    checks: ["D線の開放弦で8拍×4回、音がかすれない", "A線でも同じようにできる", "♩=50 に落としても保てる"],
+    boost: "家路のように弱い音で歌う曲が、ぐっと楽になります。",
+    today: ["D線の開放弦を8拍、小さい音で4回", "A線でも同じように4回", "かすれたら弓の速さを少し落とす"] },
+  silentnight: { kind: "STAGE", title: "きよしこの夜", trains: "6/8拍子を2つに数える。弓を長く使う", weeks: 4, score: SB + "#silentnight",
+    task: "6/8拍子を「1・2」と2つに数えて、揺れずに弾く。",
+    checks: ["楽譜帳のメトロノームに合わせて数えながら弾ける", "長い音で弓が足りなくならない", "通しで止まらない"],
+    boost: "拍を細かく分ける感覚は、ユーモレスクの弾むリズムの下地になります。",
+    today: ["楽譜帳で、メトロノームをつけて1回聴く", "1小節を「1・2」と2つに数えながら弾く", "通して1回"] },
+  amazing: { kind: "STAGE", title: "アメイジング・グレイス", trains: "3拍子でゆっくり歌う。音を長く保つ", weeks: 4, score: SB + "#amazing",
+    task: "3拍子でゆっくり、長い音を最後まで同じ大きさで。",
+    checks: ["長い音の最後まで音量を保てる", "弓の配分を決めて楽譜に書いた", "通しで止まらない"],
+    boost: "ゆっくり歌う曲は家路や我が母と同じ型です。",
+    today: ["楽譜帳で1回聴く", "長い音で弓が足りなくならないよう、弓の配分を決める", "通して1回"] },
+  dotted: { kind: "TRAINING", title: "付点のリズム", trains: "「タッカ・タッカ」を弓の配分をそろえて", weeks: 3,
+    task: "付点のリズムを、弓の長さ3対1でそろえる。",
+    checks: ["開放弦で ♩=60 の付点が崩れない", "♩=72 でも崩れない", "音階で付点のリズムが弾ける"],
+    boost: "ユーモレスク・スラヴ舞曲・ロンドの主役はこのリズムです。",
+    today: ["開放弦で「タッカ」を ♩=60 で1分", "長い音と短い音の弓の長さを3対1に", "慣れたら ♩=72 に上げる"] },
+  greensleeves: { kind: "STAGE", title: "グリーンスリーブス", trains: "短調と6/8拍子。哀愁のある旋律を歌う", weeks: 4, score: SB + "#greensleeves",
+    task: "短調の響きを、6/8の揺れに乗せて歌う。",
+    checks: ["ソ♯（低い1の指）の音程が合う", "6/8を2つに数えて弾ける", "通しで止まらない"],
+    boost: "短調の歌い方は、スラヴ舞曲など哀愁のある曲の下地になります。",
+    today: ["楽譜帳で1回聴く", "ソ♯の音だけ10回、チューナーで確かめる", "通して1回"] },
+  shift: { kind: "EVENT", title: "ポジション移動を習う", trains: "第4ポジションへの移動。教本の進み方と先生の判断で始める", weeks: 8,
+    task: "第4ポジションへ、音程を外さずに移る。",
+    checks: ["次のレッスンで先生にひと言伝えた", "移動の練習のしかたを教わった", "1の指での移動が音程どおりにできる"],
+    boost: "ここが後半いちばんの山。Lv2 より上の曲は、ほぼすべてこの技が必要です。",
+    today: ["次のレッスンで先生にひと言伝える", "教わった移動の練習を毎日5分", "移動の前後の音を、ゆっくり何度も"] },
+  canon: { kind: "STAGE", title: "カノン（メロディ）", trains: "初めてのポジション移動を曲の中で", weeks: 6, score: SB + "#canonmelody",
+    task: "最初の2音を第4ポジションで、音程どおりに。",
+    checks: ["最初の2音が10回中8回、音程どおり", "前半を ♩=50 で通せる", "全体を通しで止まらない"],
+    boost: "曲の中でポジションを移る練習。我が母や月に寄せる歌の高い音への移動に直結します。",
+    today: ["楽譜帳で1回聴く", "最初の2音（第4ポジション）だけを繰り返す", "前半を通して1回"] },
+  vibrato: { kind: "TRAINING", title: "ビブラートの入口", trains: "長い音に、ゆるやかな揺れをつける", weeks: 8,
+    task: "長い音に、左手でゆっくり揺れをつける。",
+    checks: ["先生にビブラートの形を見てもらった", "D線の3の指で、ゆっくり4回揺らせる", "曲の長い音1つにかけられる"],
+    boost: "月に寄せる歌・アメリカ・森の静けさ・協奏曲のような歌う曲には欠かせない技です。",
+    today: ["左手を弦に置いて、腕ごとゆっくり揺らす練習を2分", "♩=60 で1拍に2回揺らす", "好きな曲の長い音1つにかける"] },
+  highpos: { kind: "TRAINING", title: "高いポジションとテナー記号", trains: "第5〜7ポジションと、テナー記号を読む", weeks: 12,
+    task: "A線の高い音域へ移り、テナー記号の楽譜を読む。",
+    checks: ["第5・第6・第7ポジションの位置を教わった", "テナー記号の音が読める", "A線の音階を第7ポジションまで上がれる"],
+    boost: "森の静けさ・ロンド・協奏曲は高い音域が多く、ここが入口になります。",
+    today: ["A線の音階を第4→第7ポジションへゆっくり", "テナー記号の楽譜を1行読む", "移動の前後の音程をチューナーで確かめる"] },
+  thumb: { kind: "TRAINING", title: "親指ポジション", trains: "親指を弦に置いて、さらに高い音域へ", weeks: 16,
+    task: "親指ポジションの形を作り、音程を安定させる。",
+    checks: ["先生に親指ポジションの形を教わった", "親指と1・2・3の指で4つの音を正しく", "短い音階を親指ポジションで"],
+    boost: "チェロ協奏曲には欠かせない、上級への入口です。",
+    today: ["親指を弦に置く形を作る練習を2分", "4つの音をゆっくり", "チューナーで音程を確かめる"] },
+  largo8: { kind: "BOSS", title: "家路（最初の8小節）", op: "Op.95, II. Largo", trains: "ゆっくり歌う。弱い音を保つ。第1ポジションだけで弾ける", weeks: 4, score: SB + "#goinghome",
+    task: "♩=50 で8小節を、弱い音のまま歌いきる。",
+    checks: ["4小節を聴いて口ずさめる", "♩=40 で8小節を通せる", "♩=50 で弱い音のまま通せる", "3回続けて止まらない"],
+    boost: "最初の門番。倒すと「家路の騎士」に近づきます。",
+    today: ["門番の欄の「4小節を聴く」で旋律を覚える", "最初の4小節を ♩=40 で", "8小節を通して、弱い音のまま最後まで"] },
+  humoresque: { kind: "BOSS", title: "ユーモレスク", op: "Op.101 No.7", trains: "付点のリズム。この楽譜は第1ポジションだけで弾ける", weeks: 8, score: SB + "#humoresque",
+    task: "付点のリズムを崩さずに、明るく軽く。",
+    checks: ["楽譜帳で1回聴いた", "最初の2小節の付点を開放弦で", "前半8小節を通せる", "全体を通せる"],
+    boost: "明るい曲で、人前で弾く1曲にもちょうどいい門番です。",
+    today: ["楽譜帳で1回聴く", "最初の2小節の付点を開放弦で", "ゆっくり前半を通す"] },
+  slavonic: { kind: "BOSS", title: "スラヴ舞曲 第10番（主題）", op: "Op.72 No.2", trains: "ホ短調の哀愁ある踊り。この楽譜は第1ポジションだけ", weeks: 8, score: SB + "#slavonic",
+    task: "哀愁のある主題を、踊るように揺らして歌う。", checks: ["楽譜帳で1回聴いた", "C線のミ・ファ♯の音程が合う", "16小節を通せる", "3回続けて止まらない"],
+    boost: "短調の名旋律。弾けると一気に「ドヴォルザークらしさ」が出ます。", today: ["楽譜帳で1回聴く", "C線のミとファ♯だけをゆっくり", "16小節を通して1回"] },
+  largo: { kind: "BOSS", title: "家路（全部）", op: "Op.95, II. Largo", trains: "長いフレーズを最後まで歌いきる", weeks: 6, score: SB + "#largofull",
+    task: "長いフレーズを、途中で息切れせずに最後まで。", checks: ["楽譜帳で1回聴いた", "中間部（9〜16小節）を通せる", "「4ポジ」の小節を音程どおりに", "全体を3回続けて止まらない"],
+    boost: "家路を最後まで弾ききる、ひとつの到達点です。", today: ["楽譜帳で1回聴く", "「4ポジ」の小節だけをゆっくり", "通して1回"] },
+  mother: { kind: "BOSS", title: "我が母の教えたまいし歌", op: "Op.55 No.4", trains: "高い音で歌う。ポジション移動", weeks: 10, score: SB + "#mother",
+    task: "高い音で、長いフレーズを歌い続ける。",
+    checks: ["楽譜帳で1回聴いた", "「4ポジ」の音への移動だけを練習した", "ゆっくり通せる", "3回続けて止まらない"],
+    boost: "静かに温かく歌う門番。ポジション移動の総仕上げです。",
+    today: ["楽譜帳で1回聴く", "「4ポジ」の音への移動だけを練習", "ゆっくり通して1回"] },
+  rusalka: { kind: "BOSS", title: "月に寄せる歌（歌劇「ルサルカ」）", op: "Op.114", trains: "息の長い旋律を、ビブラートで歌う。この楽譜は第1ポジション中心", weeks: 12, score: SB + "#rusalka",
+    task: "息の長い旋律を、ビブラートで歌う。", checks: ["楽譜帳で1回聴いた", "最初の8小節を通せる", "長い音にビブラートをかけられる", "全体を通せる"],
+    boost: "ドヴォルザークのいちばん有名な歌。歌う力の集大成です。", today: ["楽譜帳で1回聴く", "最初の8小節をゆっくり", "長い音1つにビブラート"] },
+  american: { kind: "BOSS", title: "「アメリカ」第2楽章の主題", op: "Op.96, II. Lento", trains: "ゆったりした旋律をビブラートで歌う", weeks: 12, score: "https://imslp.org/wiki/String_Quartet_No.12,_Op.96_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)", scoreLabel: "原曲の楽譜（IMSLP・著作権切れ）",
+    task: "伸びやかで少し寂しい旋律を、ビブラートで歌う。", checks: ["原曲の楽譜を用意した（IMSLP）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: "弦楽四重奏の名旋律。仲間と合奏する入口にもなります。", today: ["原曲の楽譜で、主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] },
+  silentwoods: { kind: "BOSS", title: "森の静けさ（チェロとピアノ）", op: "Op.68 No.5", trains: "高い音域とテナー記号。静かに長く歌う", weeks: 20, score: "https://imslp.org/wiki/Silent_Woods_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)", scoreLabel: "原曲の楽譜（IMSLP・著作権切れ）",
+    task: "チェロのための原曲を、静かに長く歌いきる。", checks: ["原曲の楽譜を用意した（IMSLP）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: "チェロのために書かれた原曲。弾ければ立派なチェロ弾きです。", today: ["原曲の楽譜で、主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] },
+  rondo: { kind: "BOSS", title: "ロンド ト短調（チェロとピアノ）", op: "Op.94", trains: "軽快な動きと高い音域", weeks: 20, score: SB + "#rondo",
+    task: "民謡ふうの速い動きを、高い音域まで軽やかに。", checks: ["原曲の楽譜を用意した（IMSLP）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: "速い動きの集大成。協奏曲の前の腕試しになります。", today: ["原曲の楽譜で、主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] },
+  concerto2: { kind: "BOSS", title: "チェロ協奏曲 第2楽章", op: "Op.104, II. Adagio", trains: "チェロの最高峰。親指ポジションと深い歌", weeks: 40, score: "https://imslp.org/wiki/Cello_Concerto,_Op.104_(Dvo%C5%99%C3%A1k,_Anton%C3%ADn)", scoreLabel: "原曲の楽譜（IMSLP・著作権切れ）",
+    task: "協奏曲の歌を、深い音で最後まで。", checks: ["原曲の楽譜を用意した（IMSLP）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: "この道の、さらにその先にある最終目標です。", today: ["原曲の楽譜で、主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] },
+};
+// 選べる曲（レベル・必要な関門・紹介）
+const CATALOG = [
+  { id: "largo8", lv: 1, name: "家路（最初の8小節）", src: "交響曲第9番「新世界より」第2楽章 ・ 1893", text: "故郷を思う、いちばん有名な旋律。第1ポジションだけで弾けます。", needs: ["longtone", "amazing"] },
+  { id: "humoresque", lv: 1, name: "ユーモレスク", src: "8つのユーモレスク 第7曲 ・ 1894", text: "弾む付点のリズムの、明るく短い曲。この楽譜は第1ポジションだけ。", needs: ["silentnight", "dotted"] },
+  { id: "slavonic", lv: 2, name: "スラヴ舞曲 第10番（主題）", src: "スラヴ舞曲集 第2集 ・ 1886", text: "哀愁のあるホ短調の踊り。この楽譜は第1ポジションだけ（低いC線を使います）。", needs: ["greensleeves", "dotted"] },
+  { id: "largo", lv: 2, name: "家路（全部）", src: "交響曲第9番「新世界より」第2楽章 ・ 1893", text: "8小節の続きまで、長いフレーズを歌いきる。", needs: ["largo8", "longtone", "shift"] },
+  { id: "mother", lv: 2, name: "我が母の教えたまいし歌", src: "ジプシーの歌 第4曲 ・ 1880", text: "母への思いを静かに歌う。第4ポジションへの移動があります。", needs: ["amazing", "shift", "canon"] },
+  { id: "rusalka", lv: 3, name: "月に寄せる歌", src: "歌劇「ルサルカ」第1幕 ・ 1901", text: "月に恋を打ち明ける有名なアリア。この楽譜は第1ポジション中心で、ビブラートで歌うのが課題。", needs: ["shift", "canon", "vibrato"] },
+  { id: "american", lv: 3, name: "「アメリカ」第2楽章の主題", src: "弦楽四重奏曲 第12番 ・ 1893", text: "アメリカ滞在中に書いた、伸びやかで少し寂しい歌。", needs: ["shift", "vibrato"] },
+  { id: "silentwoods", lv: 4, name: "森の静けさ", src: "チェロとピアノのための ・ 1891", text: "森の中の静けさ。チェロのために書かれた原曲を弾きます。", needs: ["shift", "vibrato", "highpos"] },
+  { id: "rondo", lv: 4, name: "ロンド ト短調", src: "チェロとピアノのための ・ 1891", text: "民謡ふうの軽快な曲。速い動きと高い音域があります。", needs: ["dotted", "shift", "highpos"] },
+  { id: "concerto2", lv: 5, name: "チェロ協奏曲 第2楽章", src: "チェロ協奏曲 ロ短調 ・ 1894〜95", text: "チェロ弾きの最高峰。この道のさらに先にある曲です。", needs: ["vibrato", "highpos", "thumb"] },
+];
+// 関門ごとに「教本のどの巻で習う内容か」のおおよその対応（版によって順番が違うので、先生に確認する前提）
+const WERNER_OF = { kodokei: 1, longtone: 1, silentnight: 1, amazing: 1, dotted: 1, greensleeves: 1, largo8: 1, humoresque: 1, slavonic: 1,
+  shift: 2, canon: 2, largo: 2, mother: 2, vibrato: 2, rusalka: 2, american: 2, highpos: 3, silentwoods: 3, rondo: 3, thumb: 3, concerto2: 3 };
+const BOOKS = {
+  1: { name: "第1巻", text: "第1ポジション、4本の弦、基本の弓の使い方、指を広げる形（拡張）、半音の位置の入口" },
+  2: { name: "第2巻", text: "ポジション移動（第2〜4ポジション）、音階と分散和音、表現の入口" },
+  3: { name: "その先", text: "高いポジション、テナー記号、親指ポジション（教本の続きや曲集で）" },
+};
+let werner = { book: 1, no: "", pos: 0, next: "", mine: "", schedule: [], chapters: {}, ties: {} }, lessons = [];
+const LV_NAME = { 1: "Lv1 ・ 第1ポジションで弾ける", 2: "Lv2 ・ 第4ポジションまで", 3: "Lv3 ・ ビブラートで歌う", 4: "Lv4 ・ 高い音域の原曲", 5: "Lv5 ・ 最高峰" };
+// 道に並べる順番（易しい順）
+const ORDER = ["kodokei", "longtone", "silentnight", "amazing", "largo8", "dotted", "humoresque", "greensleeves", "slavonic", "shift", "canon", "largo", "mother", "vibrato", "rusalka", "american", "highpos", "silentwoods", "rondo", "thumb", "concerto2"];
+const DEFAULT_TARGETS = ["largo8", "humoresque", "largo", "mother"];
+let targets = [...DEFAULT_TARGETS], deadline = "";
+// ── チェロの名曲（ドヴォルザーク以外）。楽譜は IMSLP の検索へ（著作権の切れた原曲）、必要なら Claude が書き起こす
+const IMSLP = q => "https://imslp.org/index.php?search=" + encodeURIComponent(q);
+const MASTER = [
+  { id: "brahms-lullaby", lv: 1, composer: "ブラームス", name: "子守歌", src: "ブラームス ・ 歌曲 作品49の4 ・ 1868", text: "誰もが知るやさしい子守歌。ゆっくり、弱い音で歌う練習にぴったり。", needs: ["longtone", "amazing"], weeks: 4, q: "Wiegenlied Brahms" },
+  { id: "gossec-gavotte", lv: 2, composer: "ゴセック", name: "ガヴォット", src: "ゴセック ・ 1786", text: "弾む弓と、なめらかな弓の弾き分け。発表会の定番。", needs: ["dotted"], weeks: 6, q: "Gossec Gavotte" },
+  { id: "bach-air", lv: 2, composer: "バッハ", name: "G線上のアリア（主題）", src: "バッハ ・ 管弦楽組曲 第3番より ・ 1730年ごろ", text: "長い音をつないで歌う、静かな名旋律。", needs: ["longtone", "shift"], weeks: 8, q: "Air on the G String" },
+  { id: "elgar-salut", lv: 2, composer: "エルガー", name: "愛の挨拶", src: "エルガー ・ 作品12 ・ 1888", text: "婚約者への贈り物として書いた、甘く短い曲。", needs: ["shift"], weeks: 8, q: "Salut d'amour Elgar" },
+  { id: "bach-prelude", lv: 3, composer: "バッハ", name: "無伴奏チェロ組曲 第1番 プレリュード", src: "バッハ ・ BWV1007 ・ 1720年ごろ", text: "チェロ弾きなら誰もが弾きたい1曲。弦をまたいで流れる分散和音。", needs: ["shift", "greensleeves"], weeks: 16, q: "Cello Suite No.1 BWV 1007" },
+  { id: "saint-saens-swan", lv: 3, composer: "サン＝サーンス", name: "白鳥", src: "サン＝サーンス ・ 動物の謝肉祭より ・ 1886", text: "チェロの代名詞のような名曲。ゆったり水面をすべるように歌う。", needs: ["shift", "canon", "vibrato"], weeks: 14, q: "Le cygne Saint-Saens" },
+  { id: "schumann-traumerei", lv: 3, composer: "シューマン", name: "トロイメライ", src: "シューマン ・ 子供の情景より ・ 1838", text: "「夢見ごこち」という名の、短く深い歌。", needs: ["shift", "vibrato"], weeks: 10, q: "Traumerei Schumann" },
+  { id: "faure-apres", lv: 3, composer: "フォーレ", name: "夢のあとに", src: "フォーレ ・ 歌曲 作品7の1 ・ 1878年ごろ", text: "夢から覚める切なさを歌う、フランスの名歌。", needs: ["shift", "vibrato"], weeks: 12, q: "Apres un reve Faure" },
+  { id: "tchaikovsky-andante", lv: 3, composer: "チャイコフスキー", name: "アンダンテ・カンタービレ", src: "チャイコフスキー ・ 弦楽四重奏曲 第1番より ・ 1871", text: "ロシア民謡をもとにした、胸にしみる旋律。", needs: ["shift", "vibrato"], weeks: 12, q: "Andante cantabile Tchaikovsky" },
+  { id: "faure-elegie", lv: 4, composer: "フォーレ", name: "エレジー", src: "フォーレ ・ 作品24 ・ 1880", text: "チェロのために書かれた、悲しみの歌。低い音から高い音まで。", needs: ["vibrato", "highpos"], weeks: 20, q: "Elegie Faure Op.24" },
+  { id: "rachmaninoff-vocalise", lv: 4, composer: "ラフマニノフ", name: "ヴォカリーズ", src: "ラフマニノフ ・ 作品34の14 ・ 1912", text: "歌詞のない歌。長い息の旋律をチェロで。", needs: ["vibrato", "highpos"], weeks: 20, q: "Vocalise Rachmaninoff" },
+  { id: "haydn-c", lv: 5, composer: "ハイドン", name: "チェロ協奏曲 第1番", src: "ハイドン ・ ハ長調 ・ 1760年代", text: "明るく堂々とした古典派の協奏曲。", needs: ["highpos", "thumb"], weeks: 40, q: "Cello Concerto No.1 Haydn" },
+  { id: "elgar-concerto", lv: 5, composer: "エルガー", name: "チェロ協奏曲", src: "エルガー ・ 作品85 ・ 1919", text: "戦争のあとの哀しみがにじむ、20世紀の名作。", needs: ["vibrato", "highpos", "thumb"], weeks: 48, q: "Cello Concerto Elgar Op.85" },
+  { id: "popper-rhapsody", lv: 5, composer: "ポッパー", name: "ハンガリー狂詩曲", src: "ポッパー ・ 作品68 ・ 1894", text: "名チェリストが書いた、腕前を見せる華やかな曲。", needs: ["dotted", "highpos", "thumb"], weeks: 40, q: "Hungarian Rhapsody Popper" },
+];
+MASTER.forEach(m => {
+  POOL[m.id] = { kind: "BOSS", title: m.name, op: m.composer, trains: m.text, weeks: m.weeks, score: IMSLP(m.q), scoreLabel: "原曲の楽譜を探す（IMSLP）",
+    task: m.text, checks: ["原曲の楽譜を用意した（IMSLP など）", "主題の部分を通せる", "全体を通せる", "3回続けて止まらない"],
+    boost: `${m.composer}の名曲。弾ければ、チェロ弾きとしての大きな一歩です。`, today: ["楽譜で主題の部分を確認する", "難しい小節だけをゆっくり", "通して1回"] };
+  CATALOG.push({ id: m.id, lv: m.lv, composer: m.composer, name: m.name, src: m.src, text: m.text, needs: m.needs });
+  WERNER_OF[m.id] = m.lv <= 1 ? 1 : m.lv <= 3 ? 2 : 3;
+});
+CATALOG.forEach(c => { if (!c.composer) c.composer = "ドヴォルザーク"; });
+// 道に並べる順番：易しい曲から（同じ必要な関門の後ろ）
+(() => {
+  const after = { "brahms-lullaby": "largo8", "gossec-gavotte": "humoresque", "bach-air": "largo", "elgar-salut": "mother", "bach-prelude": "mother",
+    "saint-saens-swan": "rusalka", "schumann-traumerei": "rusalka", "faure-apres": "american", "tchaikovsky-andante": "american",
+    "faure-elegie": "rondo", "rachmaninoff-vocalise": "rondo", "haydn-c": "concerto2", "elgar-concerto": "concerto2", "popper-rhapsody": "concerto2" };
+  Object.entries(after).forEach(([id, prev]) => { const i = ORDER.indexOf(prev); ORDER.splice(i + 1, 0, id); });
+})();
+
+// ── 作曲家たちの読み物（人となりと、チェロとの関わり）
+const COMPOSERS = [
+  { name: "バッハ", latin: "Johann Sebastian Bach", years: "1685–1750", land: "ドイツ",
+    who: "教会の音楽家として、毎週のように新しい曲を書き続けた職人。信仰が深く、子どもは20人。きちんと積み上げる努力の人でした。",
+    cello: "「無伴奏チェロ組曲」はチェロ弾きの聖典。長く忘れられていましたが、13歳のカザルスが古本屋で楽譜を見つけ、世界に広めました。",
+    pieces: ["bach-prelude", "bach-air"] },
+  { name: "ハイドン", latin: "Joseph Haydn", years: "1732–1809", land: "オーストリア",
+    who: "「交響曲の父」と呼ばれる、温厚で面倒見のよい人。貴族の家に約30年仕え、楽団員たちから「パパ・ハイドン」と慕われました。",
+    cello: "チェロ協奏曲 第1番は、長く失われていた楽譜が1961年に見つかり、今ではチェロ弾きの大切な曲になっています。",
+    pieces: ["haydn-c"] },
+  { name: "モーツァルト", latin: "Wolfgang Amadeus Mozart", years: "1756–1791", land: "オーストリア",
+    who: "5歳で作曲を始めた神童。陽気でいたずら好き、手紙には冗談がいっぱい。35歳の若さで亡くなりました。",
+    cello: "チェロが主役の独奏曲はほとんどありませんが、弦楽四重奏や「アイネ・クライネ・ナハトムジーク」で、チェロは音楽の土台を支えています。",
+    pieces: [] },
+  { name: "ベートーヴェン", latin: "Ludwig van Beethoven", years: "1770–1827", land: "ドイツ",
+    who: "情熱的で頑固。耳が聞こえなくなってからも、作曲を続けました。",
+    cello: "5曲のチェロ・ソナタで、チェロとピアノを対等な相棒にしました。チェロ弾きが中級以降で必ず出会う作曲家です。",
+    pieces: [] },
+  { name: "シューマン", latin: "Robert Schumann", years: "1810–1856", land: "ドイツ",
+    who: "夢見がちで文学好き。ピアニストのクララと結婚し、二人で音楽の道を歩みました。",
+    cello: "「トロイメライ」はチェロで弾かれることも多い名曲。チェロ協奏曲も残しています。",
+    pieces: ["schumann-traumerei"] },
+  { name: "サン＝サーンス", latin: "Camille Saint-Saëns", years: "1835–1921", land: "フランス",
+    who: "幼いころから天才と呼ばれ、天文学や詩にも詳しい多才な人。",
+    cello: "「動物の謝肉祭」は生前ほとんど出版を許しませんでしたが、「白鳥」だけは例外。今ではチェロの代名詞です。",
+    pieces: ["saint-saens-swan"] },
+  { name: "チャイコフスキー", latin: "Pyotr Ilyich Tchaikovsky", years: "1840–1893", land: "ロシア",
+    who: "繊細で感情豊か。美しい旋律を書かせたら随一の人です。",
+    cello: "「アンダンテ・カンタービレ」は、文豪トルストイが聴いて涙したといわれる曲。チェロのための「ロココの主題による変奏曲」もあります。",
+    pieces: ["tchaikovsky-andante"] },
+  { name: "ポッパー", latin: "David Popper", years: "1843–1913", land: "チェコ（プラハ生まれ）",
+    who: "当時の名チェリストで、演奏と作曲の両方で活躍しました。",
+    cello: "チェロ弾きのための練習曲集は、今も世界中で使われています。「ハンガリー狂詩曲」は腕前を見せる華やかな曲。",
+    pieces: ["popper-rhapsody"] },
+  { name: "フォーレ", latin: "Gabriel Fauré", years: "1845–1924", land: "フランス",
+    who: "おだやかで上品な音楽を書いた、教会のオルガン奏者。晩年は耳が不自由になりました。",
+    cello: "「エレジー」「夢のあとに」「シシリエンヌ」など、チェロで歌うのにぴったりの曲が多い作曲家です。",
+    pieces: ["faure-apres", "faure-elegie"] },
+  { name: "エルガー", latin: "Edward Elgar", years: "1857–1934", land: "イギリス",
+    who: "ほとんど独学で作曲家になった人。妻アリスとの婚約の贈り物が「愛の挨拶」です。",
+    cello: "第一次世界大戦のあとに書いた「チェロ協奏曲」は、哀しみのにじむ20世紀の名作です。",
+    pieces: ["elgar-salut", "elgar-concerto"] },
+  { name: "ラフマニノフ", latin: "Sergei Rachmaninoff", years: "1873–1943", land: "ロシア",
+    who: "大きな手を持つ名ピアニストで、甘く深い旋律で知られます。",
+    cello: "歌詞のない歌「ヴォカリーズ」は、チェロで弾かれることがとても多い曲です。チェロ・ソナタもあります。",
+    pieces: ["rachmaninoff-vocalise"] },
+];
+function renderComposers() {
+  const box = $("composers"); if (!box) return;
+  const wasOpen = new Set([...box.querySelectorAll("details[open]")].map(d => d.id)); box.innerHTML = "";
+  COMPOSERS.forEach((c, i) => {
+    const d = el("details", "cmp"); d.id = "cmp-" + i; d.open = wasOpen.has(d.id);
+    const sm = el("summary"); sm.append(el("b", null, c.name), el("span", "cmp-l", `${c.latin} ・ ${c.years} ・ ${c.land}`));
+    d.append(sm);
+    const body = el("div", "cmp-body");
+    body.append(el("h4", null, "どんな人？"), el("p", null, c.who), el("h4", null, "チェロとの関わり"), el("p", null, c.cello));
+    if (c.pieces.length) {
+      body.append(el("h4", null, "目指す曲に入れられる曲"));
+      const ul = el("div", "cmp-pieces");
+      c.pieces.forEach(id => {
+        const cat = CATALOG.find(x => x.id === id); if (!cat) return;
+        const on = targets.includes(id);
+        const b = el("button", "btn" + (on ? " ghost" : ""), on ? `「${cat.name}」は目標に入っています` : `「${cat.name}」を目標に入れる（Lv${cat.lv}）`); b.type = "button"; b.disabled = on;
+        b.addEventListener("click", () => { targets = CATALOG.filter(x => x.id === id || targets.includes(x.id)).map(x => x.id); applyPlan(); savePlan(); });
+        ul.append(b);
+      });
+      body.append(ul);
+    }
+    d.append(body); box.append(d);
+  });
+}
+
+let STATIONS = [];
+function buildRoute(sel = targets) {
+  const need = new Set(["kodokei"]);
+  const add = id => { if (need.has(id)) return; const c = CATALOG.find(x => x.id === id); if (c) c.needs.forEach(add); need.add(id); };
+  sel.forEach(add);
+  return ORDER.filter(id => need.has(id)).map(id => ({ id, ...POOL[id], helps: [] }));
+}
+function bossList() {
+  return STATIONS.filter(x => x.kind === "BOSS").map((x, n) => {
+    const c = CATALOG.find(y => y.id === x.id) || {};
+    return { id: x.id, n: n + 1, name: c.name || x.title, op: x.op, src: c.src || "", text: c.text || "", needs: c.needs || [], crest: CREST_OF[x.id], incipit: x.id === "largo8" };
+  });
+}
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+const KANJI = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+function kanjiNum(n) { return n <= 10 ? KANJI[n] : n < 20 ? "十" + (n % 10 ? KANJI[n % 10] : "") : KANJI[Math.floor(n / 10)] + "十" + (n % 10 ? KANJI[n % 10] : ""); }
+const RANKS = [[0, "見習い弾き"], [.18, "弓の従者"], [.36, "門前の剣士"], [.5, "家路の騎士"], [.7, "城壁の騎士"], [.9, "ボヘミアの騎士"], [1, "城の主"]];
+const NEXT = { todo: "doing", doing: "through", through: "clear", clear: "todo" };
+const LABEL = { todo: "未着手", doing: "練習中", through: "通せた", clear: "クリア" };
+const LEFT = { todo: 1, doing: 0.5, through: 0.25, clear: 0 };
+let db = null, canWrite = true, progress = { kodokei: { status: "doing" } }, pace = 1.25, loaded = false, pendingRender = false;
+const openIds = new Set();
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function img(src, cls, alt = "") { const i = el("img", cls); i.src = src; i.alt = alt; return i; }
+const st = s => progress[s.id]?.status || "todo";
+const weeksOf = s => Number(progress[s.id]?.weeks) || s.weeks;
+const byId = id => STATIONS.find(s => s.id === id);
+const num = i => String(i + 1).padStart(2, "0");
+function addWeeks(w) { const d = new Date(); d.setDate(d.getDate() + Math.round(w * 7)); return d; }
+function ym(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月ごろ"; }
+function ymShort(d) { return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0"); }
+function months(w) { return Math.max(1, Math.round(w / 4.35)); }
+function forecast() { let acc = 0; return STATIONS.map(s => { acc += weeksOf(s) * LEFT[st(s)] * pace; return acc; }); }
+function storeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function storeSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch {} }
+function openStation(id) {
+  if (typeof openFold === "function") openFold("stage-sec");
+  openIds.add(id); renderRows();
+  document.getElementById("st-" + id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/* ── 古典的な枠：角飾りを4つ ── */
+function decorate(root = document) {
+  root.querySelectorAll(".ornate").forEach(box => {
+    if (box.querySelector(":scope > .corner")) return;
+    ["tl", "tr", "bl", "br"].forEach(p => box.append(img("art/ui/corner.png", "corner " + p)));
+  });
+}
+function clearBox(box) { box.querySelectorAll(":scope > :not(.corner)").forEach(n => n.remove()); }
+
+/* ── 絵の上の道と関門 ── */
+const IW = 2752, IH = 1536;
+// 関門の位置＝Gemini に道の上へ描かせた11の印を、画像から自動で読み取った画素座標（手前の門 → 城の門）
+const ROAD = [[1579, 1382], [1434, 1251], [1180, 1170], [1057, 1063], [1158, 1015], [1337, 954], [1433, 887], [1505, 859], [1376, 808], [1198, 774], [1040, 737]];
+const START = [1640, 1505];          // 出発地点（最初の関門の手前、絵の下の門）
+const FULL = [START, ...ROAD];
+function roadD(P = FULL) {
+  let d = `M${P[0][0]},${P[0][1]}`;
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1} ${c2} ${p2}`;
+  }
+  return d;
+}
+let roadPath = null, roadLen = 0, roadScale = 1, roadAt = [], roadUnit = 1, pinShown = null, pinAnim = 0;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// 出発地点から i 番目の関門までの道の長さ
+function lengthTo(i) { const tmp = svgEl("path", { d: roadD(FULL.slice(0, i + 2)) }); $("road").append(tmp); const L = tmp.getTotalLength(); tmp.remove(); return L; }
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+// いまの関門の中でどこまで来たか（0〜1）。状態とチェックリストの多いほう
+function partialOf(x) {
+  const byStatus = { todo: 0, doing: .35, through: .7, clear: 1 }[st(x)] || 0;
+  const done = (progress[x.id]?.checks || []).filter(Boolean).length;
+  return Math.max(byStatus, x.checks.length ? done / x.checks.length * .9 : 0);
+}
+// ピンの位置＝道の長さで表した進み具合
+function progressLength() {
+  const c = STATIONS.findIndex(x => st(x) !== "clear");
+  if (c < 0) return roadLen;
+  const prev = c === 0 ? 0 : roadAt[c - 1];
+  return prev + (roadAt[c] - prev) * partialOf(STATIONS[c]);
+}
+function layoutRoad() {
+  const stage = $("stage"), svg = $("road"), W = stage.clientWidth, H = stage.clientHeight;
+  if (!W || !H) return;
+  const posX = matchMedia("(max-width: 760px)").matches ? .35 : .30;
+  const s = Math.max(W / IW, H / IH), ox = (W - IW * s) * posX, oy = (H - IH * s) * .5;
+  roadScale = s;
+  roadUnit = Math.min(1, Math.max(.5, W / 1280));   // 画面が狭いほど部品を小さく
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = "";
+  const g = svgEl("g", { transform: `translate(${ox},${oy}) scale(${s})` }); svg.append(g);
+  roadPath = svgEl("path", { d: roadD(), fill: "none", stroke: "rgba(227,196,111,.5)", "stroke-width": 1.6 / s, "stroke-dasharray": `${2 / s} ${6 / s}` });
+  g.append(roadPath); roadLen = roadPath.getTotalLength();
+  g.append(svgEl("path", { id: "roadlit", d: roadD(), fill: "none", stroke: "#e3c46f", "stroke-width": 3 / s, "stroke-linecap": "round", "stroke-dasharray": `0 ${roadLen}` }));
+  g.append(svgEl("g", { id: "gates" }));
+  g.append(svgEl("g", { id: "pin" }));
+  roadAt = STATIONS.map((_, i) => roadLen * (i + 1) / STATIONS.length);
+  pinShown = null;
+  paintRoad();
+}
+// 現在地のピン（絵は Gemini 製）。進み具合が変わると、道に沿って動く
+function placePin(L) {
+  const pin = $("pin"); if (!pin) return;
+  const s = roadScale, pt = roadPath.getPointAtLength(L), k = roadUnit * (1 - (L / roadLen) * .3);
+  const ph = 40 * k / s, pw = ph * 100 / 128, hw = 46 * k / s, hh = hw * 65 / 160;
+  pin.setAttribute("transform", `translate(${pt.x},${pt.y})`);
+  if (!pin.firstChild) {
+    const halo = svgEl("image", { id: "pin-halo", href: "art/ui/pin-halo.png" });
+    if (!reduceMotion) halo.append(svgEl("animate", { attributeName: "opacity", values: ".35;1;.35", dur: "2.4s", repeatCount: "indefinite" }));
+    pin.append(halo, svgEl("image", { id: "pin-img", href: "art/ui/pin.png" }), svgEl("title", {}));
+  }
+  const halo = $("pin-halo"), im = $("pin-img");
+  halo.setAttribute("x", -hw / 2); halo.setAttribute("y", -hh / 2); halo.setAttribute("width", hw); halo.setAttribute("height", hh);
+  im.setAttribute("x", -pw / 2); im.setAttribute("y", -ph + 2 / s); im.setAttribute("width", pw); im.setAttribute("height", ph);
+  $("roadlit").setAttribute("stroke-dasharray", `${L} ${roadLen}`);
+}
+function movePin() {
+  const target = progressLength();
+  const c = STATIONS.findIndex(x => st(x) !== "clear");
+  const tip = $("pin")?.querySelector("title");
+  if (pinShown == null || reduceMotion) { pinShown = target; placePin(target); }
+  else if (Math.abs(target - pinShown) > .5) {
+    const from = pinShown, t0 = performance.now(), dur = 1400, id = ++pinAnim;
+    const step = now => {
+      if (id !== pinAnim) return;
+      const u = Math.min(1, (now - t0) / dur), e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+      pinShown = from + (target - from) * e; placePin(pinShown);
+      if (u < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  if (tip) tip.textContent = c < 0 ? "プラハ城に到達" : `いまここ：${num(c)} ${STATIONS[c].title}（この区間 ${Math.round(partialOf(STATIONS[c]) * 100)}%）`;
+}
+function paintRoad() {
+  if (!roadPath) return;
+  const gates = $("gates"), s = roadScale; gates.innerHTML = "";
+  STATIONS.forEach((x, i) => {
+    const pt = roadPath.getPointAtLength(roadAt[i]), k = (1 - (i / Math.max(1, STATIONS.length - 1)) * .3) * roadUnit, status = st(x), boss = x.kind === "BOSS";
+    const a = svgEl("g", { class: "gate", tabindex: "0", role: "button", "aria-label": `${num(i)} ${x.title}（${LABEL[status]}）の攻略メモを開く` });
+    const t = svgEl("title", {}); t.textContent = `${num(i)} ${x.title} ・ ${LABEL[status]}`; a.append(t);
+    // 地図用の目印は Gemini 製（未到達の点・クリアの点・門番の強調枠・ゴールの旗）。Claude は置き場所と切り替えだけ
+    const put = (file, px, dy = 0, opacity = 1) => {
+      const size = px * k / s;
+      a.append(svgEl("image", { href: "art/ui/" + file + ".png", x: pt.x - size / 2, y: pt.y - size / 2 + dy * k / s, width: size, height: size, opacity }));
+    };
+    if (boss) { put("map-boss", 28, 0, status === "clear" ? 1 : .85); if (status === "clear") put("map-clear", 11); }
+    else if (status === "clear") put("map-clear", 16);
+    else if (status === "through") put("map-clear", 16, 0, .55);
+    else put("map-todo", 14);
+    if (i === STATIONS.length - 1) put("map-goal", 30, -26);
+    a.addEventListener("click", () => openStation(x.id));
+    a.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openStation(x.id); } });
+    gates.append(a);
+  });
+  movePin();
+}
+
+/* ── ステータス ── */
+function renderHud(eta) {
+  const box = $("hud"); clearBox(box);
+  const clears = STATIONS.filter(s => st(s) === "clear").length;
+  const N = STATIONS.length, need = f => Math.ceil(f * N);
+  const rank = RANKS.reduce((r, [f, name]) => clears >= need(f) ? name : r, RANKS[0][1]);
+  const nextR = RANKS.find(([f]) => need(f) > clears), nextRank = nextR && [need(nextR[0]), nextR[1]];
+  const total = STATIONS.reduce((a, s) => a + weeksOf(s), 0), got = STATIONS.reduce((a, s) => a + weeksOf(s) * (1 - LEFT[st(s)]), 0);
+  const exp = Math.round(got / total * 100);
+  const seal = el("div", "seal"); seal.append(img("art/ui/seal.png"), el("small", null, "LV"), el("b", null, clears >= STATIONS.length ? "MAX" : String(clears + 1)));
+  const who = el("div", "who"); who.append(el("span", "rank", rank));
+  who.append(el("span", "next", nextRank ? `あと${nextRank[0] - clears}つクリアで「${nextRank[1]}」` : "最高の称号に到達"));
+  const c = STATIONS.findIndex(x => st(x) !== "clear");
+  if (c >= 0) who.append(el("span", "next", `いまここ：${num(c)} ${STATIONS[c].title}（この区間 ${Math.round(partialOf(STATIONS[c]) * 100)}%）`));
+  const g = el("div", "gauge"); g.append(el("span", "lab", "EXP")); const bar = el("div", "bar"); const f = el("i"); f.style.width = exp + "%"; bar.append(f); g.append(bar, el("span", "num", exp + "%"));
+  who.append(g);
+  if (curPos() || chaptersOf(werner.book).length) {
+    const tot = bookTotal(werner.book), now = chapterNow(werner.book, curPos());
+    who.append(el("span", "next", `教本：${BOOKS[werner.book].name} No.${curPos()}` + (tot ? `（${Math.min(100, Math.round(curPos() / tot * 100))}%${now ? "・" + now.name : ""}）` : "")));
+  }
+  const parts = [seal, who];
+  const bosses = STATIONS.filter(s => s.kind === "BOSS"), firstOpen = bosses.find(s => st(s) !== "clear") || bosses[0];
+  const i1 = STATIONS.indexOf(firstOpen), iL = STATIONS.length - 1;
+  [[`次の門番「${firstOpen ? firstOpen.title : ""}」まで`, eta[i1]], [`プラハ城（全${bosses.length}曲）まで`, eta[iL]]].forEach(([k, w]) => {
+    const d = el("div", "eta"); const kk = el("span", "k"); kk.append(img("art/ui/hourglass.png"), k); d.append(kk);
+    const v = el("span", "v"); if (w > 0) { v.append("あと約"); v.append(el("em", null, String(months(w)))); v.append("か月"); } else v.append("到達");
+    d.append(v, el("span", "d", w > 0 ? ym(addWeeks(w)) : "クリア済み"));
+    parts.push(d);
+  });
+  box.prepend(...parts);
+}
+
+/* ── 毎日の練習（チェックリスト・スタンプのカレンダー・いまの課題・成長の記録） ── */
+// チェックの候補（最終的には先生と相談して入れ替える前提）。cat の絵は Gemini 製
+const PRACTICE = [
+  { id: "posture", cat: "base", label: "構えを鏡で確かめた", hint: "椅子の高さ・楽器の角度・肩の力。1分" },
+  { id: "bowhold", cat: "base", label: "弓の持ち方を確かめた", hint: "親指と中指の位置、手の力を抜く" },
+  { id: "openstr", cat: "base", label: "開放弦のロングトーン", hint: "4本の弦を4拍ずつ、まっすぐきれいな音で" },
+  { id: "lefthand", cat: "base", label: "左手の形", hint: "指を丸く、指先で置いて離す×10" },
+  { id: "werner", cat: "book", label: "ウェルナーの課題をやった", hint: "番号を下に書いておくと、進み具合が残ります" },
+  { id: "reading", cat: "read", label: "ヘ音記号を読んだ", hint: "楽譜の音の名前を声に出して5分" },
+  { id: "twinkle", cat: "piece", label: "キラキラ星を弾いた", hint: "音がかすれない所を1つ増やす" },
+  { id: "kodokei", cat: "piece", label: "大きな古時計を弾いた", hint: "止まってもいいので最後まで" },
+  { id: "current", cat: "piece", label: "いまの関門を練習した", hint: "" },
+  { id: "free", cat: "piece", label: "好きな曲を弾いた", hint: "楽しむ時間も練習のうち" },
+];
+const CAT = { base: { name: "土台", icon: "art/ui/cat-base.png" }, book: { name: "教本", icon: "art/ui/cat-book.png" }, read: { name: "楽譜", icon: "art/ui/cat-read.png" }, piece: { name: "曲", icon: "art/ui/cat-piece.png" } };
+const TIERS = [[5, "gold", "金のスタンプ", "素晴らしい1日！"], [3, "silver", "銀のスタンプ", "しっかり積み上げました"], [1, "bronze", "銅のスタンプ", "今日も弾きました。えらい！"]];
+const MILESTONES = [1, 7, 14, 30, 50, 100, 200];
+const DEFAULT_FOCUS = [
+  { text: "弓の持ち方（親指と中指の位置、手の力を抜く）", since: "" },
+  { text: "左手の形（指を丸く、指先で押さえる）", since: "" },
+  { text: "楽譜を読む（ヘ音記号の音の位置を覚える）", since: "" },
+];
+let days = {}, focus = { items: DEFAULT_FOCUS, grads: [] }, calMonth = null, practiceDay = null, focusLoaded = false;
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const dstr = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function dayCount(rec) { if (!rec || rec.rest) return 0; return (rec.items || []).length + (rec.focus || []).length + (Number(rec.min) > 0 && !(rec.items || []).length && !(rec.focus || []).length ? 1 : 0); }
+function fmtMin(m) { m = Math.round(m); return m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + "分" : ""}` : `${m}分`; }
+function tierOf(rec) { const n = dayCount(rec); return TIERS.find(([min]) => n >= min) || null; }
+function stampImg(rec) { if (rec && rec.rest) return "art/ui/stamp-rest.png"; const t = tierOf(rec); return t ? "art/ui/stamp-" + t[1] + ".png" : null; }
+function practiced(rec) { return dayCount(rec) > 0; }
+
+async function saveDay(date, patch) {
+  const cur = days[date] || {};
+  const next = { ...cur, ...patch, date };
+  const before = tierOf(cur);
+  days[date] = next; renderPractice();
+  const after = tierOf(next);
+  if (after && (!before || after[0] > before[0])) celebrate(after, date);
+  if (!db || !canWrite) { $("msg").textContent = "保存先につながっていないため、この端末の表示だけ変わりました。"; return; }
+  try { await db.doc("days/" + date).set(next); }
+  catch (e) { $("msg").textContent = "練習の記録を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
+}
+async function saveFocus() {
+  if (!db || !canWrite) return;
+  try { await db.doc("settings/focus").set(focus); }
+  catch (e) { $("msg").textContent = "課題を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
+}
+function celebrate(tier, date) {
+  const box = $("celebrate"); box.innerHTML = "";
+  const total = Object.values(days).filter(practiced).length;
+  const ms = MILESTONES.find(m => m === total);
+  box.append(img("art/ui/stamp-" + tier[1] + ".png", "cb-stamp"), el("b", null, tier[2] + "！"),
+    el("span", null, ms ? `練習した日が${ms}日になりました。ここまで来ましたね。` : tier[3]));
+  box.hidden = false; box.classList.remove("show"); void box.offsetWidth; box.classList.add("show");
+  clearTimeout(celebrate.t); celebrate.t = setTimeout(() => { box.hidden = true; }, 2600);
+}
+
+function renderFocus() {
+  const box = $("pr-focus"); box.innerHTML = "";
+  box.append(el("h4", null, "いまの課題（これに専念する）"));
+  const ol = el("ol", "focus-list");
+  focus.items.forEach((f, i) => {
+    const li = el("li");
+    const t = el("input"); t.type = "text"; t.value = f.text; t.id = "focus-" + i; t.setAttribute("aria-label", "課題" + (i + 1));
+    t.addEventListener("change", () => { focus.items[i] = { ...f, text: t.value.trim() || f.text }; saveFocus(); renderPractice(); });
+    const grad = el("button", "btn ghost", "できた・卒業"); grad.type = "button";
+    grad.addEventListener("click", () => {
+      focus.grads = [{ text: f.text, until: todayStr(), since: f.since || "" }, ...(focus.grads || [])];
+      focus.items.splice(i, 1); saveFocus(); renderPractice(); celebrate([0, "gold", "課題を卒業", ""], todayStr());
+      $("celebrate").querySelector("span").textContent = `「${f.text}」を卒業しました。次の課題を入れましょう。`;
+    });
+    li.append(t, grad); ol.append(li);
+  });
+  box.append(ol);
+  if (focus.items.length < 3) {
+    const add = el("button", "btn ghost", "＋ 課題を足す"); add.type = "button";
+    add.addEventListener("click", () => { focus.items.push({ text: "新しい課題", since: todayStr() }); saveFocus(); renderPractice(); setTimeout(() => $("focus-" + (focus.items.length - 1))?.select(), 0); });
+    box.append(add);
+  }
+  box.append(el("p", "pr-note", "課題は3つまで。先生に直された点を入れ、できるようになったら「卒業」へ。卒業した課題は、成長の記録に残ります。"));
+}
+
+function renderToday() {
+  const date = practiceDay || todayStr(), rec = days[date] || {};
+  const box = $("pr-today"); box.innerHTML = "";
+  const head = el("div", "pr-head");
+  const dt = new Date(date + "T00:00:00");
+  head.append(el("h4", null, (date === todayStr() ? "今日の練習" : `${dt.getMonth() + 1}月${dt.getDate()}日の練習`) + "（できたものに印）"));
+  if (date !== todayStr()) { const back = el("button", "btn ghost", "今日に戻る"); back.type = "button"; back.addEventListener("click", () => { practiceDay = null; renderPractice(); }); head.append(back); }
+  box.append(head);
+  // 課題（いちばん上）
+  if (focus.items.length) {
+    const fl = el("div", "pr-group"); fl.append(el("span", "pr-cat", "課題を意識して弾いた"));
+    focus.items.forEach((f, i) => {
+      const lab = el("label", "pr-item focus"), cb = el("input"); cb.type = "checkbox"; cb.id = `pf-${i}`; cb.checked = (rec.focus || []).includes(f.text);
+      cb.addEventListener("change", () => { const set = new Set(rec.focus || []); cb.checked ? set.add(f.text) : set.delete(f.text); saveDay(date, { focus: [...set], rest: false }); });
+      lab.append(cb, el("span", null, f.text)); fl.append(lab);
+    });
+    box.append(fl);
+  }
+  const hereIdx = STATIONS.findIndex(x => st(x) !== "clear"), cur = hereIdx >= 0 ? STATIONS[hereIdx] : null;
+  ["base", "book", "read", "piece"].forEach(cat => {
+    const g = el("div", "pr-group"); const ct = el("span", "pr-cat"); ct.append(img(CAT[cat].icon, "pr-ico"), CAT[cat].name); g.append(ct);
+    PRACTICE.filter(p => p.cat === cat).forEach(p => {
+      const label = p.id === "current" ? (cur ? `いまの関門「${cur.title}」を練習した` : p.label) : p.label;
+      if (p.id === "current" && cur && (cur.id === "kodokei")) return;   // 古時計と重なるときは出さない
+      const lab = el("label", "pr-item"), cb = el("input"); cb.type = "checkbox"; cb.id = "pi-" + p.id; cb.checked = (rec.items || []).includes(p.id);
+      cb.addEventListener("change", () => { const set = new Set(rec.items || []); cb.checked ? set.add(p.id) : set.delete(p.id); saveDay(date, { items: [...set], rest: false }); });
+      const tx = el("span"); tx.append(label); const hint = p.id === "current" && cur ? cur.task : p.hint; if (hint) tx.append(el("small", null, hint));
+      lab.append(cb, tx); g.append(lab);
+      if (p.id === "werner") {
+        const no = el("input"); no.type = "text"; no.id = "pr-no"; no.className = "pr-no"; no.placeholder = "例：No.12"; no.value = rec.no || "";
+        no.setAttribute("aria-label", "ウェルナーの番号");
+        no.addEventListener("change", () => { saveDay(date, { no: no.value.trim() }); if (no.value.trim() && date === todayStr()) saveWerner({ no: no.value.trim() }); });
+        g.append(no);
+      }
+    });
+    box.append(g);
+  });
+  const mins = el("div", "pr-min"); mins.append(el("span", "pr-cat", "練習した時間"));
+  [10, 15, 20, 30, 45, 60].forEach(m => {
+    const b = el("button", "chip-min" + (Number(rec.min) === m ? " on" : ""), m + "分"); b.type = "button"; b.setAttribute("aria-pressed", String(Number(rec.min) === m));
+    b.addEventListener("click", () => saveDay(date, { min: Number(rec.min) === m ? 0 : m, rest: false })); mins.append(b);
+  });
+  const mi = el("input"); mi.type = "number"; mi.min = 0; mi.max = 600; mi.step = 5; mi.id = "pr-min"; mi.className = "pr-no"; mi.placeholder = "ほかの分数"; mi.setAttribute("aria-label", "練習した分数");
+  if (rec.min && ![10, 15, 20, 30, 45, 60].includes(Number(rec.min))) mi.value = rec.min;
+  mi.addEventListener("change", () => saveDay(date, { min: Math.max(0, Number(mi.value) || 0), rest: false }));
+  mins.append(mi); box.append(mins);
+  const foot = el("div", "pr-foot");
+  const n = dayCount(rec), t = tierOf(rec);
+  const now = el("span", "pr-tier"); if (rec.rest) now.append(img("art/ui/stamp-rest.png", "pr-mini"), "休みの日（休みも計画のうち）"); else if (t) now.append(img("art/ui/stamp-" + t[1] + ".png", "pr-mini"), `${t[2]}（${n}個）`); else now.append("1つ印を付けると銅、3つで銀、5つで金のスタンプ");
+  const rest = el("button", "btn ghost", rec.rest ? "休みを取り消す" : "今日は休み"); rest.type = "button";
+  rest.addEventListener("click", () => saveDay(date, rec.rest ? { rest: false } : { rest: true, items: [], focus: [] }));
+  foot.append(now, rest); box.append(foot);
+}
+
+function renderCalendar() {
+  const box = $("pr-cal"); box.innerHTML = "";
+  const base = calMonth || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const head = el("div", "cal-head");
+  const prev = el("button", "btn ghost", "‹"), next = el("button", "btn ghost", "›"); prev.type = next.type = "button";
+  prev.setAttribute("aria-label", "前の月"); next.setAttribute("aria-label", "次の月");
+  prev.addEventListener("click", () => { calMonth = new Date(base.getFullYear(), base.getMonth() - 1, 1); renderCalendar(); });
+  next.addEventListener("click", () => { calMonth = new Date(base.getFullYear(), base.getMonth() + 1, 1); renderCalendar(); });
+  head.append(prev, el("b", null, `${base.getFullYear()}年${base.getMonth() + 1}月`), next); box.append(head);
+  const grid = el("div", "cal-grid");
+  ["月", "火", "水", "木", "金", "土", "日"].forEach(w => grid.append(el("span", "cal-w", w)));
+  const first = (base.getDay() + 6) % 7, last = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  for (let i = 0; i < first; i++) grid.append(el("span", "cal-blank"));
+  const lessonDays = new Set([...(werner.schedule || []), ...(lessons || []).map(l => l.date)]);
+  const today = todayStr();
+  for (let d = 1; d <= last; d++) {
+    const date = dstr(new Date(base.getFullYear(), base.getMonth(), d)), rec = days[date];
+    const cell = el("button", "cal-d" + (date === today ? " today" : "") + (date === (practiceDay || today) ? " sel" : "") + (date > today ? " future" : ""));
+    cell.type = "button"; cell.disabled = date > today;
+    cell.append(el("span", "cal-n", String(d)));
+    const src = stampImg(rec); if (src) cell.append(img(src, "cal-stamp"));
+    if (lessonDays.has(date)) { const b = img("art/ui/bell.png", "cal-bell", "レッスンの日"); cell.append(b); }
+    cell.setAttribute("aria-label", `${base.getMonth() + 1}月${d}日${src ? "（スタンプあり）" : ""}${lessonDays.has(date) ? "・レッスン" : ""}`);
+    cell.addEventListener("click", () => { practiceDay = date === today ? null : date; renderPractice(); });
+    grid.append(cell);
+  }
+  box.append(grid);
+  box.append(el("p", "pr-note", "日付を押すと、その日の練習をあとから付けられます。鐘の印はレッスンの日。"));
+}
+
+function renderGrowth() {
+  const box = $("pr-growth"); box.innerHTML = "";
+  const recs = Object.values(days).filter(practiced), total = recs.length;
+  const now = new Date(), ym = dstr(now).slice(0, 7);
+  const month = recs.filter(r => r.date.startsWith(ym)).length;
+  const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7)); const mon = dstr(monday);
+  const week = recs.filter(r => r.date >= mon).length;
+  const golds = recs.filter(r => tierOf(r)?.[1] === "gold").length;
+  const minWeek = recs.filter(r => r.date >= mon).reduce((a, r) => a + (Number(r.min) || 0), 0);
+  const minMonth = recs.filter(r => r.date.startsWith(ym)).reduce((a, r) => a + (Number(r.min) || 0), 0);
+  const minAll = recs.reduce((a, r) => a + (Number(r.min) || 0), 0);
+  const stats = el("div", "gr-stats");
+  [["練習した日", total + "日"], ["今週", week + " / 5日"], ["今週の時間", fmtMin(minWeek)], ["今月の時間", fmtMin(minMonth)], ["これまでの時間", fmtMin(minAll)], ["金のスタンプ", golds + "個"]].forEach(([k, v]) => { const d = el("div"); d.append(el("span", "k", k), el("b", null, v)); stats.append(d); });
+  box.append(el("h4", null, "これだけ成長しました"), stats);
+  const counts = {}; recs.forEach(r => (r.items || []).forEach(id => counts[id] = (counts[id] || 0) + 1));
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  if (top.length) { const ul = el("ul", "gr-top"); top.forEach(([id, n]) => { const p = PRACTICE.find(x => x.id === id); ul.append(el("li", null, `${p ? p.label : id}：${n}回`)); }); box.append(el("span", "pr-cat", "よく続けた練習"), ul); }
+  const nos = Object.values(days).filter(r => r.no).sort((a, b) => a.date.localeCompare(b.date));
+  if (nos.length) box.append(el("p", "gr-line", `ウェルナー：${nos[0].no}（${nos[0].date.slice(5).replace("-", "/")}）→ ${nos[nos.length - 1].no}`));
+  const ms = el("div", "gr-ms");
+  MILESTONES.forEach(m => { const d = el("div", "ms" + (total >= m ? " on" : "")); d.append(img("art/ui/seal.png"), el("b", null, String(m)), el("small", null, "日")); d.title = `練習した日 ${m}日`; ms.append(d); });
+  box.append(el("span", "pr-cat", "記念の印（練習した日の数）"), ms);
+  if ((focus.grads || []).length) { const ul = el("ul", "gr-top"); focus.grads.slice(0, 5).forEach(g => ul.append(el("li", null, `卒業：${g.text}（${g.until.slice(5).replace("-", "/")}）`))); box.append(el("span", "pr-cat", "卒業した課題"), ul); }
+}
+
+function renderPractice() {
+  if (document.activeElement && /^(pr-no|focus-\d)$/.test(document.activeElement.id)) return;
+  renderFocus(); renderToday(); renderCalendar(); renderGrowth();
+}
+
+/* ── 教本とレッスン ── */
+async function saveWerner(patch) {
+  werner = { ...werner, ...patch };
+  if (!db || !canWrite) return;
+  try { await db.doc("settings/werner").set(werner); }
+  catch (e) { $("msg").textContent = "教本の記録を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
+}
+function daysTo(dateStr) { return Math.ceil((new Date(dateStr + "T00:00:00") - new Date(new Date().toDateString())) / 864e5); }
+function plusDays(dateStr, n) { const d = dateStr ? new Date(dateStr + "T00:00:00") : new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+
+// 教本の章（目次）と期限。chapters = { "1": [{ id, name, from, to, due }] }、ties = { 関門id: { book, id } }
+const fmt1 = n => (Math.round(n * 10) / 10).toString();
+const md = d => Number(d.slice(5, 7)) + "/" + Number(d.slice(8, 10));
+function chaptersOf(b) { const a = (werner.chapters || {})[String(b)]; return Array.isArray(a) ? a.filter(c => c && Number(c.to) >= Number(c.from)) : []; }
+function bookTotal(b) { const cs = chaptersOf(b); return cs.length ? Math.max(...cs.map(c => Number(c.to))) : 0; }
+function curPos() { return Math.max(0, Number(werner.pos) || 0); }
+function chapterNow(b, pos) { return chaptersOf(b).find(c => pos < Number(c.to)) || null; }
+function tieOf(id) { const t = (werner.ties || {})[id]; if (!t) return null; const c = chaptersOf(t.book).find(x => x.id === t.id); return c ? { book: Number(t.book), c } : null; }
+function wLocked(x) {
+  const t = tieOf(x.id);
+  if (t) return werner.book < t.book || (werner.book === t.book && curPos() < Number(t.c.from) - 1);
+  return (WERNER_OF[x.id] || 1) > werner.book;
+}
+function wName(x) { const t = tieOf(x.id); return t ? BOOKS[t.book].name + "の" + t.c.name : BOOKS[WERNER_OF[x.id] || 1].name; }
+function wLabel(x) { return "教本 " + wName(x).replace("の", " ") + (wLocked(x) ? (tieOf(x.id) ? "から" : "で習ってから") : ""); }
+// レッスンの残り回数：予定に入っている日＋予定の先は月2回として数える
+function lessonsLeft(due) {
+  const today = todayStr(), done = lessons.some(l => l.date === today);
+  const sch = (werner.schedule || []).filter(x => (x > today || (x === today && !done)));
+  const inRange = sch.filter(x => x <= due).length, last = sch.sort().pop() || today;
+  const extra = due > last ? Math.floor((daysTo(due) - daysTo(last)) / 15) : 0;
+  return inRange + extra;
+}
+// 1回のレッスンで進んだ番号の数（同じ巻の、番号つきの記録の直近6回から）
+function lessonPace(b) {
+  const pts = lessons.filter(l => Number(l.book) === b && Number(l.pos) > 0).sort((x, y) => x.date.localeCompare(y.date)).slice(-6);
+  return pts.length < 2 ? null : (Number(pts[pts.length - 1].pos) - Number(pts[0].pos)) / (pts.length - 1);
+}
+function chapterGoal() {
+  const b = werner.book, pos = curPos(), today = todayStr();
+  const g = chaptersOf(b).filter(c => c.due && pos < Number(c.to)).sort((x, y) => x.due.localeCompare(y.due))[0];
+  if (!g) return null;
+  const left = Number(g.to) - pos, n = lessonsLeft(g.due), need = left / Math.max(1, n), pace = lessonPace(b);
+  let tone, msg;
+  if (g.due < today) { tone = "late"; msg = "期限を過ぎました。先生と期限を決め直しましょう"; }
+  else if (pace == null) { tone = "wait"; msg = "ペースは、番号つきのレッスン記録が2回たまると判定します"; }
+  else if (pace >= need) { tone = "ok"; msg = `今のペース（1回 ${fmt1(pace)}番）で間に合います`; }
+  else if (pace >= need * 0.7) { tone = "wait"; msg = `少し足りません（今は1回 ${fmt1(pace)}番）。期限を2週間のばすのも手です`; }
+  else { tone = "late"; msg = `このままだと間に合いません（今は1回 ${fmt1(pace)}番）。期限を先生と相談しましょう`; }
+  return { g, left, n, need, pace, tone, msg };
+}
+let weditOpen = false;
+function saveChapters(list) { saveWerner({ chapters: { ...(werner.chapters || {}), [String(werner.book)]: list } }); }
+function askItems() {
+  const items = [], hereIdx = STATIONS.findIndex(x => st(x) !== "clear");
+  const bosses = STATIONS.filter(x => x.kind === "BOSS").map(x => "「" + (CATALOG.find(c => c.id === x.id)?.name || x.title) + "」");
+  if (bosses.length) items.push(`ドヴォルザークの${bosses.join("")}を弾けるようになりたいです。いまの教本の進み方で、どの順番がよいでしょうか？`);
+  if (hereIdx >= 0) {
+    const cur = STATIONS[hereIdx];
+    items.push(`いま「${cur.title}」を練習しています。${cur.task}　つまずく所を見てもらえますか？`);
+    STATIONS.slice(hereIdx, hereIdx + 4).forEach(x => {
+      if (wLocked(x)) items.push(`「${x.title}」は教本の${wName(x)}の内容だと思います。いつ頃から始められそうですか？`);
+      else if (x.kind === "EVENT" || x.id === "vibrato") items.push(`「${x.title}」を教えてもらえますか？（${x.trains}）`);
+    });
+  }
+  (werner.mine || "").split("\n").map(t => t.trim()).filter(Boolean).forEach(t => items.push(t));
+  return [...new Set(items)];
+}
+function renderLesson() {
+  if (document.activeElement && (document.activeElement.id === "ls-mine" || document.activeElement.id === "ls-memo")) return;
+  const bookBox = $("ls-book");
+  if (!bookBox.contains(document.activeElement)) {
+    bookBox.innerHTML = "";
+    bookBox.append(el("h4", null, "教本（ウェルナー）の現在地"));
+    const row = el("div", "ls-row");
+    const sel = el("select"); sel.id = "ls-bookno"; sel.setAttribute("aria-label", "いまの巻");
+    [1, 2, 3].forEach(n => { const o = el("option", null, n === 3 ? "その先（曲集など）" : BOOKS[n].name); o.value = n; if (n === werner.book) o.selected = true; sel.append(o); });
+    sel.addEventListener("change", () => { saveWerner({ book: Number(sel.value), pos: 0 }); render(); });
+    const no = el("input"); no.id = "ls-pos"; no.type = "number"; no.min = "0"; no.step = "1"; no.inputMode = "numeric"; no.value = curPos() || ""; no.placeholder = "0"; no.setAttribute("aria-label", "合格した番号（No.）");
+    no.addEventListener("change", () => { saveWerner({ pos: Math.max(0, Math.round(Number(no.value) || 0)) }); no.blur(); render(); });
+    const mk = (t, d) => { const bt = el("button", "btn ghost", t); bt.type = "button"; bt.setAttribute("aria-label", d > 0 ? "番号を1つ進める" : "番号を1つ戻す"); bt.addEventListener("click", () => { saveWerner({ pos: Math.max(0, curPos() + d) }); render(); }); return bt; };
+    row.append(sel, el("span", null, "の No."), no, el("span", null, "まで合格"), mk("−1", -1), mk("＋1", 1));
+    bookBox.append(row, el("div", "wview", null));
+    const ed = el("details", "wedit"); ed.open = weditOpen; ed.addEventListener("toggle", () => { weditOpen = ed.open; });
+    ed.append(el("summary", null, "章と期限を入れる・直す"));
+    const list = chaptersOf(werner.book).length ? (werner.chapters[String(werner.book)] || []) : (werner.chapters || {})[String(werner.book)] || [];
+    const grid = el("div", "wch");
+    if (list.length) { const hr = el("div", "wrow wh"); ["章の名前", "No.から", "No.まで", "期限", ""].forEach(h => hr.append(el("span", null, h))); grid.append(hr); }
+    list.forEach((c, i) => {
+      const nm = el("input"); nm.type = "text"; nm.value = c.name || ""; nm.id = "wch-n-" + i; nm.placeholder = "章の名前"; nm.setAttribute("aria-label", "章の名前");
+      const f = el("input"); f.type = "number"; f.inputMode = "numeric"; f.min = "1"; f.value = c.from ?? ""; f.id = "wch-f-" + i; f.placeholder = "から"; f.setAttribute("aria-label", "最初の番号");
+      const t = el("input"); t.type = "number"; t.inputMode = "numeric"; t.min = "1"; t.value = c.to ?? ""; t.id = "wch-t-" + i; t.placeholder = "まで"; t.setAttribute("aria-label", "最後の番号");
+      const du = el("input"); du.type = "date"; du.value = c.due || ""; du.id = "wch-d-" + i; du.setAttribute("aria-label", "この章を終える期限");
+      const rm = el("button", "wrm", "×"); rm.type = "button"; rm.setAttribute("aria-label", (c.name || "この章") + "を消す");
+      const upd = () => { const next = list.map((x, j) => j === i ? { ...x, name: nm.value.trim(), from: Math.round(Number(f.value) || 0), to: Math.round(Number(t.value) || 0), due: du.value } : x); saveChapters(next); renderWView(); };
+      [nm, f, t, du].forEach(x => x.addEventListener("change", upd));
+      rm.addEventListener("click", () => { saveChapters(list.filter((_, j) => j !== i)); bookBox.innerHTML = ""; render(); });
+      const wr = el("div", "wrow"); wr.append(nm, f, t, du, rm); grid.append(wr);
+    });
+    ed.append(grid);
+    const add = el("button", "btn ghost", "章を足す"); add.type = "button";
+    add.addEventListener("click", () => {
+      const last = list[list.length - 1], from = last ? (Number(last.to) || 0) + 1 : 1;
+      saveChapters([...list, { id: "c" + Date.now().toString(36), name: "第" + (list.length + 1) + "章", from, to: from + 9, due: "" }]);
+      add.blur(); render();
+    });
+    ed.append(add, el("p", "pr-note", "目次の写真を Claude に送れば、章はまとめて入れます。期限は「この章をこの日までに」。番号は合格した最後の No. を入れます。"));
+    // 関門と章のつなぎ
+    const allCh = [1, 2, 3].flatMap(bk => chaptersOf(bk).map(c => ({ bk, c })));
+    if (allCh.length) {
+      ed.append(el("h5", null, "関門は、どの章で習うか"));
+      const tl = el("div", "wtie");
+      STATIONS.forEach(x => {
+        const lab = el("label", null, x.title); lab.htmlFor = "tie-" + x.id;
+        const se = el("select"); se.id = "tie-" + x.id;
+        const o0 = el("option", null, "巻だけで見る（" + BOOKS[WERNER_OF[x.id] || 1].name + "）"); o0.value = ""; se.append(o0);
+        allCh.forEach(({ bk, c }) => { const o = el("option", null, BOOKS[bk].name + "・" + c.name); o.value = bk + ":" + c.id; se.append(o); });
+        const cur = (werner.ties || {})[x.id]; se.value = cur ? cur.book + ":" + cur.id : "";
+        se.addEventListener("change", () => { const ties = { ...(werner.ties || {}) }; if (se.value) { const [bk, id] = se.value.split(":"); ties[x.id] = { book: Number(bk), id }; } else delete ties[x.id]; saveWerner({ ties }); se.blur(); render(); });
+        tl.append(lab, se);
+      });
+      ed.append(tl);
+    }
+    bookBox.append(ed);
+    const books = el("div", "books");
+    [1, 2, 3].forEach(n => {
+      const ids = STATIONS.filter(x => (tieOf(x.id)?.book || WERNER_OF[x.id] || 1) === n);
+      const bk = el("div", "bk" + (n === werner.book ? " now" : "")); const t = el("span");
+      t.append(BOOKS[n].text); if (ids.length) t.append(el("small", null, "この道では：" + ids.map(x => x.title).join("・")));
+      bk.append(el("b", null, BOOKS[n].name), t); books.append(bk);
+    });
+    bookBox.append(books);
+  }
+  renderWView();
+
+  const nx = $("ls-next"); nx.innerHTML = "";
+  nx.append(el("h4", null, "次のレッスン（月2回）"));
+  const r2 = el("div", "ls-row"); const di = el("input"); di.type = "date"; di.id = "ls-date"; di.value = werner.next || ""; di.setAttribute("aria-label", "次のレッスンの日");
+  di.addEventListener("change", () => { saveWerner({ next: di.value }); renderLesson(); });
+  r2.append(di); nx.append(r2);
+  const c = el("div", "count");
+  if (werner.next) { const d = daysTo(werner.next); if (d > 0) { c.append("あと"); c.append(el("em", null, String(d))); c.append("日"); } else if (d === 0) c.append("今日がレッスンの日"); else c.append("日付が過ぎています"); }
+  else c.append("日付を入れてください");
+  nx.append(c);
+  const sch = (werner.schedule || []).filter(Boolean).sort(), today = new Date().toISOString().slice(0, 10);
+  const sl = el("div", "ls-sch"); sl.append(el("span", "ls-mine", "レッスンの予定"));
+  sch.forEach(x => {
+    const chip = el("span", "sch-chip" + (x < today ? " past" : "")); chip.append(Number(x.slice(5, 7)) + "/" + Number(x.slice(8, 10)));
+    const rm = el("button", null, "×"); rm.type = "button"; rm.setAttribute("aria-label", x + " を予定から外す");
+    rm.addEventListener("click", () => { const left = sch.filter(y => y !== x); const nextUp = left.filter(y => y >= today)[0] || ""; saveWerner({ schedule: left, next: werner.next === x ? nextUp : werner.next }); render(); });
+    chip.append(rm); sl.append(chip);
+  });
+  const addIn = el("input"); addIn.type = "date"; addIn.id = "ls-add"; addIn.setAttribute("aria-label", "予定に足す日");
+  const addB = el("button", "btn ghost", "予定に足す"); addB.type = "button";
+  addB.addEventListener("click", () => {
+    if (!addIn.value) return; const left = [...new Set([...sch, addIn.value])].sort();
+    const nextUp = (!werner.next || werner.next < today || addIn.value < werner.next) && addIn.value >= today ? (left.filter(y => y >= today)[0] || addIn.value) : werner.next;
+    saveWerner({ schedule: left, next: nextUp }); render();
+  });
+  sl.append(addIn, addB); nx.append(sl);
+  nx.append(el("label", "ls-mine", "レッスンで言われたこと"));
+  const memo = el("textarea"); memo.id = "ls-memo"; memo.rows = 2; memo.placeholder = "例：弓は駒と指板の真ん中で。次はNo.25まで";
+  nx.append(el("span", "ls-mine", "先に左の「No.」を合格した番号にしてから押すと、進んだ数が記録されます。"));
+  const done = el("button", "btn", "レッスンに行った（記録する）"); done.type = "button"; done.disabled = !db || !canWrite || !loaded;
+  done.addEventListener("click", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    try { await db.collection("lessons").add({ date: today, memo: memo.value.trim(), book: werner.book, no: werner.no || "", pos: curPos() }); }
+    catch (e) { $("msg").textContent = "レッスンを記録できませんでした（" + (e && e.code || "不明") + "）。"; return; }
+    const upcoming = (werner.schedule || []).filter(x => x > today).sort()[0];
+    memo.value = ""; await saveWerner({ next: upcoming || plusDays(today, 14) }); render();
+  });
+  nx.append(memo, done, el("span", "ls-mine", "押すと記録され、次のレッスン日を予定の次の日（予定がなければ2週間後）に進めます。"));
+
+  const ul = $("say"); ul.innerHTML = ""; askItems().forEach(t => ul.append(el("li", null, t)));
+  const mine = $("ls-mine"); if (mine.value !== (werner.mine || "")) mine.value = werner.mine || "";
+
+  const log = $("ls-log"); log.innerHTML = ""; log.append(el("h4", null, "レッスンの記録"));
+  if (!lessons.length) log.append(el("p", "empty", "まだ記録がありません。レッスンのあとに「レッスンに行った」を押すと、ここに残ります。"));
+  else { const ol = el("ol"); lessons.slice(0, 6).forEach(l => { const li = el("li"); li.append(el("b", null, l.date), el("span", null, `${BOOKS[l.book || 1]?.name || ""}${Number(l.pos) > 0 ? " No." + l.pos : l.no ? " " + l.no : ""}　${l.memo || ""}`)); ol.append(li); }); log.append(ol); }
+}
+$("ls-mine").addEventListener("change", e => { saveWerner({ mine: e.target.value }); renderLesson(); });
+// 進み具合（帯）と、いちばん近い章の期限
+function renderWView() {
+  const box = document.querySelector("#ls-book .wview"); if (!box) return; box.innerHTML = "";
+  const b = werner.book, pos = curPos(), cs = chaptersOf(b), total = bookTotal(b);
+  if (!cs.length) { box.append(el("p", "empty", pos ? `${BOOKS[b].name} No.${pos} まで合格。目次（章）を入れると、何％か・どの章かが出ます。` : "合格した番号を入れてください。目次（章）を入れると、何％か・どの章かが出ます。")); return; }
+  const now = chapterNow(b, pos), pct = Math.min(100, Math.round(pos / total * 100));
+  const head = el("div", "wnow"); head.append(el("b", null, `${BOOKS[b].name} No.${pos}`), el("span", null, ` / ${total}`), el("em", null, pct + "%"));
+  box.append(head);
+  const bar = el("div", "wbar"); bar.setAttribute("aria-hidden", "true");
+  cs.forEach(c => {
+    const seg = el("i"); const w = (Number(c.to) - Number(c.from) + 1) / total * 100; seg.style.flexBasis = w + "%";
+    const fill = Math.max(0, Math.min(1, (pos - Number(c.from) + 1) / (Number(c.to) - Number(c.from) + 1)));
+    const f = el("b"); f.style.width = (fill * 100) + "%"; seg.append(f); if (now && c.id === now.id) seg.className = "cur"; bar.append(seg);
+  });
+  box.append(bar);
+  box.append(el("p", "wcur", now ? `いま：${now.name}（No.${now.from}〜${now.to}）あと ${Number(now.to) - pos}番` : `${BOOKS[b].name}を終えました`));
+  const g = chapterGoal();
+  if (g) {
+    const card = el("div", "wgoal " + g.tone);
+    card.append(el("b", null, `${g.g.name}を ${md(g.g.due)} までに`));
+    card.append(el("span", null, `あと ${g.left}番 ・ レッスンあと ${g.n}回 → 1回あたり ${fmt1(g.need)}番`));
+    card.append(el("small", null, g.msg));
+    box.append(card);
+  } else box.append(el("p", "empty", "章に期限を入れると、間に合うかを判定します（下の「章と期限」から）。"));
+}
+
+
+/* ── 目指す曲を選ぶ ── */
+function totalWeeks(sel, p = pace) {
+  return buildRoute(sel).reduce((a, x) => a + (Number(progress[x.id]?.weeks) || x.weeks) * LEFT[progress[x.id]?.status || "todo"] * p, 0);
+}
+function fmtDate(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日"; }
+async function savePlan() {
+  if (!db || !canWrite) return;
+  try { await db.doc("settings/plan").set({ targets, deadline }); }
+  catch (e) { $("msg").textContent = "選んだ曲を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
+}
+function applyPlan() { STATIONS = buildRoute(); layoutRoad(); render(); }
+function renderPlan() {
+  const lv = $("levels"); lv.innerHTML = "";
+  [1, 2, 3, 4, 5].forEach(n => {
+    const box = el("div", "level"); box.append(el("h3", null, LV_NAME[n]));
+    const cards = el("div", "cards");
+    CATALOG.filter(c => c.lv === n).forEach(c => {
+      const lab = el("label", "pick"), cb = el("input"); cb.type = "checkbox"; cb.id = "pick-" + c.id; cb.checked = targets.includes(c.id);
+      cb.addEventListener("change", () => {
+        targets = CATALOG.filter(x => x.id === c.id ? cb.checked : targets.includes(x.id)).map(x => x.id);
+        applyPlan(); savePlan();
+      });
+      const d = el("div"); const nmw = el("span", "nm"); nmw.append(el("span", "cmp-tag", c.composer), c.name); d.append(nmw, el("span", "src", c.src), el("span", "tx", c.text));
+      const pre = c.needs.filter(id => POOL[id] && id !== c.id).map(id => POOL[id].title);
+      if (pre.length) { const nd = el("div", "needs"); nd.append(el("span", null, "先に：" + pre.join("・"))); d.append(nd); }
+      const m = el("div", "meta"); m.append(el("span", null, "この曲だけで約" + months(POOL[c.id].weeks * pace) + "か月"));
+      m.append(!POOL[c.id].score ? el("span", "no", "楽譜はこれから作れます") : POOL[c.id].score.startsWith(SB) ? el("span", "has", "楽譜あり（楽譜帳・音つき）") : el("span", "has", "原曲の楽譜（IMSLP）"));
+      d.append(m); lab.append(cb, d); cards.append(lab);
+    });
+    box.append(cards); lv.append(box);
+  });
+  const v = $("verdict"); v.innerHTML = "";
+  const need = totalWeeks(targets), done = new Date(); done.setDate(done.getDate() + Math.round(need * 7));
+  const sum = el("div", "vd-sum");
+  sum.append(el("span", "k", `選んだ曲 ${targets.length}曲 ・ 道の関門 ${STATIONS.length}個（${["週2〜3日・15分", "週4〜5日・20分", "ほぼ毎日30分"][[1.8, 1.25, 1].indexOf(pace)] || "いまの練習量"}）`));
+  const vv = el("span", "v"); vv.append("全部そろうまで あと約"); vv.append(el("em", null, String(months(need)))); vv.append("か月"); sum.append(vv);
+  sum.append(el("span", "k", "見込み：" + ym(done)));
+  sum.append(el("span", "route", "道の順番：" + STATIONS.map(x => x.title).join(" → ")));
+  const j = el("div", "vd-judge");
+  const lab = el("label"); lab.append("いつまでに？");
+  const di = el("input"); di.type = "date"; di.id = "plan-deadline"; di.value = deadline;
+  di.addEventListener("change", () => { deadline = di.value; renderPlan(); savePlan(); });
+  lab.append(di); j.append(lab);
+  const box = el("div", "judge");
+  if (!targets.length) { box.className = "judge none"; box.append("曲を1つ以上選んでください。"); }
+  else if (!deadline) { box.className = "judge none"; box.append("期限を入れると、間に合うかを判定します。"); }
+  else {
+    const avail = (new Date(deadline + "T00:00:00") - new Date()) / 864e5 / 7, ratio = need / Math.max(.1, avail);
+    if (ratio <= .9) { box.className = "judge ok"; box.append(el("b", null, "間に合う見込みです"), el("br"), `期限まで約${Math.round(avail)}週、必要なのは約${Math.round(need)}週。約${Math.round(avail - need)}週の余裕があります。`); }
+    else if (ratio <= 1.1) { box.className = "judge warn"; box.append(el("b", null, "ぎりぎりです"), el("br"), `必要なのは約${Math.round(need)}週、期限までは約${Math.round(avail)}週。練習の量を少し増やすか、期限を少し延ばすと安心です。`); }
+    else {
+      box.className = "judge bad"; box.append(el("b", null, `このままだと約${Math.round(need - avail)}週足りません`));
+      const ul = el("ul");
+      [1.25, 1].filter(p => p < pace).forEach(p => { const w = totalWeeks(targets, p); if (w <= avail) ul.append(el("li", null, `練習を「${p === 1 ? "ほぼ毎日30分" : "週4〜5日・20分"}」にすれば間に合います（約${Math.round(w)}週）。`)); });
+      const hardest = [...targets].sort((a, b) => (CATALOG.find(c => c.id === b).lv - CATALOG.find(c => c.id === a).lv))[0];
+      const without = targets.filter(t => t !== hardest), w2 = totalWeeks(without);
+      if (without.length && w2 <= avail) ul.append(el("li", null, `「${CATALOG.find(c => c.id === hardest).name}」を次の目標に回せば間に合います（約${Math.round(w2)}週）。`));
+      ul.append(el("li", null, `いまの練習量のままなら、${fmtDate(done)}ごろが目安です。`));
+      box.append(ul);
+    }
+  }
+  j.append(box);
+  v.append(sum, j);
+}
+
+/* ── 門番（カード） ── */
+function renderBosses(eta) {
+  const root = $("bosses"); root.innerHTML = "";
+  bossList().forEach(b => {
+    const s = byId(b.id), i = STATIONS.indexOf(s), hp = Math.round(LEFT[st(s)] * 100);
+    const card = el("article", "boss ornate small");
+    const crest = b.crest ? img("art/crest-" + b.crest + ".png", "crest", b.name + "の紋章") : img("art/ui/gate.png", "crest gate-only", ""); card.append(crest);
+    const tl = el("div", "tagline"); tl.append(el("span", "latin", "Gatekeeper " + (ROMAN[b.n - 1] || b.n)), el("span", "op", b.op));
+    card.append(tl, el("h3", null, b.name), el("span", "src", b.src));
+    const g = el("div", "gauge"); g.append(el("span", "lab", "HP"));
+    const bar = el("div", "bar hp"); const f = el("i"); f.style.width = hp + "%"; bar.append(f);
+    g.append(bar, el("span", "num", hp + "%")); card.append(g);
+    if (!hp) card.append(el("span", "defeated", "CLEARED ・ 攻略済み"));
+    card.append(el("p", null, b.text));
+    const helpers = STATIONS.filter(x => b.needs.includes(x.id));
+    if (helpers.length) {
+      const h = el("div", "helps"); h.append(el("span", "h", "この門番に効く関門"));
+      helpers.forEach(x => {
+        const a = el("a", st(x) === "clear" ? "done" : ""); a.href = "#st-" + x.id;
+        a.append(el("span", "mk", st(x) === "clear" ? "✓" : num(STATIONS.indexOf(x))), x.title);
+        a.addEventListener("click", ev => { ev.preventDefault(); openStation(x.id); });
+        h.append(a);
+      });
+      card.append(h);
+    }
+    if (b.incipit) {
+      const box = el("div", "incipit"); box.id = "incipit"; box.setAttribute("aria-label", "家路の最初の4小節の楽譜"); card.append(box);
+      const ls = el("div", "listen"); const btn = el("button", "btn", playing.length ? "■ 止める" : "▶ 4小節を聴く"); btn.type = "button"; btn.id = "play"; btn.addEventListener("click", playLargo);
+      const a = el("a", null, "楽譜帳で8小節を開く →"); a.href = SB + "#goinghome"; a.target = "_blank"; a.rel = "noopener";
+      ls.append(btn, a); card.append(ls);
+    } else if (s.score) { const ls = el("div", "listen"); const a = el("a", null, s.score.startsWith(SB) ? "楽譜帳で開く（音つき）→" : (s.scoreLabel || "楽譜を開く") + " →"); a.href = s.score; a.target = "_blank"; a.rel = "noopener"; ls.append(a); card.append(ls); }
+    else card.append(el("span", "pending", "楽譜は準備中"));
+    const w = el("div", "when"); w.append("到達の見込み "); w.append(el("b", null, eta[i] > 0 ? ym(addWeeks(eta[i])) : "クリア済み")); card.append(w);
+    root.append(card);
+  });
+  decorate(root); drawIncipit();
+}
+
+/* ── 関門の一覧と攻略メモ ── */
+async function save(s, patch) {
+  if (!db || !canWrite) { $("msg").textContent = "保存先につながっていないため、変更を記録できません。"; return false; }
+  const cur = { ...(progress[s.id] || {}) };
+  const next = { ...cur, ...patch, updated: new Date().toISOString().slice(0, 10) };
+  Object.keys(next).forEach(k => { if (next[k] === null) delete next[k]; });
+  try { await db.doc("progress/" + s.id).set(next); return true; }
+  catch (e) { $("msg").textContent = "保存できませんでした（" + (e && e.code || "不明") + "）。少し待ってもう一度試してください。"; return false; }
+}
+function detailFor(s) {
+  const d = el("div", "detail"); d.id = "dt-" + s.id;
+  const left = el("div");
+  left.append(el("h4", null, "課題"), el("div", "task", s.task));
+  left.append(el("h4", null, s.kind === "BOSS" ? "倒すと" : "門番への効き目"));
+  const bb = el("div", "boost"); bb.append(img(s.kind === "BOSS" ? "art/ui/gate.png" : "art/ui/lantern.png"), el("span", null, s.boost)); left.append(bb);
+  const right = el("div"); right.append(el("h4", null, "クリアの目安（チェックリスト）"));
+  const ul = el("ul", "checks"), have = progress[s.id]?.checks || [];
+  s.checks.forEach((t, k) => {
+    const li = el("li"), lab = el("label"), cb = el("input"); cb.type = "checkbox"; cb.id = `ck-${s.id}-${k}`; cb.checked = !!have[k]; cb.disabled = !loaded;
+    cb.addEventListener("change", async () => { const next = s.checks.map((_, j) => j === k ? cb.checked : !!have[j]); if (!(await save(s, { checks: next }))) cb.checked = !cb.checked; });
+    lab.append(cb, el("span", null, t)); li.append(lab); ul.append(li);
+  });
+  right.append(ul);
+  const tune = el("div", "tune"), wk = weeksOf(s);
+  const minus = el("button", null, "−"), plus = el("button", null, "＋"), reset = el("button", "reset", "標準に戻す");
+  [minus, plus, reset].forEach(b => { b.type = "button"; b.disabled = !loaded; });
+  minus.setAttribute("aria-label", s.title + "の目安を1週減らす"); plus.setAttribute("aria-label", s.title + "の目安を1週増やす");
+  minus.addEventListener("click", () => save(s, { weeks: Math.max(1, wk - 1) }));
+  plus.addEventListener("click", () => save(s, { weeks: Math.min(40, wk + 1) }));
+  reset.addEventListener("click", () => save(s, { weeks: null }));
+  tune.append(el("span", null, "目安"), minus, el("b", null, String(wk)), plus, el("span", null, "週（ほぼ毎日30分のとき）"));
+  if (wk !== s.weeks) tune.append(reset);
+  right.append(tune);
+  const nb = el("div", "note-box"); nb.append(el("h4", null, "メモ（先生に言われたこと・気づいたこと）"));
+  const ta = el("textarea", "note"); ta.id = "note-" + s.id; ta.value = progress[s.id]?.note || ""; ta.placeholder = "例：弓の真ん中を使う、と言われた"; ta.disabled = !loaded;
+  ta.setAttribute("aria-label", s.title + "のメモ");
+  const saved = el("div", "saved");
+  ta.addEventListener("blur", async () => {
+    if (ta.value !== (progress[s.id]?.note || "")) { if (await save(s, { note: ta.value })) saved.textContent = "保存しました"; }
+    if (pendingRender) { pendingRender = false; render(); }
+  });
+  nb.append(ta, saved);
+  d.append(left, right, nb);
+  return d;
+}
+function renderRows() {
+  if (document.activeElement?.matches?.("textarea.note")) { pendingRender = true; return; }
+  const eta = forecast(), hereIdx = STATIONS.findIndex(s => st(s) !== "clear"), fold = $("fold-done").checked;
+  const rows = $("rows"); rows.innerHTML = "";
+  STATIONS.forEach((s, i) => {
+    const status = st(s), boss = s.kind === "BOSS";
+    const li = el("li", "row" + (boss ? " boss-row" : "") + (status === "clear" ? " done" : "") + (i === hereIdx ? " here" : "")); li.id = "st-" + s.id;
+    const no = el("div", "no"); no.append(el("small", null, KIND[s.kind]), el("b", null, num(i))); li.append(no);
+    li.append(img(ICON[s.kind], "ico"));
+    const mid = el("div");
+    const nm = el("div", "nm"); nm.append(s.title);
+    nm.append(el("span", "wbook" + (wLocked(s) ? " lock" : ""), wLabel(s)));
+    if (i === hereIdx) nm.append(el("span", "now-tag", "NOW"));
+    mid.append(nm);
+    if (s.op) mid.append(el("div", "op", s.op));
+    const compact = fold && status === "clear" && !openIds.has(s.id);
+    if (!compact) mid.append(el("div", "tr", s.trains));
+    const meta = el("div", "meta");
+    const done = (progress[s.id]?.checks || []).filter(Boolean).length;
+    meta.append(el("span", "cnt" + (done === s.checks.length ? " full" : ""), `◆ ${done}/${s.checks.length}`));
+    if (s.score) { const a = el("a", null, (s.scoreLabel || "楽譜") + " →"); a.href = s.score; a.target = "_blank"; a.rel = "noopener"; meta.append(a); }
+    else if (boss) meta.append(el("span", "pending", "楽譜は準備中"));
+    const open = openIds.has(s.id);
+    const tg = el("button", "toggle", open ? "攻略メモを閉じる ▴" : "攻略メモ ▾"); tg.type = "button";
+    tg.setAttribute("aria-expanded", open ? "true" : "false");
+    tg.addEventListener("click", () => { open ? openIds.delete(s.id) : openIds.add(s.id); renderRows(); });
+    meta.append(tg); mid.append(meta);
+    li.append(mid);
+    const e = el("div", "eta-c");
+    if (status === "clear") e.append(el("b", null, "CLEAR"), el("span", null, progress[s.id]?.updated || ""));
+    else e.append(el("b", null, ymShort(addWeeks(eta[i]))), el("span", null, "目安 " + Math.round(weeksOf(s) * pace) + "週"));
+    li.append(e);
+    const stc = el("div", "st");
+    const chip = el("button", "chip", LABEL[status]); chip.type = "button"; chip.dataset.s = status;
+    chip.setAttribute("aria-label", s.title + ": " + LABEL[status] + "（押すと切り替え）");
+    chip.disabled = !db || !canWrite || !loaded;
+    chip.addEventListener("click", async () => { chip.disabled = true; if (!(await save(s, { status: NEXT[status] }))) chip.disabled = false; });
+    stc.append(chip); li.append(stc);
+    if (status === "clear") { const sm = el("span", "sealmark"); sm.append(img("art/ui/seal.png"), el("span", null, "CLEAR")); li.append(sm); }
+    if (open) li.append(detailFor(s));
+    rows.append(li);
+  });
+}
+
+/* ── 今日のクエスト ── */
+function renderQuest(hereIdx) {
+  const q = $("quest"); clearBox(q);
+  if (hereIdx < 0) { const l = el("div", "quest-l"); l.append(el("span", "lbl", "All Clear"), el("span", "nt", "プラハ城に到達"), el("p", null, "3体の門番をすべて越えました。次の目標は、チェロ協奏曲の第2楽章です。")); q.prepend(l); return; }
+  const s = STATIONS[hereIdx], day = new Date().toISOString().slice(0, 10);
+  const l = el("div", "quest-l");
+  const lbl = el("span", "lbl"); lbl.append(img("art/ui/lantern.png"), (s.kind === "BOSS" ? "Boss " : "Stage ") + num(hereIdx) + " / " + STATIONS.length);
+  l.append(lbl, el("span", "nt", s.title), el("p", null, s.task));
+  if (s.score) { const a = el("a", null, (s.scoreLabel || "楽譜を開く") + " →"); a.href = s.score; a.target = "_blank"; a.rel = "noopener"; a.style.fontWeight = "700"; l.append(a); }
+  // 進めるボタン：押すと記録され、道の上のピンが次へ動く
+  const adv = el("div", "advance");
+  const b1 = el("button", "btn ghost", "通せた"), b2 = el("button", "btn", "クリアした");
+  [b1, b2].forEach(b => { b.type = "button"; b.disabled = !db || !canWrite || !loaded; });
+  if (st(s) === "through") b1.disabled = true;
+  b1.addEventListener("click", () => save(s, { status: "through" }));
+  b2.addEventListener("click", () => save(s, { status: "clear" }));
+  adv.append(b1, b2);
+  l.append(adv, el("p", "adv-note", "押すと記録され、地図のピンが次の関門へ進みます。チェックリストを付けても、少しずつ進みます。"));
+  const r = el("div", "quest-r"); r.append(el("span", "latin", "Objectives"));
+  const ol = el("ol", "objs"), doneEl = el("div", "complete");
+  const update = () => { const all = [...ol.querySelectorAll("input")].every(c => c.checked); doneEl.textContent = all ? "QUEST COMPLETE" : ""; };
+  s.today.forEach((t, k) => {
+    const key = `dq:${day}:${s.id}:${k}`, li = el("li"), lab = el("label"), cb = el("input");
+    cb.type = "checkbox"; cb.id = "obj-" + k; cb.checked = storeGet(key) === "1";
+    cb.addEventListener("change", () => { storeSet(key, cb.checked ? "1" : null); update(); });
+    lab.append(cb, el("span", null, t)); li.append(lab); ol.append(li);
+  });
+  r.append(ol, doneEl); update();
+  const nx = STATIONS[hereIdx + 1];
+  if (nx) { const p = el("p", "next-up"); p.append("次の関門："); p.append(el("b", null, nx.title)); p.append("（" + nx.trains + "）"); r.append(p); }
+  q.prepend(l, r);
+}
+
+function render() {
+  if (document.activeElement?.matches?.("textarea.note")) { pendingRender = true; return; }
+  const eta = forecast(), hereIdx = STATIONS.findIndex(s => st(s) !== "clear");
+  $("subtitle").textContent = `${kanjiNum(STATIONS.length)}の関門を越え、プラハの城へ`; $("stage-count").textContent = STATIONS.length;
+  renderPlan(); renderComposers(); renderHud(eta); renderBosses(eta); renderRows(); renderQuest(hereIdx); renderLesson(); renderPractice(); paintRoad();
+}
+
+$("pace").addEventListener("change", async ev => {
+  pace = Number(ev.target.value); render();
+  if (db && canWrite) { try { await db.doc("settings/pace").set({ factor: pace }); } catch (e) { $("msg").textContent = "練習の量を保存できませんでした（" + (e && e.code || "不明") + "）。"; } }
+});
+$("fold-done").checked = storeGet("fold-done") === "1";
+$("fold-done").addEventListener("change", () => { storeSet("fold-done", $("fold-done").checked ? "1" : null); renderRows(); });
+$("copy").addEventListener("click", async () => {
+  const b = $("copy");
+  try { await navigator.clipboard.writeText([...$("say").querySelectorAll("li")].map(li => "・" + li.textContent).join("\n")); b.textContent = "コピーしました"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("say")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = "文を選びました"; }
+  setTimeout(() => { b.textContent = "文をコピー"; }, 2500);
+});
+
+/* ── 家路の4小節（楽譜と音） ── */
+const LARGO = "X:1\nM:4/4\nL:1/4\nQ:1/4=50\nK:D clef=bass\nF,3/2 A,/ A,2 | F,3/2 E,/ D,2 | E, F, A, F, | E,4 |]";
+function drawIncipit() {
+  const box = $("incipit"); if (!box) return;
+  if (!window.ABCJS) { box.textContent = "楽譜の表示部品を読み込めませんでした。楽譜帳で開いてください。"; return; }
+  ABCJS.renderAbc(box, LARGO, { responsive: "resize", staffwidth: 420, paddingtop: 0, paddingbottom: 4, paddingleft: 6, paddingright: 6 });
+}
+let ac = null, playing = [];
+function playLargo() {
+  if (playing.length) { playing.forEach(o => { try { o.stop(); } catch {} }); playing = []; const b = $("play"); if (b) b.textContent = "▶ 4小節を聴く"; return; }
+  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+  const q = 60 / 50, notes = [[92.5, 1.5], [110, .5], [110, 2], [92.5, 1.5], [82.41, .5], [73.42, 2], [82.41, 1], [92.5, 1], [110, 1], [92.5, 1], [82.41, 4]];
+  let t = ac.currentTime + .08;
+  notes.forEach(([f, b]) => {
+    const dur = b * q, o = ac.createOscillator(), lp = ac.createBiquadFilter(), gn = ac.createGain();
+    o.type = "sawtooth"; o.frequency.value = f; lp.type = "lowpass"; lp.frequency.value = 1100;
+    gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.16, t + .12); gn.gain.setValueAtTime(.16, t + dur - .12); gn.gain.linearRampToValueAtTime(0, t + dur - .02);
+    o.connect(lp).connect(gn).connect(ac.destination); o.start(t); o.stop(t + dur); playing.push(o); t += dur;
+  });
+  const b = $("play"); if (b) b.textContent = "■ 止める";
+  const last = playing[playing.length - 1]; last.onended = () => { if (playing.includes(last)) { playing = []; const bb = $("play"); if (bb) bb.textContent = "▶ 4小節を聴く"; } };
+}
+
+STATIONS = buildRoute();
+decorate(); render();
+// 開け閉めの状態はこの端末に覚えておく
+document.querySelectorAll("details.fold").forEach(d => {
+  const saved = storeGet("fold:" + d.id); if (saved) d.open = saved === "open";
+  const mark = () => d.closest("section").classList.toggle("fold-sec-closed", !d.open);
+  mark(); d.addEventListener("toggle", () => { storeSet("fold:" + d.id, d.open ? "open" : "closed"); mark(); });
+});
+function openFold(sectionId) { const d = document.querySelector("#" + sectionId + " details.fold"); if (d && !d.open) d.open = true; }
+document.querySelectorAll('.tn-in a[href^="#"]').forEach(a => a.addEventListener("click", () => openFold(a.getAttribute("href").slice(1))));
+const heroImg = document.querySelector("#stage img");
+if (heroImg.complete) layoutRoad(); else heroImg.addEventListener("load", layoutRoad);
+let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(layoutRoad, 100); }).observe($("stage"));
+
+(async () => {
+  if (!window.claude) { $("msg").textContent = "保存先につながらないため、進み具合を記録できません。"; return; }
+  db = await claude.use("db");
+  if (!db) { $("msg").textContent = "保存先につながらないため、進み具合を記録できません。サインインした状態で開くと記録できます。"; return; }
+  const user = await claude.use("user");
+  if (user) { const w = await user.can("data.write"); if (w === false) canWrite = false; }
+  const timer = setTimeout(() => { $("msg").textContent = "保存先からの応答が遅れています。表示が古い可能性があります。"; }, 10000);
+  db.collection("progress").onSnapshot(snap => {
+    clearTimeout(timer); if ($("msg").textContent.startsWith("保存先からの")) $("msg").textContent = "";
+    progress = {}; snap.docs.forEach(d => { progress[d.id] = d.data(); }); loaded = true;
+    render();
+  }, err => { clearTimeout(timer); $("msg").textContent = "進み具合を読めませんでした（" + err.code + "）。"; });
+  db.collection("days").onSnapshot(snap => {
+    days = {}; snap.docs.forEach(d => { const v = d.data(); if (v && v.date) days[v.date] = v; }); renderPractice();
+  }, () => {});
+  db.doc("settings/focus").onSnapshot(d => {
+    if (!d.exists) return; const v = d.data();
+    focus = { items: Array.isArray(v.items) ? v.items : DEFAULT_FOCUS, grads: Array.isArray(v.grads) ? v.grads : [] }; renderPractice();
+  }, () => {});
+  db.doc("settings/werner").onSnapshot(d => {
+    if (!d.exists) return;
+    const v = d.data(); werner = { book: Number(v.book) || 1, no: v.no || "", pos: Number(v.pos) || 0, next: v.next || "", mine: v.mine || "", schedule: Array.isArray(v.schedule) ? v.schedule : [], chapters: v.chapters && typeof v.chapters === "object" ? v.chapters : {}, ties: v.ties && typeof v.ties === "object" ? v.ties : {} }; render();
+  }, () => {});
+  db.collection("lessons").onSnapshot(snap => {
+    lessons = snap.docs.map(d => d.data()).filter(l => l && l.date).sort((a, b) => b.date.localeCompare(a.date)); renderLesson();
+  }, () => {});
+  db.doc("settings/plan").onSnapshot(d => {
+    if (!d.exists) return;
+    const v = d.data(), t = Array.isArray(v.targets) ? v.targets.filter(id => CATALOG.some(c => c.id === id)) : targets;
+    const changed = t.join() !== targets.join() || (v.deadline || "") !== deadline;
+    targets = t; deadline = typeof v.deadline === "string" ? v.deadline : "";
+    if (changed) applyPlan();
+  }, () => {});
+  db.doc("settings/pace").onSnapshot(d => {
+    const f = d.exists && Number(d.data().factor);
+    if (f && f !== pace) { pace = f; const r = document.querySelector('#pace input[value="' + f + '"]'); if (r) r.checked = true; render(); }
+  }, () => {});
+})();
+</script>
+
+<style>.topnav .tn-sep ~ a { display: none; }</style>
+</body>
+</html>
