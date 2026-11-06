@@ -1,1 +1,0 @@
-celloSeed({"progress/kodokei": {"status": "doing", "updated": "2026-11-04"}, "settings/pace": {"factor": 1}, "settings/plan": {"deadline": "", "targets": ["largo8", "humoresque", "largo", "mother", "rusalka", "silentwoods", "concerto2"]}, "settings/werner": {"book": 1, "mine": "", "next": "2026-11-06", "no": "", "schedule": ["2026-11-06", "2026-11-18"]}});
