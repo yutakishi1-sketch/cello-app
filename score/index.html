@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <script src="../shim.js"></script>
 </head>
@@ -497,6 +497,6 @@ if (location.hash && /^#[A-Za-z0-9_-]+$/.test(location.hash)) {
 </script>
 
 
-<style>nav.pages { display: none; }</style>
+<style>nav.pages { display: none; } html, body { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
