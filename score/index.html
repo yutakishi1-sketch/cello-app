@@ -105,7 +105,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   <nav class="toc" id="toc" aria-label="曲の目次"><img class="corner tl" src="art/corner.png" alt=""><img class="corner tr" src="art/corner.png" alt=""><img class="corner bl" src="art/corner.png" alt=""><img class="corner br" src="art/corner.png" alt=""></nav>
   <main id="songs" hidden></main>
   <p class="foot" id="fallback" hidden>楽譜の表示部品を読み込めませんでした。時間をおいて開き直してください。</p>
-  <p class="foot">どの曲もパブリックドメインの旋律を、初心者のチェロ向けに調と音域を選び直したものです。カノンの低音のやさしい版（2分音符・1オクターブ上）は<a href="https://claude.ai/artifact/J11qb7dDwnQzn2vVs6TPqB">別ページ</a>にあります。</p>
+  <p class="foot">どの曲もパブリックドメインの旋律を、初心者のチェロ向けに調と音域を選び直したものです。カノンの低音は、やさしい版（2分音符・4分音符）から原曲の高さまで、この楽譜帳に入っています。</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
@@ -247,7 +247,19 @@ V:2 clef=treble name="ピアノ"
 [V:2] [1 z[A,DF]2 | z[G,B,E]2 | z[A,CE]2 | z[B,DG]2 | z[G,B,EG]2 | z[G,C][A,CF] | [_B,DG_B]3 | [CEGc]3 :|
 [V:1] [2 "_D線"!2!F,3 | !1!_E,3 | "_G線"!1!A,, !2!_B,, "_D線"!1!_E, | !0!D, "_G線"!4!C, !2!_B,, | "_D線"!0!D, "_G線"!4!C, !2!_B,, | "_C線"!2!_E,,3 | "_G線"!2!_B,,3 | !4!C,3 |]
 [V:2] [2 z[A,DF]2 | z[G,C_EG]2 | z[G,_B,E]2 | z[_B,DG]2 | z[G,_B,_EG]2 | z[G,C][A,CF] | [_B,DG_B]3 | [C_EGc]3 |]` },
-{ id: "canon-bass", title: "カノン ① 低音（原曲のチェロパート・通し）", stage: 3, warn: "4つ目のファ♯（C線）だけ、4の指を少し伸ばして押さえます（拡張）。先生に一度見てもらってください。", tip: "パッヘルベル。原曲のチェロのパートを、原曲の高さのまま最初から最後まで載せています（8つの音×28回と最後のレ、全57小節）。第1ポジション＋拡張1か所。目安 Lv2。2分音符のやさしい版と1オクターブ上の版は、下の「別ページ」にあります。出典: Mutopia Project #2047「Canon per 3 Violini e Basso」（IMSLP の原典版をもとに Michael Fischer v. Mollard が浄書、CC BY 4.0）。", abc:
+{ id: "canon-easy1", title: "カノン 低音 やさしい版（2分音符）", stage: 1, tip: "パッヘルベル。チェロが最初から最後までくり返す8つの音を、1音2拍のゆっくりにしたものです。原曲より1オクターブ上の音も混ぜて、全部第1ポジション・指は1・3・4だけ。弓を端から端まで使い切り、音がかすれないことだけに集中します。", abc:
+`M:4/4
+L:1/2
+Q:1/4=56
+K:D clef=bass
+"_D線"!0!D, "_A線"!0!A, | !1!B, "_D線"!3!F, | !4!G, !0!D, | !4!G, "_A線"!0!A, :|` },
+{ id: "canon-easy2", title: "カノン 低音 やさしい版（4分音符）", stage: 2, tip: "音も指も2分音符の版と同じで、長さだけ半分（原曲のリズム）。速さ56から始めて、72で止まらず回せたらクリア。次は原曲の高さの「カノン ① 低音」へ。", abc:
+`M:4/4
+L:1/4
+Q:1/4=56
+K:D clef=bass
+"_D線"!0!D, "_A線"!0!A, !1!B, "_D線"!3!F, | !4!G, !0!D, !4!G, "_A線"!0!A, :|` },
+{ id: "canon-bass", title: "カノン ① 低音（原曲のチェロパート・通し）", stage: 3, warn: "4つ目のファ♯（C線）だけ、4の指を少し伸ばして押さえます（拡張）。先生に一度見てもらってください。", tip: "パッヘルベル。原曲のチェロのパートを、原曲の高さのまま最初から最後まで載せています（8つの音×28回と最後のレ、全57小節）。第1ポジション＋拡張1か所。目安 Lv2。2分音符と4分音符のやさしい版は、同じ楽譜帳の「カノン 低音 やさしい版」にあります。出典: Mutopia Project #2047「Canon per 3 Violini e Basso」（IMSLP の原典版をもとに Michael Fischer v. Mollard が浄書、CC BY 4.0）。", abc:
 `M:4/4
 L:1/4
 Q:1/4=55
@@ -542,6 +554,6 @@ openSong(location.hash);
 </script>
 
 
-<style>nav.pages { display: none; } .wrap { padding-block: 14px 40px; gap: 24px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
+<style>nav.pages { display: none; } .lead a, .lead br { display: none; } .wrap { padding-block: 14px 40px; gap: 24px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
