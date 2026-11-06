@@ -1,6 +1,26 @@
 /* チェロのアプリ用：claude.ai の保存の仕組み（claude.use("db") など）を、スマホの中の保存に置き換える。
    ページのコードは claude.ai 版と同じまま動く。書いた記録は、設定があれば Google スプレッドシートにも写す。 */
 (() => {
+  // ── 使う人の切り替え ──
+  // 1台を何人かで使えるように、保存の名前（キー）の頭に人の印を付ける。最初の人（p1）は印なし（これまでの記録をそのまま使う）
+  const S = Storage.prototype, rawGet = S.getItem, rawSet = S.setItem, rawDel = S.removeItem;
+  const PKEY = "cello-app:profile", PLIST = "cello-app:profiles";
+  let pid = "p1";
+  try { pid = rawGet.call(localStorage, PKEY) || "p1"; } catch { /* 保存できない環境では1人で使う */ }
+  if (pid !== "p1") {
+    const keyOf = k => (k === PKEY || k === PLIST) ? k : pid + "|" + k;
+    S.getItem = function (k) { return rawGet.call(this, keyOf(String(k))); };
+    S.setItem = function (k, v) { return rawSet.call(this, keyOf(String(k)), v); };
+    S.removeItem = function (k) { return rawDel.call(this, keyOf(String(k))); };
+  }
+  const readRaw = (k, d) => { try { const v = JSON.parse(rawGet.call(localStorage, k)); return v ?? d; } catch { return d; } };
+  window.celloProfiles = {
+    current: () => pid,
+    list: () => { const l = readRaw(PLIST, null); return Array.isArray(l) && l.length ? l : [{ id: "p1", name: "わたし" }]; },
+    save(list) { try { rawSet.call(localStorage, PLIST, JSON.stringify(list)); } catch (e) { console.warn("使う人の一覧を保存できませんでした", e); } },
+    switchTo(id) { try { rawSet.call(localStorage, PKEY, id); } catch (e) { console.warn("使う人を切り替えられませんでした", e); } },
+  };
+
   const KEY = "cello-app:db", QKEY = "cello-app:sync-queue", URLKEY = "cello-app:sync-url";
   const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
@@ -31,6 +51,7 @@
 
   // スプレッドシートへ写す（届かなかった分は次に回す）
   function queue(path, data) {
+    if (pid !== "p1") path = pid + "/" + path;
     const q = read(QKEY, []); q.push({ path, data: data === undefined ? null : data, deleted: data === undefined, at: new Date().toISOString() });
     write(QKEY, q.slice(-500)); flush();
   }
@@ -51,7 +72,7 @@
     url: () => read(URLKEY, ""), setUrl: u => { write(URLKEY, u.trim()); flush(); },
     pending: () => read(QKEY, []).length, last: () => read("cello-app:last-sync", ""),
     // 外枠と各ページは別々に読み込むので、送り直しは保存領域の最新から作る
-    sendAll: () => { const cur = read(KEY, {}), at = new Date().toISOString(); write(QKEY, [...read(QKEY, []), ...Object.keys(cur).map(p => ({ path: p, data: cur[p], deleted: false, at }))]); return flush(); },
+    sendAll: () => { const cur = read(KEY, {}), at = new Date().toISOString(); write(QKEY, [...read(QKEY, []), ...Object.keys(cur).map(p => ({ path: pid === "p1" ? p : pid + "/" + p, data: cur[p], deleted: false, at }))]); return flush(); },
     flush,
   };
 

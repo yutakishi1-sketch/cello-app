@@ -34,6 +34,7 @@ dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--fr
 dialog::backdrop { background: rgba(0,0,0,.6); }
 dialog h2 { margin: 0 0 10px; font-family: var(--f-display); font-size: 18px; }
 dialog p { margin: 6px 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+dialog select { flex: 1 1 8em; background: #14203a; color: var(--ink); border: 1px solid var(--line); padding: 8px; font: inherit; font-size: 16px; }
 dialog input { width: 100%; background: #14203a; color: var(--ink); border: 1px solid var(--line); padding: 8px; font-size: 14px; }
 dialog .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 dialog button { font: inherit; font-size: 14px; padding: 8px 14px; border: 1px solid #6e5a2c; background: #14203a; color: var(--ink); cursor: pointer; }
@@ -56,7 +57,19 @@ dialog .st { font-size: 13px; color: var(--ink); }
 </div>
 
 <dialog id="settings">
-  <h2>記録の送り先</h2>
+  <h2>使う人</h2>
+  <p>1台を何人かで使うときは、人ごとに記録（練習・レッスン・教本・書き込み・メモ）を分けられます。</p>
+  <div class="row">
+    <select id="who" aria-label="使う人"></select>
+    <button type="button" id="who-go">この人にする</button>
+  </div>
+  <div class="row">
+    <input id="who-name" type="text" placeholder="名前（例：さとこ）" aria-label="名前" style="flex:1 1 8em; width:auto">
+    <button type="button" id="who-add">人を足す</button>
+    <button type="button" id="who-rename">名前を変える</button>
+  </div>
+  <p class="st" id="who-st"></p>
+  <h2 style="margin-top:16px">記録の送り先</h2>
   <p>練習やレッスンの記録はこのスマホに保存されます。下に送り先（Google スプレッドシートの受け口）を入れると、同じ記録がスプレッドシートにも写り、Claude が読めるようになります。</p>
   <input id="sync-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" aria-label="送り先のURL">
   <p class="st" id="sync-st"></p>
@@ -66,7 +79,7 @@ dialog .st { font-size: 13px; color: var(--ink); }
     <button type="button" id="close">閉じる</button>
   </div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：e10b41879bd2</p>
+  <p>アプリの版：75bc2365a4a7</p>
 </dialog>
 
 <script src="shim.js"></script>
@@ -94,7 +107,24 @@ function status() {
   const last = celloSync.last(), n = celloSync.pending();
   st.textContent = (celloSync.url() ? "送り先：設定済み" : "送り先：まだありません（記録はこのスマホにだけ保存）") + (last ? "／最後に送った日時 " + new Date(last).toLocaleString("ja-JP") : "") + (n ? "／未送信 " + n + "件" : "");
 }
-document.getElementById("gear").addEventListener("click", () => { urlIn.value = celloSync.url(); status(); dlg.showModal(); });
+document.getElementById("gear").addEventListener("click", () => { urlIn.value = celloSync.url(); status(); renderWho(); dlg.showModal(); });
+// 使う人：選ぶ・足す・名前を変える。切り替えたら全ページを読み込み直す
+const who = document.getElementById("who"), whoName = document.getElementById("who-name"), whoSt = document.getElementById("who-st");
+function renderWho() {
+  const list = celloProfiles.list(), cur = celloProfiles.current();
+  who.innerHTML = ""; list.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; if (p.id === cur) o.selected = true; who.append(o); });
+  const me = list.find(p => p.id === cur); whoSt.textContent = "いまの人：" + (me ? me.name : "わたし");
+}
+document.getElementById("who-go").addEventListener("click", () => { if (who.value !== celloProfiles.current()) { celloProfiles.switchTo(who.value); location.reload(); } });
+document.getElementById("who-add").addEventListener("click", () => {
+  const name = whoName.value.trim(); if (!name) { whoSt.textContent = "名前を入れてから「人を足す」を押してください"; return; }
+  const list = celloProfiles.list(), id = "p" + Date.now().toString(36);
+  celloProfiles.save([...list, { id, name }]); whoName.value = ""; renderWho(); who.value = id; whoSt.textContent = "「" + name + "」を足しました。「この人にする」で切り替わります";
+});
+document.getElementById("who-rename").addEventListener("click", () => {
+  const name = whoName.value.trim(); if (!name) { whoSt.textContent = "新しい名前を入れてから押してください"; return; }
+  celloProfiles.save(celloProfiles.list().map(p => p.id === who.value ? { ...p, name } : p)); whoName.value = ""; renderWho();
+});
 document.getElementById("close").addEventListener("click", () => dlg.close());
 document.getElementById("sync-save").addEventListener("click", async () => { celloSync.setUrl(urlIn.value); await celloSync.flush(); status(); });
 document.getElementById("sync-all").addEventListener("click", async () => { await celloSync.sendAll(); status(); });
