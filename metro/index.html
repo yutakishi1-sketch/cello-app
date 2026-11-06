@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <script src="../shim.js"></script>
 </head>
@@ -155,6 +155,11 @@ document.addEventListener("keydown", e => { if (e.code === "Space" && e.target =
 document.addEventListener("visibilitychange", async () => { if (m.on && !document.hidden && !wake) { try { wake = await navigator.wakeLock?.request("screen"); } catch {} } });
 </script>
 
-<style>.wrap > nav { display: none; }</style>
+<style>/* スマホで左右にぶれないようにする。iPhone は16px未満の入力欄を押すと自動で拡大し、そのまま横に動くため */
+html, body { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; }
+@media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }
+</style>
+
+<style>.wrap > nav { display: none; } html, body { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
