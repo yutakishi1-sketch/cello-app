@@ -44,7 +44,19 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .toc-row b { font-size: 12.5px; color: var(--gold-soft); min-width: 6.5em; letter-spacing: .04em; }
 .toc a { font-size: 13.5px; color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--panel-2); padding: 2px 10px; }
 .toc a:hover { border-color: var(--gold); color: var(--gold); }
-.song { display: grid; gap: 10px; scroll-margin-top: 60px; }
+/* 曲は1曲ずつ開け閉めする（縦に長くなりすぎないように）。楽譜は開いたときに初めて描く */
+.song { display: block; scroll-margin-top: 60px; }
+.song > summary { list-style: none; cursor: pointer; }
+.song > summary::-webkit-details-marker { display: none; }
+.song-head::before { content: ""; flex: none; align-self: center; width: 9px; height: 9px; margin: 0 4px 0 2px; border: 1.5px solid var(--gold); transform: rotate(45deg); }
+.song-head::after { content: "Open ▾"; margin-left: auto; font-family: var(--f-latin); font-weight: 700; letter-spacing: .08em; font-size: 14px; color: var(--gold); white-space: nowrap; }
+.song[open] > .song-head::after { content: "Close ▴"; }
+.song[open] > .song-head::before { background: var(--gold); }
+.song-body { display: grid; gap: 10px; padding-top: 10px; }
+.song > .song-head { flex-wrap: nowrap; align-items: center; }
+.song-head h2 { min-width: 0; }
+.song-head h2 small { display: block; font-family: var(--f-fine); font-weight: 400; font-size: 12px; letter-spacing: 0; color: var(--muted); line-height: 1.4; }
+@media (max-width: 520px) { .song-head h2 { font-size: 17px; letter-spacing: .02em; } .song-head .stage { font-size: 11px; white-space: nowrap; } .song:not([open]) .song-head .stage { display: none; } .song-head::after { font-size: 13px; } }
 .song-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; border-bottom: 1px solid var(--frame); padding-bottom: 6px; }
 .stage { font-size: 12px; font-weight: 700; color: var(--gold-soft); border: 1px solid var(--gold-dim); padding: 0 6px; }
 .tip { font-family: var(--f-fine); font-size: 14px; line-height: 1.85; color: var(--ink-2); margin: 0; }
@@ -88,7 +100,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
     <p class="lead">練習表の曲のうち、著作権の切れた曲をチェロ用に書き起こしたものです。全部第1ポジション、音符の上の数字が指番号（0＝開放弦）、下が弦です。<br><a href="https://claude.ai/artifact/6fdtu9w1SfjjCJWArFDatt">練習表へ戻る</a></p>
   </header>
   <nav class="toc" id="toc" aria-label="曲の目次"><img class="corner tl" src="art/corner.png" alt=""><img class="corner tr" src="art/corner.png" alt=""><img class="corner bl" src="art/corner.png" alt=""><img class="corner br" src="art/corner.png" alt=""></nav>
-  <main id="songs" style="display:grid;gap:40px"></main>
+  <main id="songs" style="display:grid;gap:14px"></main>
   <p class="foot" id="fallback" hidden>楽譜の表示部品を読み込めませんでした。時間をおいて開き直してください。</p>
   <p class="foot">どの曲もパブリックドメインの旋律を、初心者のチェロ向けに調と音域を選び直したものです。カノンの低音のやさしい版（2分音符・1オクターブ上）は<a href="https://claude.ai/artifact/J11qb7dDwnQzn2vVs6TPqB">別ページ</a>にあります。</p>
 </div>
@@ -448,14 +460,19 @@ function playSong(song, btn, opts) {
 const ok = !!window.ABCJS;
 if (!ok) $("fallback").hidden = false;
 SONGS.forEach(s => {
-  const sec = document.createElement("section"); sec.className = "song"; sec.id = s.id;
-  const head = document.createElement("div"); head.className = "song-head";
-  const h = document.createElement("h2"); h.textContent = s.title;
+  const sec = document.createElement("details"); sec.className = "song"; sec.id = s.id;
+  const head = document.createElement("summary"); head.className = "song-head";
+  const body = document.createElement("div"); body.className = "song-body";
+  const h = document.createElement("h2");
+  // 曲名の（…）は小さく2行目へ。閉じた一覧が縦に伸びないように
+  const tm = s.title.match(/^(.+?)\s*(（.+）)$/);
+  h.textContent = tm ? tm[1] : s.title;
+  if (tm) { const sub = document.createElement("small"); sub.textContent = tm[2]; h.append(sub); }
   const st = document.createElement("span"); st.className = "stage"; st.textContent = STAGE[s.stage];
-  head.append(h, st); sec.append(head);
-  const tip = document.createElement("p"); tip.className = "tip"; tip.textContent = s.tip; sec.append(tip);
-  if (s.warn) { const w = document.createElement("p"); w.className = "warn"; w.textContent = s.warn; sec.append(w); }
-  const meterLine = document.createElement("p"); meterLine.className = "meter"; sec.append(meterLine);
+  head.append(h, st); sec.append(head, body);
+  const tip = document.createElement("p"); tip.className = "tip"; tip.textContent = s.tip; body.append(tip);
+  if (s.warn) { const w = document.createElement("p"); w.className = "warn"; w.textContent = s.warn; body.append(w); }
+  const meterLine = document.createElement("p"); meterLine.className = "meter"; body.append(meterLine);
   const ctr = document.createElement("div"); ctr.className = "controls";
   const btn = document.createElement("button"); btn.type = "button"; btn.textContent = "▶ 鳴らす";
   const speed = document.createElement("label"); speed.className = "speed";
@@ -466,21 +483,27 @@ SONGS.forEach(s => {
   const reset = document.createElement("button"); reset.type = "button"; reset.className = "ghost"; reset.textContent = "ふつうに戻す";
   const clickLab = document.createElement("label"); const click = document.createElement("input"); click.type = "checkbox"; click.id = "click-" + s.id; clickLab.append(click, "メトロノーム");
   const loopLab = document.createElement("label"); const loop = document.createElement("input"); loop.type = "checkbox"; loop.id = "loop-" + s.id; loopLab.append(loop, "くり返し");
-  ctr.append(btn, speed, reset, clickLab, loopLab); sec.append(ctr);
-  const sheet = document.createElement("div"); sheet.className = "sheet"; sheet.id = "sheet-" + s.id; sec.append(sheet);
+  ctr.append(btn, speed, reset, clickLab, loopLab); body.append(ctr);
+  const sheet = document.createElement("div"); sheet.className = "sheet"; sheet.id = "sheet-" + s.id; body.append(sheet);
   main.append(sec);
-  if (ok) {
-    try { s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
-      sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); }); }
-    catch (e) { console.error(s.id, e); }
-  }
-  btn.disabled = !s.tune;
-  const mt = meterOf(s), base = s.tune ? Math.round(s.tune.getBpm()) : 80;
-  const dotted = Math.abs(mt.beat - 0.375) < 1e-6, beatSym = dotted ? "♩." : "♩";
-  mark.textContent = beatSym + "=";
-  meterLine.textContent = mt.num + "/" + mt.den + "拍子：1小節を" + mt.perBar + "つに数える（1拍＝" + (dotted ? "付点4分音符" : "4分音符") + "）。ふつうの速さは " + beatSym + "=" + base + "。";
-  range.min = String(Math.max(30, Math.round(base * 0.5))); range.max = String(Math.round(base * 1.6)); range.step = "1"; range.value = String(base);
-  val.textContent = range.value;
+  // 閉じたままの曲は文字の幅が測れないので、開いたときに初めて楽譜を描く
+  let ready = false, base = 80;
+  const prepare = () => {
+    if (ready) return; ready = true;
+    if (ok) {
+      try { s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
+        sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); }); }
+      catch (e) { console.error(s.id, e); }
+    }
+    btn.disabled = !s.tune;
+    const mt = meterOf(s); base = s.tune ? Math.round(s.tune.getBpm()) : 80;
+    const dotted = Math.abs(mt.beat - 0.375) < 1e-6, beatSym = dotted ? "♩." : "♩";
+    mark.textContent = beatSym + "=";
+    meterLine.textContent = mt.num + "/" + mt.den + "拍子：1小節を" + mt.perBar + "つに数える（1拍＝" + (dotted ? "付点4分音符" : "4分音符") + "）。ふつうの速さは " + beatSym + "=" + base + "。";
+    range.min = String(Math.max(30, Math.round(base * 0.5))); range.max = String(Math.round(base * 1.6)); range.step = "1"; range.value = String(base);
+    val.textContent = range.value;
+  };
+  sec.addEventListener("toggle", () => { if (sec.open) prepare(); else if (playing && playing.btn === btn) stopAll(); });
   const opts = () => ({ bpm: Number(range.value), click: click.checked, loop: () => loop.checked });
   const restartIfPlaying = () => { if (playing && playing.btn === btn) playSong(s, btn, opts()); };
   range.addEventListener("input", () => { val.textContent = range.value; });
@@ -490,10 +513,21 @@ SONGS.forEach(s => {
   btn.addEventListener("click", () => (playing && playing.btn === btn) ? stopAll() : playSong(s, btn, opts()));
 });
 const HASH_ALIAS = { "#canonmelody": "#canon-melody" };   // 前の目印で開いても新しい段へ
-if (location.hash && /^#[A-Za-z0-9_-]+$/.test(location.hash)) {
-  const target = document.querySelector(HASH_ALIAS[location.hash] || location.hash);
-  if (target) setTimeout(() => target.scrollIntoView(), 300);
+// 目次や目印で曲を指したら、その曲を開いてそこへ移る
+function openSong(hash) {
+  if (!hash || !/^#[A-Za-z0-9_-]+$/.test(hash)) return;
+  const target = document.querySelector(HASH_ALIAS[hash] || hash);
+  if (!target || !target.classList.contains("song")) return;
+  target.open = true;
+  setTimeout(() => target.scrollIntoView({ block: "start" }), 60);
 }
+toc.addEventListener("click", e => {
+  const a = e.target.closest("a[href^='#']"); if (!a) return;
+  e.preventDefault(); openSong(a.getAttribute("href"));
+  try { history.replaceState(null, "", a.getAttribute("href")); } catch (err) { /* 書き換えられない画面でも開くだけはする */ }
+});
+addEventListener("hashchange", () => openSong(location.hash));
+openSong(location.hash);
 </script>
 
 
