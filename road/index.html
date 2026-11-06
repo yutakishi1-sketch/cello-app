@@ -752,6 +752,7 @@ footer { padding-block: 84px 48px; }
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+<script src="art/cello-voice.js"></script>
 <script>
 const SB = "https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj";
 const TRACKER = "https://claude.ai/artifact/6fdtu9w1SfjjCJWArFDatt";
@@ -1916,13 +1917,20 @@ function drawIncipit() {
   if (!window.ABCJS) { box.textContent = "楽譜の表示部品を読み込めませんでした。楽譜帳で開いてください。"; return; }
   ABCJS.renderAbc(box, LARGO, { responsive: "resize", staffwidth: 420, paddingtop: 0, paddingbottom: 4, paddingleft: 6, paddingright: 6 });
 }
-let ac = null, playing = [];
-function playLargo() {
-  if (playing.length) { playing.forEach(o => { try { o.stop(); } catch {} }); playing = []; const b = $("play"); if (b) b.textContent = "▶ 4小節を聴く"; return; }
-  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+let ac = null, playing = [], largoSeq = 0;
+// 本物のチェロの録音で鳴らす（art/cello-voice.js）。読めないときは、のこぎり波を丸めた作った音
+async function playLargo() {
+  const b0 = $("play");
+  if (playing.length || (b0 && b0.textContent === "読み込み中…")) { largoSeq++; playing.forEach(o => { try { o.stop(); } catch {} }); playing = []; if (b0) b0.textContent = "▶ 4小節を聴く"; return; }
+  ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume();
   const q = 60 / 50, notes = [[92.5, 1.5], [110, .5], [110, 2], [92.5, 1.5], [82.41, .5], [73.42, 2], [82.41, 1], [92.5, 1], [110, 1], [92.5, 1], [82.41, 4]];
+  const midiOf = f => Math.round(69 + 12 * Math.log2(f / 440)), my = ++largoSeq;
+  let voice = false;
+  if (window.CelloVoice) { if (!CelloVoice.ready() && b0) b0.textContent = "読み込み中…"; voice = await CelloVoice.prepare(ac, notes.map(([f]) => midiOf(f))); if (my !== largoSeq) return; }
   let t = ac.currentTime + .08;
   notes.forEach(([f, b]) => {
+    const vn = voice && CelloVoice.note(ac, midiOf(f), t, b * q * 0.97, { gain: 1.4 });
+    if (vn) { playing.push(vn); t += b * q; return; }
     const dur = b * q, o = ac.createOscillator(), lp = ac.createBiquadFilter(), gn = ac.createGain();
     o.type = "sawtooth"; o.frequency.value = f; lp.type = "lowpass"; lp.frequency.value = 1100;
     gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.16, t + .12); gn.gain.setValueAtTime(.16, t + dur - .12); gn.gain.linearRampToValueAtTime(0, t + dur - .02);
