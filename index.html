@@ -110,7 +110,7 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
   </details>
   <div class="row"><button type="button" id="close">閉じる</button></div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：5754a108f18f</p>
+  <p>アプリの版：9ac232d99975</p>
 </dialog>
 
 <script src="shim.js"></script>
@@ -119,7 +119,7 @@ const VIEWS = { road: "road/index.html", score: "score/index.html", finger: "fin
 const frames = {}, box = document.getElementById("views");
 function show(route) {
   const [v, anchor] = (route || "road").split(":"), name = VIEWS[v] ? v : "road";
-  if (!frames[name]) { const f = document.createElement("iframe"); f.title = name; f.src = VIEWS[name] + (anchor ? "#" + anchor : ""); box.append(f); frames[name] = f; }
+  if (!frames[name]) { const f = document.createElement("iframe"); f.title = name; f.allow = "microphone; autoplay"; f.src = VIEWS[name] + (anchor ? "#" + anchor : ""); box.append(f); frames[name] = f; }
   else if (anchor) frames[name].contentWindow.location.hash = anchor;
   Object.entries(frames).forEach(([k, f]) => { f.hidden = k !== name; });
   document.querySelectorAll("nav.tabs button[data-v]").forEach(b => { if (b.dataset.v === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
