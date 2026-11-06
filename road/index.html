@@ -1132,7 +1132,7 @@ function paintRoad() {
     else if (status === "clear") put("map-clear", 16);
     else if (status === "through") put("map-clear", 16, 0, .55);
     else put("map-todo", 14);
-    if (i === STATIONS.length - 1) put("map-goal", 30, -26);
+    if (i === STATIONS.length - 1) put("map-goal", 46, -36);   // ゴールの旗は奥で小さくなるので大きめに（本人の希望）
     a.addEventListener("click", () => openStation(x.id));
     a.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openStation(x.id); } });
     gates.append(a);
