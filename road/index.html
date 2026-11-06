@@ -526,7 +526,7 @@ footer { padding-block: 84px 48px; }
 
 <nav class="topnav" aria-label="ページの切り替え">
   <div class="inner tn-in">
-    <a href="#practice-sec">今日の練習</a><a href="#tools-sec">道具箱</a><a href="#stage-sec">関門</a><a href="#plan-sec">目標の曲</a><a href="#lesson-sec">レッスン</a>
+    <a href="#practice-sec">デイリー</a><a href="#tools-sec">道具箱</a><a href="#stage-sec">関門</a><a href="#plan-sec">目標の曲</a><a href="#lesson-sec">レッスン</a>
     <span class="tn-sep" aria-hidden="true"></span>
     <a href="https://claude.ai/artifact/JuFha8i4nhqDb6eZZaygpj" target="_blank" rel="noopener">楽譜帳 ↗</a><a href="https://claude.ai/artifact/JKa7TVRz2XjCEPKV3qoyKX" target="_blank" rel="noopener">運指 ↗</a><a href="https://claude.ai/artifact/HnwDJT7kZBXT8n8uDEeomZ" target="_blank" rel="noopener">メトロノーム ↗</a><a href="https://claude.ai/artifact/JLKfEUDVVCBNLj22oGrLqt" target="_blank" rel="noopener">調弦 ↗</a>
   </div>
@@ -554,8 +554,8 @@ footer { padding-block: 84px 48px; }
   <section class="block" id="practice-sec">
     <div class="inner">
       <div class="sec-head">
-        <span class="sec-no">Daily</span>
-        <h2>今日の練習に、<span class="nw">スタンプを</span></h2>
+        <span class="sec-no">Daily Mission</span>
+        <h2>デイリーミッション</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">できたことに印を付けると、カレンダーにスタンプが押されます。1つで銅、3つで銀、5つで金。チェックの候補は、先生と相談して入れ替えていきましょう。</p>
       </div>
@@ -573,8 +573,8 @@ footer { padding-block: 84px 48px; }
   <section class="block" id="quest-sec">
     <div class="inner">
       <div class="sec-head">
-        <span class="sec-no">Quest Log</span>
-        <h2>今日の15分</h2>
+        <span class="sec-no">Today's Quest</span>
+        <h2>今日のクエスト</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">3つ終えたらクエスト達成。疲れた日は1つだけでも進んだことにします。チェックは毎日リセットされ、この端末にだけ残ります。</p>
       </div>
@@ -595,7 +595,7 @@ footer { padding-block: 84px 48px; }
     <div class="inner">
       <div class="sec-head">
         <span class="sec-no">Lesson</span>
-        <h2>教本とレッスンに、<span class="nw">道を合わせる</span></h2>
+        <h2>教本とレッスン</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">レッスンで合格した教本の番号（No.）を入れると、何％進んだか・いまどの章か・章の期限に間に合うかが出ます。関門は、その章まで進むと挑戦できるようになります。</p>
       </div>
@@ -638,7 +638,7 @@ footer { padding-block: 84px 48px; }
       <details class="fold" id="fold-stage-sec" data-default="closed">
         <summary class="sec-head fold-sum">
         <span class="sec-no">Stage Select</span>
-        <h2><span id="stage-count">11</span>の関門と、<span class="nw">攻略メモ</span></h2>
+        <h2><span id="stage-count" hidden>11</span>関門と攻略メモ</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">右のボタンで「未着手 → 練習中 → 通せた → クリア」。「攻略メモ」を開くと、課題・チェックリスト・門番への効き目・目安の週数の調整・メモがあります。</p>
       <span class="fold-h" aria-hidden="true"></span></summary>
@@ -668,7 +668,7 @@ footer { padding-block: 84px 48px; }
       <details class="fold" id="fold-gate-sec" data-default="closed">
         <summary class="sec-head fold-sum">
         <span class="sec-no">Gatekeepers</span>
-        <h2>城の門を守る、<span class="nw">3つの旋律</span></h2>
+        <h2>門番の旋律</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">選んだドヴォルザークの曲を「門番」として並べた一覧です。体力ゲージはクリアに近づくほど減ります。「この門番に効く関門」を先に越えておくと、挑みやすくなります。</p>
       <span class="fold-h" aria-hidden="true"></span></summary>
@@ -682,7 +682,7 @@ footer { padding-block: 84px 48px; }
       <details class="fold" id="fold-plan-sec" data-default="closed">
         <summary class="sec-head fold-sum">
         <span class="sec-no">Quest Board</span>
-        <h2>目指す曲を、<span class="nw">自分で選ぶ</span></h2>
+        <h2>目標の曲</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
         <p class="sec-lead">ドヴォルザークの曲と、チェロの名曲をレベル別に並べました。やりたい曲に印を付けると、先にやっておく関門が自動で道に入り、期限までに間に合うかを判定します。</p>
       <span class="fold-h" aria-hidden="true"></span></summary>
@@ -724,7 +724,7 @@ footer { padding-block: 84px 48px; }
   <section class="block more" id="composers-sec">
     <div class="inner">
       <details class="fold" id="fold-composers-sec" data-default="closed">
-        <summary class="sec-head fold-sum"><span class="sec-no">Composers</span><h2>作曲家たちの読み物</h2><img class="divider" src="art/ui/divider.png" alt=""><p class="sec-lead">チェロの名曲を書いた人たちの、人となりとチェロとの関わり。名前を押すと開きます。気になる曲は、ここから目標に入れられます。</p><span class="fold-h" aria-hidden="true"></span></summary>
+        <summary class="sec-head fold-sum"><span class="sec-no">Composers</span><h2>作曲家の読み物</h2><img class="divider" src="art/ui/divider.png" alt=""><p class="sec-lead">チェロの名曲を書いた人たちの、人となりとチェロとの関わり。名前を押すと開きます。気になる曲は、ここから目標に入れられます。</p><span class="fold-h" aria-hidden="true"></span></summary>
         <div class="composers ornate" id="composers"></div>
       </details>
     </div>
