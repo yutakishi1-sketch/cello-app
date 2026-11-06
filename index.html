@@ -17,7 +17,7 @@
   --f-body: "Hiragino Sans", system-ui, sans-serif; --f-display: "Hiragino Mincho ProN", "Yu Mincho", serif; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bar); color: var(--ink); font-family: var(--f-body); overflow: hidden; overscroll-behavior: none; touch-action: pan-y; }
-.app { position: fixed; top: 0; left: 0; right: 0; height: 100vh; height: 100lvh; display: grid; grid-template-rows: env(safe-area-inset-top, 0px) minmax(0, 1fr) auto; }
+.app { position: fixed; inset: 0; display: grid; grid-template-rows: env(safe-area-inset-top, 0px) minmax(0, 1fr) auto; }
 .top { background: var(--bar); }
 .views { position: relative; min-height: 0; }
 .views iframe { position: absolute; inset: 0; width: 1px; min-width: 100%; height: 100%; border: 0; background: var(--bg); }
@@ -66,7 +66,7 @@ dialog .st { font-size: 13px; color: var(--ink); }
     <button type="button" id="close">閉じる</button>
   </div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：ab36bc26e234</p>
+  <p>アプリの版：83e954d6e5cb</p>
 </dialog>
 
 <script src="shim.js"></script>
