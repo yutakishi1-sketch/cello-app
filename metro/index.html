@@ -156,10 +156,10 @@ document.addEventListener("visibilitychange", async () => { if (m.on && !documen
 </script>
 
 <style>/* スマホで左右にぶれないようにする。iPhone は16px未満の入力欄を押すと自動で拡大し、そのまま横に動くため */
-html, body { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; }
+html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; }
 @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }
 </style>
 
-<style>.wrap > nav { display: none; } html, body { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
+<style>.wrap > nav { display: none; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }</style>
 </body>
 </html>
