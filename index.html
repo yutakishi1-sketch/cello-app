@@ -65,6 +65,7 @@ dialog .st { font-size: 13px; color: var(--ink); }
     <button type="button" id="close">閉じる</button>
   </div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
+  <p>アプリの版：9198a152b270</p>
 </dialog>
 
 <script src="shim.js"></script>
@@ -97,7 +98,15 @@ document.getElementById("close").addEventListener("click", () => dlg.close());
 document.getElementById("sync-save").addEventListener("click", async () => { celloSync.setUrl(urlIn.value); await celloSync.flush(); status(); });
 document.getElementById("sync-all").addEventListener("click", async () => { await celloSync.sendAll(); status(); });
 
-if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(e => console.warn("オフライン用の準備に失敗しました", e)));
+// 新しい版が届いたら1回だけ読み込み直す。開き直したときにも新しい版がないか確かめる
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(e => console.warn("オフライン用の準備に失敗しました", e)));
+}
 </script>
 </body>
 </html>
