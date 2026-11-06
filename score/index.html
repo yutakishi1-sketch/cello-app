@@ -47,7 +47,7 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 /* 曲は1曲ずつ開け閉めする（縦に長くなりすぎないように）。楽譜は開いたときに初めて描く */
 .song { display: block; scroll-margin-top: 60px; }
 .song:not([open]) { display: none; }
-.toc .song { border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); padding: 10px 0 14px; margin: 2px 0 6px; }
+.wrap > .song { border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); padding: 10px 0 14px; }
 .toc a.on { border-color: var(--gold); background: var(--gold); color: var(--on-gold); font-weight: 700; }
 .song > summary { list-style: none; cursor: pointer; }
 .song > summary::-webkit-details-marker { display: none; }
@@ -525,10 +525,9 @@ function openSong(hash) {
   const target = document.querySelector(HASH_ALIAS[hash] || hash);
   if (!target || !target.classList.contains("song")) return;
   document.querySelectorAll(".song[open]").forEach(d => { if (d !== target) d.open = false; });
-  const link = toc.querySelector('.toc-row a[href="#' + target.id + '"]');
-  if (link) link.closest(".toc-row").after(target);   // 目次の枠の中、その段のすぐ下に出す
+  toc.before(target);   // 楽譜は目次の枠の上（見出しのすぐ下）に出す
   target.open = true;
-  setTimeout(() => (link ? link.closest(".toc-row") : target).scrollIntoView({ block: "start" }), 60);
+  setTimeout(() => target.scrollIntoView({ block: "start" }), 60);
 }
 toc.addEventListener("click", e => {
   const a = e.target.closest(".toc-row a[href^='#']"); if (!a) return;
