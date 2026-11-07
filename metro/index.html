@@ -101,12 +101,35 @@ const PRESETS = [[50, "ロングトーン"], [60, "ゆっくり"], [72, "いつ�
 let ac = null, wake = null;
 const m = { bpm: 72, beats: 4, sub: false, on: false, next: 0, tick: 0, timer: 0, taps: [] };
 function actx() { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; }
+// 振り子のメトロノームに近い音にする。「ピッ」という電子音ではなく、
+// 木の箱を打つ「カッ」（ごく短い雑音を木の鳴りの高さで響かせる）と、1拍目だけ小さなベル（金属の、倍音が整数倍にならない響き）
+let noise = null;
+function noiseBuf() {
+  if (!noise) { const n = Math.floor(ac.sampleRate * 0.04); noise = ac.createBuffer(1, n, ac.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+  return noise;
+}
+function ping(t, f, peak, decay, dest) {
+  const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.001); g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  o.connect(g).connect(dest); o.start(t); o.stop(t + decay + 0.01);
+}
+function tick(t, vol, pitch) {
+  const out = ac.createGain(); out.gain.value = vol; out.connect(ac.destination);
+  const s = ac.createBufferSource(), hp = ac.createBiquadFilter(), bp = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf(); hp.type = "highpass"; hp.frequency.value = 900; bp.type = "bandpass"; bp.frequency.value = 2400 * pitch; bp.Q.value = 3;
+  g.gain.setValueAtTime(2.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.016);
+  s.connect(hp).connect(bp).connect(g).connect(out); s.start(t); s.stop(t + 0.03);
+  ping(t, 1650 * pitch, 0.32, 0.028, out);         // 木の箱そのものの鳴り
+  ping(t, 3300 * pitch * 1.09, 0.1, 0.012, out);   // 打った瞬間の硬さ
+}
+function bell(t) {
+  const out = ac.createGain(); out.gain.value = 0.16; out.connect(ac.destination);
+  [[1, 1, 0.7], [2.76, 0.4, 0.3], [5.4, 0.18, 0.14]].forEach(([r, a, d]) => ping(t, 1980 * r, a, d, out));
+}
 function click(t, kind) {
-  const o = ac.createOscillator(), g = ac.createGain();
-  o.type = "sine"; o.frequency.value = kind === 2 ? 1760 : kind === 1 ? 1175 : 880;
-  const peak = kind === 2 ? 0.5 : kind === 1 ? 0.3 : 0.12;
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.06);
+  if (kind === 2) { tick(t, 0.9, 1); bell(t); }
+  else if (kind === 1) tick(t, 0.8, 1);
+  else tick(t, 0.32, 1.25);                          // 裏拍は小さく、少し高く
 }
 function schedule() {
   const per = m.sub ? 2 : 1;
