@@ -28,13 +28,9 @@ nav a { color: var(--ink); text-decoration: none; } nav a:hover { color: var(--g
 h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 28px; letter-spacing: .08em; text-align: center; }
 .lead { margin: -8px 0 0; text-align: center; font-family: var(--f-fine); font-size: 13.5px; color: var(--muted); }
 .panel { background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 4px var(--bg), inset 0 0 0 5px #2b2618; padding: 22px 20px; display: grid; gap: 14px; justify-items: center; }
-.note { font-family: var(--f-latin); font-weight: 700; font-size: 110px; line-height: .9; color: var(--ink); min-height: 100px; }
-.note.in { color: var(--ok); text-shadow: 0 0 24px rgba(111,207,142,.45); }
-.sub { font-size: 14px; color: var(--muted); min-height: 1.4em; text-align: center; }
-.sub b { color: var(--ink); }
-svg.meter { width: 100%; max-width: 420px; height: auto; display: block; }
-.verdict { font-family: var(--f-display); font-weight: 700; font-size: 20px; min-height: 1.4em; }
-.verdict.in { color: var(--ok); } .verdict.off { color: var(--warn); }
+/* 文字盤の輪：左の外に大きな輪があり、音名が輪に沿って回る（正本の見本は design/tuner-clock-wheel.html） */
+svg.wheel { width: 100%; max-width: 380px; height: auto; display: block; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .strings { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; width: 100%; }
 .strings button { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border: 1px solid var(--gold-dim); background: var(--panel-2); color: var(--ink); cursor: pointer; font: inherit; }
 .strings button b { font-family: var(--f-latin); font-size: 26px; line-height: 1; color: var(--gold); }
@@ -55,7 +51,6 @@ h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 18px
 .tones button small { font-size: 11.5px; color: var(--muted); }
 .tones button[aria-pressed="true"] { border-color: var(--gold); background: linear-gradient(180deg, rgba(201,165,78,.22), var(--panel-2)); box-shadow: 0 0 14px rgba(227,196,111,.35); }
 .panel .help { justify-self: stretch; }
-.note.fade { opacity: .45; }
 .strings button b { white-space: nowrap; }
 .strings button[data-s="auto"] b, .strings button[data-s="all"] b { font-family: var(--f-display); font-size: 17px; line-height: 26px; }
 .lvlrow { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 12px; color: var(--muted); }
@@ -84,18 +79,8 @@ h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 18px
 
   <div class="panel">
     <h2>マイクで測る</h2>
-    <div class="note" id="note" aria-live="polite">–</div>
-    <div class="sub" id="sub">「マイクで聴く」を押して、開放弦を1本ずつ弾いてください。</div>
-    <svg class="meter" id="meter" viewBox="0 0 420 150" role="img" aria-label="音の高さのずれ">
-      <path d="M30 130 A180 180 0 0 1 390 130" fill="none" stroke="#22304a" stroke-width="2"/>
-      <g id="ticks"></g>
-      <rect x="195" y="10" width="30" height="16" fill="rgba(111,207,142,.15)"/>
-      <line id="needle" x1="210" y1="130" x2="210" y2="22" stroke="#c9a54e" stroke-width="4" stroke-linecap="round" style="transform-box: view-box; transform-origin: 210px 130px; transition: transform .12s linear"/>
-      <circle cx="210" cy="130" r="7" fill="#c9a54e"/>
-      <text x="40" y="146" fill="#8f95a1" font-size="12">低い</text>
-      <text x="356" y="146" fill="#8f95a1" font-size="12">高い</text>
-    </svg>
-    <div class="verdict" id="verdict"></div>
+    <svg class="wheel" id="wheel" viewBox="0 0 324 430" role="img" aria-label="音の高さの文字盤"></svg>
+    <div class="sr" id="say" aria-live="polite"></div>
     <div class="strings" id="strings">
       <button type="button" data-s="auto" aria-pressed="true"><b>自動</b><small>近い弦</small></button>
       <button type="button" data-s="C" aria-pressed="false"><b>C</b><small>C線</small></button>
@@ -120,9 +105,10 @@ const OPEN = { C: -21, G: -14, D: -7, A: 0 };           // A3 から何半音か
 const NAMES = ["A", "A♯", "B", "C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯"];
 let refA = (() => { try { return Number(localStorage.getItem("tuner-a")); } catch { return 0; } })() || 442, target = "auto", ctx = null, stream = null, analyser = null, buf = null, raf = 0;
 $("refa").value = String(refA);
-$("refa").addEventListener("change", e => { refA = Number(e.target.value); try { localStorage.setItem("tuner-a", e.target.value); } catch {} toneStop(); });
+$("refa").addEventListener("change", e => { refA = Number(e.target.value); try { localStorage.setItem("tuner-a", e.target.value); } catch {} toneStop(); if (!stream) clearShow(idleMsg()); });
 document.querySelectorAll("#strings button").forEach(b => b.addEventListener("click", () => {
   target = b.dataset.s; document.querySelectorAll("#strings button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  if (!stream) clearShow(idleMsg());
 }));
 // 基準の音：本物のチェロの録音から取った音色で、正確な高さのまま鳴らし続ける（録音を読めないときは、のこぎり波を丸めた作った音）
 let actx = null, toneNow = null, toneSeq = 0;
@@ -151,8 +137,91 @@ async function toneStart(name, btn) {
   toneNow = (ok && CelloVoice.hold(actx, midi, { rate })) || synthHold(refA / 2 * Math.pow(2, OPEN[name] / 12));
 }
 Object.keys(OPEN).forEach(n => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", n + "線の基準の音を鳴らす"); const x = document.createElement("b"); x.textContent = n; const s = document.createElement("small"); s.textContent = n + "線"; b.append(x, s); b.addEventListener("click", () => toneStart(n, b)); $("tones").append(b); });
-// 目盛り（−50〜＋50セント）
-(() => { const g = $("ticks"); for (let c = -50; c <= 50; c += 10) { const a = (c / 50) * 60 * Math.PI / 180, x1 = 210 + Math.sin(a) * 112, y1 = 130 - Math.cos(a) * 112, x2 = 210 + Math.sin(a) * (c % 50 === 0 ? 96 : 104), y2 = 130 - Math.cos(a) * (c % 50 === 0 ? 96 : 104); const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2); l.setAttribute("stroke", c === 0 ? "#6fcf8e" : "#3a4a68"); l.setAttribute("stroke-width", c === 0 ? 3 : 1.5); g.append(l); } })();
+// ── 文字盤の輪：画面の左の外に大きな輪があり、音名が輪に沿って回る。金の針は固定で、針から目標の音までの弧が光る
+const wheel = (() => {
+  const sv = $("wheel"), NS = "http://www.w3.org/2000/svg";
+  const CX = -330, CY = 215, R = 440, RW = 40, DEG = 19, VIS = 70, BOT = 430;   // DEG：半音1つぶん回る角度
+  const C = { gold: "#c9a54e", goldS: "#e0c272", dim: "#6e5a2c", line: "#3a3322", ink: "#ebe7dc", sub: "#8f95a1", ring: "#111a2c", ok: "#6fcf8e", warn: "#e8964a" };
+  const LAT = "'Cormorant Garamond',Garamond,serif", JP = "'Shippori Mincho B1','Hiragino Mincho ProN',serif", FINE = "'Zen Old Mincho','Hiragino Mincho ProN',serif";
+  const DO = { C: "ド", "C♯": "ド♯", D: "レ", "E♭": "ミ♭", E: "ミ", F: "ファ", "F♯": "ファ♯", G: "ソ", "G♯": "ソ♯", A: "ラ", "B♭": "シ♭", B: "シ" };
+  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (p || sv).append(e); return e; };
+  const pt = (d, r) => { const a = d * Math.PI / 180; return [CX + r * Math.cos(a), CY + r * Math.sin(a)]; };
+  const arc = (r, a0, a1) => { const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r); return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1}`; };
+  const corner = (x, y, sx, sy) => {
+    el("path", { d: "M0 22V6Q0 0 6 0H22M4 14Q4 4 14 4", fill: "none", stroke: C.dim, "stroke-width": 1.2, transform: `translate(${x} ${y}) scale(${sx} ${sy})` });
+    el("path", { d: "M8 8l3 -3l3 3l-3 3z", fill: C.gold, transform: `translate(${x} ${y}) scale(${sx} ${sy})` });
+  };
+  // 右側の読み取り：音名（大）＋♯♭（右上）＋オクターブ（右下）、その下に3行。はみ出すときは文字を縮める
+  function readout(X, s) {
+    const right = 312, g = el("g", { opacity: s.live ? 1 : 0.45 }), col = s.ok ? C.ok : C.ink;
+    const letter = s.name ? s.name[0] : "–", acc = s.name ? s.name.slice(1) : "", oct = s.name ? String(s.oct) : "";
+    for (let k = 1; k > 0.5; k -= 0.06) {
+      g.innerHTML = "";
+      const big = el("text", { x: X, y: CY + 6, "font-family": LAT, "font-weight": 700, "font-size": 78 * k, fill: col, style: s.ok ? "filter:drop-shadow(0 0 10px rgba(111,207,142,.5))" : "" }, g);
+      big.textContent = letter;
+      let x2 = X + big.getComputedTextLength() + 3;
+      if (acc) { const a = el("text", { x: x2, y: CY - 28 * k, "font-family": LAT, "font-weight": 700, "font-size": 34 * k, fill: col }, g); a.textContent = acc; x2 += a.getComputedTextLength() + 2; }
+      const o = el("text", { x: x2, y: CY + 6, "font-family": LAT, "font-size": 22 * k, fill: C.sub }, g); o.textContent = oct;
+      if (x2 + o.getComputedTextLength() <= right) break;
+    }
+    s.lines.forEach(([txt, kind], i) => {
+      if (!txt) return;
+      const [f, wt, size, fill] = i === 0 ? [JP, 700, 17, C.gold] : i === 1 ? [FINE, 400, 15, kind === "ok" ? C.ok : kind === "warn" ? C.warn : C.sub] : [FINE, 400, 13, C.sub];
+      const t = el("text", { x: X + 3, y: CY + 46 + i * 26, "font-family": f, "font-weight": wt, "font-size": size, fill }, g); t.textContent = txt;
+      const len = t.getComputedTextLength(); if (X + 3 + len > right) t.setAttribute("font-size", (size * (right - X - 3) / len).toFixed(1));
+    });
+  }
+  function draw(p, s) {
+    sv.innerHTML = "";
+    corner(312, 12, -1, 1); corner(312, BOT - 12, -1, -1);   // 左は輪がかかるので、飾りの角は右だけ
+    el("path", { d: arc(R, -VIS, VIS) + "L" + pt(VIS, R - RW).join(" ") + arc(R - RW, VIS, -VIS).replace(/^M[^A]+A(\S+) (\S+) 0 0 1/, "A$1 $2 0 0 0") + "Z", fill: C.ring });
+    [R + 1, R - RW - 1].forEach(r => el("path", { d: arc(r, -VIS, VIS), fill: "none", stroke: C.gold, "stroke-width": 1.4 }));
+    [R - 4, R - RW + 4, R - 12, R - 20, R + 12].forEach(r => el("path", { d: arc(r, -VIS, VIS), fill: "none", stroke: C.dim, "stroke-width": 0.8 }));
+    for (let r = R - RW - 48; r > R - RW - 200; r -= 7) el("path", { d: arc(r, -VIS, VIS), fill: "none", stroke: C.line, "stroke-width": 0.7, opacity: 0.7 });
+    // 縁のぎざぎざ（輪といっしょに回る）
+    for (let a = -VIS; a <= VIS; a += 0.9) { const sp = a - ((p * DEG) % 0.9); if (Math.abs(sp) >= VIS) continue; const [x1, y1] = pt(sp, R + 3), [x2, y2] = pt(sp, R + 11); el("line", { x1, y1, x2, y2, stroke: C.line, "stroke-width": 0.8 }); }
+    // 5セントごとの目盛り（50セントは長く金色）
+    for (let k = Math.floor((p - 4) * 20); k <= Math.ceil((p + 4) * 20); k++) {
+      const m = k / 20, a = (m - p) * DEG; if (Math.abs(a) > VIS - 2) continue;
+      const frac = Math.abs(m - Math.round(m)); if (frac < 1e-6) continue;
+      const half = Math.abs(frac - 0.5) < 1e-6, ten = k % 2 === 0, [x1, y1] = pt(a, R - 12), [x2, y2] = pt(a, half ? R - 28 : ten ? R - 20 : R - 16);
+      el("line", { x1, y1, x2, y2, stroke: half ? C.gold : C.dim, "stroke-width": half ? 1.3 : ten ? 0.9 : 0.6 });
+    }
+    // 針から目標の音までの光る弧
+    if (s.goal != null) {
+      const ga = Math.max(-(VIS - 2), Math.min(VIS - 2, (s.goal - p) * DEG));
+      if (Math.abs(ga) > 0.05) el("path", { d: ga >= 0 ? arc(R - 16, 0, ga) : arc(R - 16, ga, 0), fill: "none", stroke: s.ok ? C.ok : C.goldS, "stroke-width": 6, "stroke-linecap": "round", style: `filter:drop-shadow(0 0 6px ${s.ok ? C.ok : C.goldS})` });
+    }
+    const near = Math.round(p);
+    for (let k = near - 4; k <= near + 4; k++) {
+      const a = (k - p) * DEG; if (Math.abs(a) > VIS - 3) continue;
+      const cur = k === s.goal, hi = cur ? (s.ok ? C.ok : C.goldS) : C.gold, [x, y] = pt(a, R - 16);
+      el("path", { d: "M0 -7L5 0L0 7L-5 0Z", fill: hi, transform: `translate(${x} ${y}) rotate(${a})` });
+      const [lx, ly] = pt(a, R - RW - 24), nm = LETTERS[((k % 12) + 12) % 12], op = Math.max(0.15, 1 - Math.abs(a) / VIS);
+      const t = el("text", { x: lx, y: ly, "text-anchor": "middle", "dominant-baseline": "central", "font-family": LAT, "font-weight": 700, "font-size": nm.length > 1 ? 24 : 28, fill: hi, opacity: cur ? 1 : op.toFixed(2), transform: `rotate(${a + 90} ${lx} ${ly})` });
+      t.textContent = nm;
+    }
+    // 固定の金の針
+    const [hx, hy] = pt(0, R + 18);
+    el("path", { d: `M${hx + 34} ${hy}L${hx + 12} ${hy - 3}L${hx + 4} ${hy}L${hx + 12} ${hy + 3}Z`, fill: C.gold });
+    el("circle", { cx: hx + 20, cy: hy, r: 5, fill: "none", stroke: C.gold, "stroke-width": 1.6 });
+    el("line", { x1: hx + 34, y1: hy, x2: hx + 56, y2: hy, stroke: C.gold, "stroke-width": 1.6 }); el("circle", { cx: hx + 58, cy: hy, r: 2.4, fill: C.gold });
+    readout(hx + 68, s);
+    // 下の欄は輪にかからない右側に：ラの高さと、いま聞こえている周波数
+    el("path", { d: `M${hx + 4} ${BOT - 62}H296`, stroke: C.line, "stroke-width": 1 });
+    el("text", { x: hx + 8, y: BOT - 40, "font-family": LAT, "font-size": 15, fill: C.sub }).textContent = "A = " + refA + " Hz";
+    if (s.hz) el("text", { x: hx + 8, y: BOT - 20, "font-family": LAT, "font-size": 15, fill: C.sub, opacity: s.live ? 1 : 0.45 }).textContent = "いま " + s.hz.toFixed(1) + " Hz";
+  }
+  let want = 57, disp = 57, state = null;
+  const doName = n => DO[n] || "";
+  return {
+    doName,
+    set(p, s) { want = p; state = s; },
+    // 1コマ進める：表示の高さを目標へなめらかに寄せて描き直す（大きく飛んだときはすぐ移る）
+    tick() { if (!state) return; disp = Math.abs(want - disp) > 3 ? want : disp + (want - disp) * 0.35; draw(disp, state); },
+    jump() { disp = want; if (state) draw(disp, state); },
+  };
+})();
 
 // ── 音の高さを測る：McLeod 法（正規化した自己相関）。チューナーでよく使う方式で、低い弦の1オクターブ読み違いに強い
 // 自己相関は FFT でまとめて計算する（毎回100万回の掛け算をしない）
@@ -225,31 +294,29 @@ const LETTERS = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♯", "A", "
 const hist = []; let shown = null, lastHeard = 0, inTune = false, lastRun = 0;
 const median = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
 const cents = (f, g) => 1200 * Math.log2(f / g);
-function clearShow() {
-  $("verdict").textContent = ""; $("verdict").className = "verdict"; $("note").classList.remove("in", "fade");
-  $("note").textContent = "–"; $("sub").textContent = "弦を弾いてください"; setNeedle(0); inTune = false;
+const OPEN_MIDI = n => 57 + OPEN[n];                     // A3 = 57
+const say = t => { if ($("say").textContent !== t) $("say").textContent = t; };
+// 音を聞いていないとき：選んだ弦（自動・全音ならラ）を針に合わせて止めておく
+let lastP = null;
+function clearShow(msg = "弦を弾いてください") {
+  inTune = false;
+  const p = OPEN[target] != null ? OPEN_MIDI(target) : lastP ?? 57;
+  wheel.set(p, { goal: null, name: "", live: false, ok: false, lines: [[msg, ""]] }); wheel.jump(); say(msg);
 }
-function setNeedle(c) { $("needle").style.transform = `rotate(${(Math.max(-50, Math.min(50, c)) / 50) * 60}deg)`; }
 function render(freq, live) {
-  const semiFromA = 12 * Math.log2(freq / refA) + 12;   // A3 = 0
-  let label, goal, c;
-  if (target === "all") {
-    const n = Math.round(semiFromA - 12), midi = 69 + n;           // A4 からの半音
-    label = LETTERS[((midi % 12) + 12) % 12]; goal = refA * Math.pow(2, n / 12); c = cents(freq, goal);
-    $("sub").innerHTML = `<b>${label}${Math.floor(midi / 12) - 1}</b>（${freq.toFixed(1)} Hz）／ ちょうどは ${goal.toFixed(1)} Hz`;
-  } else {
-    const ref = target === "auto" ? Object.entries(OPEN).reduce((b, [k, v]) => Math.abs(semiFromA - v) < Math.abs(semiFromA - b[1]) ? [k, v] : b, ["A", 0]) : [target, OPEN[target]];
-    label = ref[0]; goal = refA / 2 * Math.pow(2, ref[1] / 12); c = cents(freq, goal);
-    const near = Math.round(semiFromA), now = LETTERS[(((near + 9) % 12) + 12) % 12];
-    $("sub").innerHTML = `いまの音：<b>${now}</b>（${freq.toFixed(1)} Hz）／ 目標：${label}線 ${goal.toFixed(1)} Hz`;
-  }
+  const p = 69 + 12 * Math.log2(freq / refA);
+  let goal, strName;
+  if (target === "all") { goal = Math.round(p); strName = Object.keys(OPEN).find(k => OPEN_MIDI(k) === goal); }
+  else { strName = target === "auto" ? Object.keys(OPEN).reduce((b, k) => Math.abs(p - OPEN_MIDI(k)) < Math.abs(p - OPEN_MIDI(b)) ? k : b, "A") : target; goal = OPEN_MIDI(strName); }
+  const c = (p - goal) * 100, r = Math.round(c), name = LETTERS[((goal % 12) + 12) % 12];
   inTune = inTune ? Math.abs(c) <= 6 : Math.abs(c) <= 3;
-  $("note").textContent = label; $("note").classList.toggle("in", inTune); $("note").classList.toggle("fade", !live);
-  setNeedle(c);
-  const v = $("verdict"), r = Math.round(c);
-  if (Math.abs(c) > 300) { v.textContent = "別の弦の音です。弦ボタンを「自動」にしてみてください"; v.className = "verdict off"; }
-  else if (inTune) { v.textContent = "ぴったり！"; v.className = "verdict in"; }
-  else { v.textContent = r < 0 ? `${-r} セント低い → 少し上げる` : `${r} セント高い → 少し下げる`; v.className = "verdict off"; }
+  const lines = [[wheel.doName(name) + (strName ? "・" + strName + "線" : ""), ""]];
+  if (Math.abs(c) > 300) lines.push(["別の弦の音です", "warn"], ["弦ボタンを「自動」に", ""]);
+  else if (inTune) lines.push(["ぴったり", "ok"], ["そのまま弾き続けて", ""]);
+  else lines.push([r < 0 ? r + " セント 低い" : "+" + r + " セント 高い", "warn"], [r < 0 ? "♭ 少し上げる" : "♯ 少し下げる", ""]);
+  lastP = p;
+  wheel.set(p, { goal, name, oct: Math.floor(goal / 12) - 1, live, ok: inTune, hz: freq, lines });
+  say(name + "、" + (inTune ? "ぴったり" : lines[1][0]));
 }
 function feed(res, now) {
   $("lvl").style.width = dbPos(res.rms) + "%";
@@ -259,7 +326,7 @@ function feed(res, now) {
     const med = median(hist);
     shown = shown == null || Math.abs(cents(med, shown)) > 50 ? med : Math.pow(2, 0.7 * Math.log2(shown) + 0.3 * Math.log2(med));
     lastHeard = now; render(shown, true);
-  } else if (shown != null && now - lastHeard < 900) { $("note").classList.add("fade"); }   // 音が消えても少し残す
+  } else if (shown != null && now - lastHeard < 900) { render(shown, false); }   // 音が消えても少し残す（薄く）
   else if (shown != null) { hist.length = 0; shown = null; clearShow(); }
 }
 function loop(now) {
@@ -268,6 +335,7 @@ function loop(now) {
   lastRun = now;
   analyser.getFloatTimeDomainData(buf);
   feed(detect(buf, ctx.sampleRate, SENS[sens]), now);
+  wheel.tick();
 }
 let src = null;
 async function start() {
@@ -299,9 +367,12 @@ async function start() {
 function stop() {
   cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); if (src) src.disconnect(); if (ctx) ctx.close().catch(() => {});
   stream = ctx = src = null; $("go").textContent = "マイクで聴く"; $("go").classList.remove("stop");
-  $("lvl").style.width = "0%"; clearShow(); $("sub").textContent = "止めました。";
+  $("lvl").style.width = "0%"; clearShow("止めました");
 }
 $("go").addEventListener("click", () => stream ? stop() : start());
+const idleMsg = () => "「マイクで聴く」を押す";
+clearShow(idleMsg());
+if (document.fonts) document.fonts.ready.then(() => { if (!stream) clearShow(idleMsg()); });   // 字の幅を測り直す
 document.addEventListener("visibilitychange", () => { if (document.hidden && stream) stop(); });   // 裏に回ったらマイクを離す
 // 試験用：本物のマイクの代わりに、決まった高さの音で測り方を確かめる（harm: 倍音の強さ、noise: 雑音の強さ）
 window.__tunerTest = (freq, { rate = 48000, harm = [1, 0.6, 0.4, 0.25], noise = 0, amp = 0.3 } = {}) => {
@@ -324,13 +395,12 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 <style>/* iPad・パソコンの広い画面では、幅を広げて中身も大きくする（スマホはこれまでどおり） */
 @media (min-width: 700px) {
   .wrap { max-width: 760px; }
-  .note { font-size: 150px; min-height: 140px; }
-  svg.meter { max-width: 560px; }
+  svg.wheel { max-width: 480px; }
   .tones button { padding: 20px 8px; }
   .tones button b { font-size: 40px; }
   .strings button b { font-size: 32px; }
   .btn { font-size: 20px; padding: 12px 36px; }
-  .help, .sub { font-size: 15px; }
+  .help { font-size: 15px; }
 }
 </style>
 
