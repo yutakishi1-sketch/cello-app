@@ -85,6 +85,11 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
       <label class="chk" for="sub8"><input type="checkbox" id="sub8">8分音符も刻む</label>
     </div>
     <div class="row">
+      <label for="snd">音</label>
+      <select id="snd"><option value="classic" selected>振り子（木）</option><option value="plastic">振り子（プラスチック）</option><option value="synth">作った音</option></select>
+      <button type="button" class="ghost" id="try">1回聞く</button>
+    </div>
+    <div class="row">
       <button type="button" class="btn" id="go">▶ 鳴らす</button>
       <button type="button" class="ghost" id="tap">タップで合わせる</button>
     </div>
@@ -92,8 +97,10 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   </div>
 
   <p class="help"><b>使い方：</b>新しい曲は、まず楽譜の速さの7割くらいから。音程とリズムが崩れずに3回続けて弾けたら、4つずつ上げます。<br><b>タップで合わせる：</b>先生の弾く速さや録音に合わせて、ボタンを何回か押すと、その速さになります。</p>
+  <p class="help" style="opacity:.7;font-size:11px">音の録音：振り子（木）＝ Olga Ernst「Sound Classic Metronome 96」（Wikimedia Commons、<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja" target="_blank" rel="noopener">CC BY-SA 4.0</a>、1拍分を切り出して使用）／振り子（プラスチック）＝ Joseph Sardin（BigSoundBank、CC0）</p>
 </div>
 
+<script src="art/metro-samples.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
@@ -126,10 +133,31 @@ function bell(t) {
   const out = ac.createGain(); out.gain.value = 0.16; out.connect(ac.destination);
   [[1, 1, 0.7], [2.76, 0.4, 0.3], [5.4, 0.18, 0.14]].forEach(([r, a, d]) => ping(t, 1980 * r, a, d, out));
 }
-function click(t, kind) {
+function synthClick(t, kind) {
   if (kind === 2) { tick(t, 0.9, 1); bell(t); }
   else if (kind === 1) tick(t, 0.8, 1);
   else tick(t, 0.32, 1.25);                          // 裏拍は小さく、少し高く
+}
+// 本物のメトロノームの録音（art/metro-samples.js）。振り子は左右で少し音が違うので、2つを交互に鳴らす
+const real = {};
+async function loadReal() {
+  if (!window.METRO_SAMPLES) return;
+  for (const [k, url] of Object.entries(window.METRO_SAMPLES)) {
+    if (real[k]) continue;
+    try {
+      const bin = atob(url.slice(url.indexOf(",") + 1)), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      real[k] = await new Promise((ok, ng) => ac.decodeAudioData(bytes.buffer, ok, ng));
+    } catch (e) { console.warn("メトロノームの録音を開けませんでした", k, e); }
+  }
+}
+let swing = 0;
+function click(t, kind) {
+  const buf = real[m.snd + (swing++ % 2)];
+  if (m.snd === "synth" || !buf) return synthClick(t, kind);
+  const s = ac.createBufferSource(), g = ac.createGain();
+  s.buffer = buf; g.gain.value = kind === 2 ? 0.9 : kind === 1 ? 0.55 : 0.22;   // 1拍目は強く、裏拍はそっと
+  s.connect(g).connect(ac.destination); s.start(t);
 }
 function schedule() {
   const per = m.sub ? 2 : 1;
@@ -141,7 +169,7 @@ function schedule() {
   }
 }
 async function start() {
-  actx(); m.on = true; m.tick = 0; m.next = ac.currentTime + 0.08; schedule(); m.timer = setInterval(schedule, 25); render();
+  actx(); await loadReal(); m.on = true; m.tick = 0; m.next = ac.currentTime + 0.08; schedule(); m.timer = setInterval(schedule, 25); render();
   try { wake = await navigator.wakeLock?.request("screen"); } catch { wake = null; }
 }
 function stop() {
@@ -170,6 +198,9 @@ $("bpm").addEventListener("input", e => setBpm(Number(e.target.value)));
 $("go").addEventListener("click", () => m.on ? stop() : start());
 $("beats").addEventListener("change", e => { m.beats = Number(e.target.value); store.set("mt-beats", e.target.value); dots(); });
 $("sub8").addEventListener("change", e => { m.sub = e.target.checked; store.set("mt-sub", m.sub ? "1" : "0"); });
+m.snd = store.get("mt-snd") || "classic"; $("snd").value = m.snd;
+$("snd").addEventListener("change", e => { m.snd = e.target.value; store.set("mt-snd", m.snd); });
+$("try").addEventListener("click", async () => { actx(); await loadReal(); const t = ac.currentTime + 0.05; click(t, 2); click(t + 0.5, 1); click(t + 1, 1); });
 $("tap").addEventListener("click", () => {
   const now = performance.now(); m.taps = m.taps.filter(t => now - t < 3000); m.taps.push(now);
   if (m.taps.length >= 2) setBpm(60000 / ((m.taps[m.taps.length - 1] - m.taps[0]) / (m.taps.length - 1)));
