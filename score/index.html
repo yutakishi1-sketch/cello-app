@@ -778,7 +778,7 @@ SONGS.forEach(s => {
   // この曲を弾いている姿を撮って、腕・指・弓を確かめる（アプリの中だけ）
   if (window.celloProfiles && window.top !== window) {
     const rec = document.createElement("button"); rec.type = "button"; rec.textContent = "● 弾いて撮る";
-    rec.addEventListener("click", () => window.top.postMessage({ celloGo: "form" }, location.origin));
+    rec.addEventListener("click", () => window.top.postMessage({ celloGo: "finger:form" }, location.origin));   // 運指の「弾いて撮る」を開く
     ctr.append(rec);
   }
   body.append(ctr);
