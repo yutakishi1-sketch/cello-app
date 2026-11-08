@@ -774,7 +774,14 @@ SONGS.forEach(s => {
   const reset = document.createElement("button"); reset.type = "button"; reset.className = "ghost"; reset.textContent = "ふつうに戻す";
   const clickLab = document.createElement("label"); const click = document.createElement("input"); click.type = "checkbox"; click.id = "click-" + s.id; clickLab.append(click, "メトロノーム");
   const loopLab = document.createElement("label"); const loop = document.createElement("input"); loop.type = "checkbox"; loop.id = "loop-" + s.id; loopLab.append(loop, "くり返し");
-  ctr.append(btn, speed, reset, clickLab, loopLab); body.append(ctr);
+  ctr.append(btn, speed, reset, clickLab, loopLab);
+  // この曲を弾いている姿を撮って、腕・指・弓を確かめる（アプリの中だけ）
+  if (window.celloProfiles && window.top !== window) {
+    const rec = document.createElement("button"); rec.type = "button"; rec.textContent = "● 弾いて撮る";
+    rec.addEventListener("click", () => window.top.postMessage({ celloGo: "form" }, location.origin));
+    ctr.append(rec);
+  }
+  body.append(ctr);
   // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
   const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
   ctr.append(pen);
