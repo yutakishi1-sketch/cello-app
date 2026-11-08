@@ -128,20 +128,20 @@
     // 針は下に濃い縁を敷いて、金の文字盤や輪と混ざらず、くっきり見えるようにする
     el("line", { x1: CX, y1: CY + 18, x2: CX, y2: CY - 100, stroke: "#05080f", "stroke-width": 2.2, "stroke-linecap": "round", opacity: 0.6 }, sweep);
     el("line", { x1: CX, y1: CY + 18, x2: CX, y2: CY - 100, stroke: C.hi, "stroke-width": 0.9, "stroke-linecap": "round" }, sweep);
-    el("path", { d: `M${CX} ${CY - 108}l2 5l5 2l-5 2l-2 5l-2-5l-5-2l5-2z`, fill: C.hi, stroke: "#05080f", "stroke-width": 0.8, "paint-order": "stroke" }, sweep);
-    el("circle", { cx: CX, cy: CY + 18, r: 2.6, fill: C.gold }, sweep);
+    el("path", { d: `M${CX} ${CY - 107}l1.1 4.6l3.2 1.4l-3.2 1.4l-1.1 4.6l-1.1-4.6l-3.2-1.4l3.2-1.4z`, fill: C.hi, stroke: "#05080f", "stroke-width": 0.5, "paint-order": "stroke" }, sweep);
+    el("circle", { cx: CX, cy: CY + 18, r: 1.6, fill: C.gold }, sweep);
 
     // ── 金の太陽の針：今の速さを指す（先は百合、後ろは三日月）
     const hand = el("g", {});
     el("line", { x1: CX, y1: CY + 26, x2: CX, y2: CY - 92, stroke: "#05080f", "stroke-width": 3, "stroke-linecap": "round", opacity: 0.6 }, hand);
     el("line", { x1: CX, y1: CY + 26, x2: CX, y2: CY - 92, stroke: C.hi, "stroke-width": 1.4, "stroke-linecap": "round" }, hand);   // 縦一直線の線にグラデーションは付かない（消える）ので単色
-    el("path", { d: `M${CX} ${CY - 104}C${CX + 4} ${CY - 98} ${CX + 6} ${CY - 95} ${CX} ${CY - 90}C${CX - 6} ${CY - 95} ${CX - 4} ${CY - 98} ${CX} ${CY - 104}Z`, fill: C.hi, stroke: "#05080f", "stroke-width": 0.9, "paint-order": "stroke" }, hand);
-    el("path", { d: `M${CX} ${CY - 92}c4 -1 7 1 7 4c-3 -1 -5 -1 -7 0zM${CX} ${CY - 92}c-4 -1 -7 1 -7 4c3 -1 5 -1 7 0z`, fill: C.gold }, hand);
-    el("path", { d: `M${CX - 7} ${CY + 30}A8 8 0 1 0 ${CX + 7} ${CY + 30}A6 6 0 1 1 ${CX - 7} ${CY + 30}Z`, fill: C.gold }, hand);
+    el("path", { d: `M${CX} ${CY - 104}C${CX + 2} ${CY - 99} ${CX + 3} ${CY - 95} ${CX} ${CY - 90}C${CX - 3} ${CY - 95} ${CX - 2} ${CY - 99} ${CX} ${CY - 104}Z`, fill: C.hi, stroke: "#05080f", "stroke-width": 0.6, "paint-order": "stroke" }, hand);
+    el("path", { d: `M${CX} ${CY - 92}c2.5 -0.6 4.5 0.6 4.5 2.6c-2 -0.6 -3.2 -0.6 -4.5 0zM${CX} ${CY - 92}c-2.5 -0.6 -4.5 0.6 -4.5 2.6c2 -0.6 3.2 -0.6 4.5 0z`, fill: C.gold }, hand);
+    el("path", { d: `M${CX - 5} ${CY + 29}A5.6 5.6 0 1 0 ${CX + 5} ${CY + 29}A4.6 4.6 0 1 1 ${CX - 5} ${CY + 29}Z`, fill: C.gold }, hand);
     const sunH = el("g", {}, hand), SY = CY - 74;
-    for (let i = 0; i < 16; i++) { const [x1, y1] = pol(CX, SY, 10, i * 22.5), [x2, y2] = pol(CX, SY, i % 2 ? 14 : 18, i * 22.5); el("line", { x1, y1, x2, y2, stroke: C.goldS, "stroke-width": i % 2 ? 1 : 1.6 }, sunH); }
-    el("circle", { cx: CX, cy: SY, r: 9, fill: GOLD, stroke: "#05080f", "stroke-width": 1 }, sunH);
-    el("circle", { cx: CX, cy: SY, r: 5.5, fill: "none", stroke: C.deep, "stroke-width": 0.6, opacity: 0.6 }, sunH);
+    for (let i = 0; i < 16; i++) { const [x1, y1] = pol(CX, SY, 7.5, i * 22.5), [x2, y2] = pol(CX, SY, i % 2 ? 10.5 : 13.5, i * 22.5); el("line", { x1, y1, x2, y2, stroke: C.goldS, "stroke-width": i % 2 ? 0.6 : 0.9 }, sunH); }
+    el("circle", { cx: CX, cy: SY, r: 6.5, fill: GOLD, stroke: "#05080f", "stroke-width": 0.7 }, sunH);
+    el("circle", { cx: CX, cy: SY, r: 4, fill: "none", stroke: C.deep, "stroke-width": 0.6, opacity: 0.6 }, sunH);
     // 中心：月の玉（半分金・半分夜）と金の座金
     el("circle", { cx: CX, cy: CY, r: 12, fill: "none", stroke: GOLD, "stroke-width": 1.6 });
     el("circle", { cx: CX, cy: CY, r: 9, fill: C.night, stroke: C.gold, "stroke-width": 1 });
