@@ -65,6 +65,9 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .tip { font-family: var(--f-fine); font-size: 14px; line-height: 1.85; color: var(--ink-2); margin: 0; }
 .warn { font-size: 13px; background: var(--warn-bg); color: var(--warn-fg); border: 1px solid #6b5a1f; padding: 4px 10px; margin: 0; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.mix { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+.mix-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 40%); gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.mix-row label { display: flex; gap: 6px; align-items: center; } .mix-row input[type=checkbox] { accent-color: var(--gold); } .mix-row input[type=range] { width: 100%; accent-color: var(--gold); } .mix-row input[type=range]:disabled { opacity: .35; }
 .controls button { font: inherit; font-weight: 700; font-size: 13.5px; border: 0; padding: 0 16px; min-height: 40px; background: var(--gold); color: var(--on-gold); cursor: pointer; }
 .controls button.on { background: var(--panel-2); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
 .controls button:disabled { opacity: .5; cursor: default; }
@@ -673,12 +676,14 @@ async function playSong(song, btn, opts) {
   const tc = ctx.currentTime + 0.15, t0 = tc + countIn, nodes = [];
   for (let k = 0; k < mt.perBar; k++) nodes.push(beep(tc + k * mt.beat * whole, k === 0, 1));
   let end = 0;
-  (seq.tracks || []).forEach(track => track.forEach(ev => {
+  // パートごとの音量（0〜1）。0 のパートは鳴らさない（長さの計算には入れる）
+  (seq.tracks || []).forEach((track, ti) => { const v = opts.mix ? opts.mix(ti) : 1; track.forEach(ev => {
     if (ev.cmd !== "note" || ev.pitch == null) return;
     const d = ev.duration * whole;
-    nodes.push((voice && CelloVoice.note(ctx, ev.pitch, t0 + ev.start * whole, d, { gain: 1.4 })) || tone(t0 + ev.start * whole, d, 440 * Math.pow(2, (ev.pitch - 69) / 12), "triangle", 0.3));
     end = Math.max(end, ev.start + ev.duration);
-  }));
+    if (v <= 0) return;
+    nodes.push((voice && CelloVoice.note(ctx, ev.pitch, t0 + ev.start * whole, d, { gain: 1.4 * v })) || tone(t0 + ev.start * whole, d, 440 * Math.pow(2, (ev.pitch - 69) / 12), "triangle", 0.3 * v));
+  }); });
   if (opts.click) {
     const first = pickup - Math.floor(pickup / mt.beat + 1e-6) * mt.beat;
     for (let p = first, i = 0; p < end - 1e-6; p += mt.beat, i++) {
@@ -776,6 +781,22 @@ SONGS.forEach(s => {
   const clickLab = document.createElement("label"); const click = document.createElement("input"); click.type = "checkbox"; click.id = "click-" + s.id; clickLab.append(click, "メトロノーム");
   const loopLab = document.createElement("label"); const loop = document.createElement("input"); loop.type = "checkbox"; loop.id = "loop-" + s.id; loopLab.append(loop, "くり返し");
   ctr.append(btn, speed, reset, clickLab, loopLab);
+  // 2つのパート（上の段＝旋律、下の段＝伴奏）がある曲は、パートごとに鳴らす・鳴らさないと音量を選べる（曲ごとにこの端末に覚える）
+  const names = [...s.abc.matchAll(/V:(\d)[^\n]*?name="([^"]+)"/g)].reduce((o, m) => (o[m[1] - 1] = m[2], o), {});
+  const parts = s.abc.includes("V:2") ? 2 : 1, MIXKEY = "score-mix:" + s.id;
+  let mix = (() => { try { return JSON.parse(localStorage.getItem(MIXKEY)) || null; } catch { return null; } })() || [{ on: true, vol: 100 }, { on: true, vol: 70 }];
+  const mixBox = document.createElement("div"); mixBox.className = "mix";
+  if (parts > 1) {
+    [0, 1].forEach(i => {
+      const row = document.createElement("div"); row.className = "mix-row";
+      const lab = document.createElement("label"); const on = document.createElement("input"); on.type = "checkbox"; on.checked = mix[i].on;
+      lab.append(on, (i === 0 ? "上の段" : "下の段") + "（" + (names[i] || (i === 0 ? "旋律" : "伴奏")) + "）");
+      const vol = document.createElement("input"); vol.type = "range"; vol.min = "0"; vol.max = "100"; vol.step = "5"; vol.value = String(mix[i].vol); vol.setAttribute("aria-label", (i === 0 ? "上の段" : "下の段") + "の音量");
+      const save = () => { mix[i] = { on: on.checked, vol: Number(vol.value) }; vol.disabled = !on.checked; try { localStorage.setItem(MIXKEY, JSON.stringify(mix)); } catch {} };
+      on.addEventListener("change", () => { save(); restartIfPlaying(); }); vol.addEventListener("change", () => { save(); restartIfPlaying(); }); vol.disabled = !on.checked;
+      row.append(lab, vol); mixBox.append(row);
+    });
+  }
   // この曲を弾いている姿を撮って、腕・指・弓を確かめる（アプリの中だけ）
   if (window.celloProfiles && window.top !== window) {
     const rec = document.createElement("button"); rec.type = "button"; rec.textContent = "● 弾いて撮る";
@@ -783,6 +804,7 @@ SONGS.forEach(s => {
     ctr.append(rec);
   }
   body.append(ctr);
+  if (parts > 1) body.append(mixBox);
   // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
   const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
   ctr.append(pen);
@@ -815,7 +837,7 @@ SONGS.forEach(s => {
     if (sec.open) prepare(); else if (playing && playing.btn === btn) stopAll();
     const link = toc.querySelector('.toc-row a[href="#' + s.id + '"]'); if (link) link.classList.toggle("on", sec.open);
   });
-  const opts = () => ({ bpm: Number(range.value), click: click.checked, loop: () => loop.checked });
+  const opts = () => ({ bpm: Number(range.value), click: click.checked, loop: () => loop.checked, mix: ti => (ti > 1 || !mix[ti]) ? 1 : (mix[ti].on ? mix[ti].vol / 100 : 0) });
   const restartIfPlaying = () => { if (playing && playing.btn === btn) playSong(s, btn, opts()); };
   range.addEventListener("input", () => { val.textContent = range.value; });
   range.addEventListener("change", restartIfPlaying);
