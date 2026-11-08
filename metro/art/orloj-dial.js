@@ -15,7 +15,7 @@
 
   function create(sv, { bpm = 72, beats = 4 } = {}) {
     const CX = 170, CY = 170, uid = "od" + Math.random().toString(36).slice(2, 7);
-    sv.setAttribute("viewBox", "0 0 340 340"); sv.innerHTML = "";
+    sv.setAttribute("viewBox", "-20 -20 380 380"); sv.innerHTML = "";
     const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (p || sv).append(e); return e; };
     // 金の金属感（斜めのグラデーション）と、空の奥行き
     const defs = el("defs", {});
@@ -25,18 +25,45 @@
     [[0, C.sky], [1, C.sky2]].forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, g2));
     const GOLD = `url(#${uid}g)`;
 
-    // ── いちばん外：金の花弁の縁（ゴシックの飾り）と、30°ごとの百合の飾り
-    let lobes = "";
-    for (let i = 0; i < 72; i++) { const a0 = i * 5, [x0, y0] = pol(CX, CY, 146, a0), [x1, y1] = pol(CX, CY, 146, a0 + 5); lobes += `${i ? "" : `M${x0} ${y0}`}A3.4 3.4 0 0 1 ${x1} ${y1}`; }
-    el("path", { d: lobes, fill: "none", stroke: C.gold, "stroke-width": 1.1 });
-    for (let i = 0; i < 12; i++) {
-      const a = i * 30, [x, y] = pol(CX, CY, 155, a);
-      const g = el("g", { transform: `translate(${x} ${y}) rotate(${a})` });
-      el("path", { d: "M0 -9C3 -5 4 -2 0 3C-4 -2 -3 -5 0 -9Z", fill: GOLD }, g);              // 百合の花びら
-      el("path", { d: "M0 1C4 0 7 2 7 5C4 4 2 4 0 3ZM0 1C-4 0 -7 2 -7 5C-4 4 -2 4 0 3Z", fill: C.gold }, g);
-      el("circle", { cx: 0, cy: 6, r: 1.6, fill: C.goldS }, g);
+    // ── 四角い枠（石の額）：文字盤のまわりの四隅に、角ばったゴシックの金の装飾。柔らかい曲線は使わない
+    const F0 = -20, F1 = 360;
+    el("path", { d: `M${F0} ${F0}H${F1}V${F1}H${F0}ZM${CX + 152} ${CY}A152 152 0 1 0 ${CX - 152} ${CY}A152 152 0 1 0 ${CX + 152} ${CY}Z`, fill: "#0f1727", "fill-rule": "evenodd" });
+    el("rect", { x: F0 + 1, y: F0 + 1, width: F1 - F0 - 2, height: F1 - F0 - 2, fill: "none", stroke: GOLD, "stroke-width": 2 });
+    el("rect", { x: F0 + 6, y: F0 + 6, width: F1 - F0 - 12, height: F1 - F0 - 12, fill: "none", stroke: C.dim, "stroke-width": 0.8 });
+    el("rect", { x: F0 + 10, y: F0 + 10, width: F1 - F0 - 20, height: F1 - F0 - 20, fill: "none", stroke: C.gold, "stroke-width": 0.8 });
+    // 内側の縁のぎざ（内向きの小さな三角）
+    let saw = "";
+    for (let v = F0 + 22; v <= F1 - 22; v += 12) {
+      saw += `M${v - 3} ${F0 + 10}L${v} ${F0 + 15}L${v + 3} ${F0 + 10}M${v - 3} ${F1 - 10}L${v} ${F1 - 15}L${v + 3} ${F1 - 10}`;
+      saw += `M${F0 + 10} ${v - 3}L${F0 + 15} ${v}L${F0 + 10} ${v + 3}M${F1 - 10} ${v - 3}L${F1 - 15} ${v}L${F1 - 10} ${v + 3}`;
     }
-    for (let i = 0; i < 12; i++) { const [x, y] = pol(CX, CY, 152, i * 30 + 15); el("circle", { cx: x, cy: y, r: 1.4, fill: C.dim }); }
+    el("path", { d: saw, fill: "none", stroke: C.dim, "stroke-width": 0.8 });
+    const star = (x, y, R, r, fill) => { let d = ""; for (let i = 0; i < 16; i++) { const [px, py] = pol(x, y, i % 2 ? r : (i % 4 ? R * 0.62 : R), i * 22.5); d += (i ? "L" : "M") + px + " " + py; } el("path", { d: d + "Z", fill, stroke: C.deep, "stroke-width": 0.6 }); };
+    const diamond = (x, y, k, fill) => el("path", { d: `M${x} ${y - k}l${k} ${k}l${-k} ${k}l${-k} ${-k}z`, fill });
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+      const px = CX + sx * 158, py = CY + sy * 158;
+      // 隅から縁に沿って伸びる金の線と、先の菱形
+      el("path", { d: `M${px} ${py}V${CY + sy * 66}M${px} ${py}H${CX + sx * 66}`, stroke: C.gold, "stroke-width": 0.9 });
+      el("path", { d: `M${px - sx * 8} ${py}V${CY + sy * 92}M${px} ${py - sy * 8}H${CX + sx * 92}`, stroke: C.dim, "stroke-width": 0.7 });
+      diamond(px, CY + sy * 62, 4, C.goldS); diamond(CX + sx * 62, py, 4, C.goldS);
+      // 隅から円へ向かう尖った光（対角線の上の菱形の列）
+      [[132, 3.4], [120, 2.4]].forEach(([d, k]) => diamond(CX + sx * d, CY + sy * d, k, C.gold));
+      el("path", { d: `M${px} ${py}L${CX + sx * 140} ${CY + sy * 140}`, stroke: C.gold, "stroke-width": 0.9 });
+      // 隅の八方の星（羅針盤の星）
+      el("circle", { cx: px, cy: py, r: 19, fill: "none", stroke: C.dim, "stroke-width": 0.7 });
+      star(px, py, 17, 4.2, GOLD);
+      el("circle", { cx: px, cy: py, r: 2.6, fill: C.deep, stroke: C.goldS, "stroke-width": 0.8 });
+    });
+    // 四辺のまん中：要石（尖った菱形）と左右の線
+    [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach(([dx, dy]) => {
+      const x = CX + dx * 167, y = CY + dy * 167, ox = dy ? 1 : 0, oy = dx ? 1 : 0;
+      el("path", { d: `M${x - ox * 44} ${y - oy * 44}L${x - ox * 12} ${y - oy * 12}M${x + ox * 12} ${y + oy * 12}L${x + ox * 44} ${y + oy * 44}`, stroke: C.gold, "stroke-width": 0.9 });
+      diamond(x - ox * 46, y - oy * 46, 2.4, C.gold); diamond(x + ox * 46, y + oy * 46, 2.4, C.gold);
+      el("path", { d: `M${x} ${y - 9}L${x + 6} ${y}L${x} ${y + 9}L${x - 6} ${y}Z`, fill: GOLD, stroke: C.deep, "stroke-width": 0.6, transform: dx ? `rotate(90 ${x} ${y})` : "" });
+    });
+    // 文字盤のいちばん外：細かい歯の輪（機械の刻み）
+    for (let i = 0; i < 180; i++) { const a = i * 2, long = i % 15 === 0, [x1, y1] = pol(CX, CY, 145, a), [x2, y2] = pol(CX, CY, long ? 152 : 149, a); el("line", { x1, y1, x2, y2, stroke: long ? C.goldS : C.dim, "stroke-width": long ? 1.3 : 0.7 }); }
+    el("circle", { cx: CX, cy: CY, r: 152.5, fill: "none", stroke: GOLD, "stroke-width": 1.4 });
 
     // ── 外の帯：黒地に金の数字（速さ）
     el("circle", { cx: CX, cy: CY, r: 142, fill: C.band, stroke: GOLD, "stroke-width": 3 });
@@ -143,6 +170,7 @@
         lamps.forEach((l, i) => l.setAttribute("fill", i === lit && glow > 0.05 ? C.goldS : "none"));
       },
       // 文字盤の上の点（svg の座標）から速さを読む。外の帯の近くを回すと速さが変わる
+      pointOf(e) { const r = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return { x: vb.x + (e.clientX - r.left) / r.width * vb.width, y: vb.y + (e.clientY - r.top) / r.height * vb.height }; },
       bpmAtPoint(x, y) { const a = Math.atan2(x - CX, -(y - CY)) * 180 / Math.PI; return Math.abs(a) <= SPAN + 8 ? bpmOf(a) : null; },
       center: [CX, CY],
     };
