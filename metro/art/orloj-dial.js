@@ -1,5 +1,5 @@
 /* 天文時計の文字盤（メトロノーム用）。プラハの天文時計を下敷きに、夜の青と金で華やかに描く。
-   外の帯＝速さの目盛り（40〜208）、金の太陽の針＝今の速さ、中心のずれた金の黄道の輪＝拍ごとに「カチッ」と30°送る。
+   外の帯＝速さの目盛り（40〜208）、金の太陽の針＝今の速さ、中心のずれた金の黄道の輪＝拍に合わせてなめらかに回る（1拍30°）、細い拍の針＝1小節で1周。
    描くだけの部品：音は持たない。呼ぶ側が beat(拍の時刻, 何拍目) を渡し、毎コマ frame(今の時刻) を呼ぶ。
    OrlojDial.create(svg要素, { bpm, beats }) → { setBpm, setBeats, beat, reset, frame, bpmAtPoint } */
 (() => {
@@ -123,9 +123,15 @@
     }
     for (let i = 0; i < 36; i++) { const [x, y] = pol(ZX, ZY, ZR + 12, i * 10 + 5); el("circle", { cx: x, cy: y, r: 0.9, fill: C.goldS }, zod); }
 
+    // ── 拍の針：拍に合わせてなめらかに回る細い針（1小節で1周、小節の頭で真上）。先は小さな星
+    const sweep = el("g", {});
+    el("line", { x1: CX, y1: CY + 18, x2: CX, y2: CY - 100, stroke: C.gold, "stroke-width": 1.1, "stroke-linecap": "round", opacity: 0.9 }, sweep);
+    el("path", { d: `M${CX} ${CY - 108}l2 5l5 2l-5 2l-2 5l-2-5l-5-2l5-2z`, fill: C.goldS }, sweep);
+    el("circle", { cx: CX, cy: CY + 18, r: 2.6, fill: C.gold }, sweep);
+
     // ── 金の太陽の針：今の速さを指す（先は百合、後ろは三日月）
     const hand = el("g", {});
-    el("line", { x1: CX, y1: CY + 26, x2: CX, y2: CY - 92, stroke: GOLD, "stroke-width": 2.4, "stroke-linecap": "round" }, hand);
+    el("line", { x1: CX, y1: CY + 26, x2: CX, y2: CY - 92, stroke: C.goldS, "stroke-width": 2.4, "stroke-linecap": "round" }, hand);   // 縦一直線の線にグラデーションは付かない（消える）ので単色
     el("path", { d: `M${CX} ${CY - 104}C${CX + 4} ${CY - 98} ${CX + 6} ${CY - 95} ${CX} ${CY - 90}C${CX - 6} ${CY - 95} ${CX - 4} ${CY - 98} ${CX} ${CY - 104}Z`, fill: C.goldS, stroke: C.deep, "stroke-width": 0.6 }, hand);
     el("path", { d: `M${CX} ${CY - 92}c4 -1 7 1 7 4c-3 -1 -5 -1 -7 0zM${CX} ${CY - 92}c-4 -1 -7 1 -7 4c3 -1 5 -1 7 0z`, fill: C.gold }, hand);
     el("path", { d: `M${CX - 7} ${CY + 30}A8 8 0 1 0 ${CX + 7} ${CY + 30}A6 6 0 1 1 ${CX - 7} ${CY + 30}Z`, fill: C.gold }, hand);
@@ -138,9 +144,10 @@
     el("circle", { cx: CX, cy: CY, r: 9, fill: C.night, stroke: C.gold, "stroke-width": 1 });
     el("path", { d: `M${CX} ${CY - 9}A9 9 0 0 1 ${CX} ${CY + 9}Z`, fill: GOLD });
 
-    // ── 動き
-    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, zodT = 0, since = 9;
+    // ── 動き：輪と拍の針は、拍と拍のあいだを等速でなめらかに回す（止まって跳ぶ動きはしない）
+    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, count = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0;
     function setBeats(n) {
+      perBar = n > 1 ? n : 4;
       lampG.innerHTML = ""; lamps.length = 0;
       const k = Math.max(1, n), gap = k > 4 ? 15 : 20;
       for (let i = 0; i < k; i++) { const x = CX + (i - (k - 1) / 2) * gap, y = CY + 58; lamps.push(el("path", { d: `M${x} ${y - 6}l6 6l-6 6l-6-6z`, fill: "none", stroke: i === 0 && k > 1 ? C.goldS : C.dim, "stroke-width": 1.2 }, lampG)); }
@@ -158,14 +165,20 @@
         let glow = 0, lit = -1;
         if (now != null) {
           while (beatsT.length > 1 && beatsT[1].t <= now) beatsT.shift();
-          const a = beatsT[0];
-          if (a && now >= a.t) { if (a !== last) { last = a; zodT += 30; } since = now - a.t; glow = Math.exp(-since / 0.1); lit = a.i; }
+          const a = beatsT[0], b = beatsT[1];
+          if (a && now >= a.t) {
+            if (a !== last) { last = a; count++; }
+            const f = Math.min(1, (now - a.t) / ((b ? b.t : a.t + 60 / want) - a.t));
+            zodA = (count - 1 + f) * 30;                                        // 1拍で30°、等速で
+            const inBar = a.i >= 0 ? a.i : (count - 1) % perBar;
+            sweepA = (inBar + f) / perBar * 360;                                // 1小節で1周
+            glow = Math.exp(-(now - a.t) / 0.12); lit = a.i;
+          }
         }
-        // 歯車が1こま進むように：拍の瞬間に30°先へ、少し行き過ぎてから止まる
-        const e = Math.min(1, since / 0.09), over = e < 1 ? 1 - Math.pow(1 - e, 3) * Math.cos(e * 5) : 1;
-        zod.setAttribute("transform", `rotate(${zodT - 30 + 30 * Math.min(1.06, over)} ${ZX} ${ZY})`);
+        zod.setAttribute("transform", `rotate(${zodA} ${ZX} ${ZY})`);
+        sweep.setAttribute("transform", `rotate(${sweepA} ${CX} ${CY})`);
         const strong = lit === 0 && lamps.length > 1;
-        zod.style.filter = glow > 0.02 ? `drop-shadow(0 0 ${3 + 9 * glow}px rgba(255,227,154,${(glow * (strong ? 0.85 : 0.45)).toFixed(2)}))` : "none";
+        zod.style.filter = glow > 0.02 ? `drop-shadow(0 0 ${3 + 7 * glow}px rgba(255,227,154,${(glow * (strong ? 0.7 : 0.35)).toFixed(2)}))` : "none";
         sunH.style.filter = strong && glow > 0.02 ? `drop-shadow(0 0 ${4 + 10 * glow}px rgba(255,227,154,${glow.toFixed(2)}))` : "none";
         lamps.forEach((l, i) => l.setAttribute("fill", i === lit && glow > 0.05 ? C.goldS : "none"));
       },
