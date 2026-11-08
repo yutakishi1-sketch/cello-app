@@ -109,18 +109,21 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
     <button type="button" id="sync-all">全部を送り直す</button>
   </div>
   </details>
+  <h2>ベータ</h2>
+  <p>弾いている動画から、腕・指・弓の動きを確かめます（動画はこのスマホの中だけで調べます）。</p>
+  <div class="row"><button type="button" id="open-form">フォームを確かめる（ベータ）</button></div>
   <div class="row"><button type="button" id="close">閉じる</button></div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：98e51b48e24c</p>
+  <p>アプリの版：3980ec068928</p>
 </dialog>
 
 <script src="shim.js"></script>
 <script>
-const VIEWS = { road: "road/index.html", score: "score/index.html", finger: "finger/index.html", metro: "metro/index.html", tuner: "tuner/index.html" };
+const VIEWS = { road: "road/index.html", score: "score/index.html", finger: "finger/index.html", metro: "metro/index.html", tuner: "tuner/index.html", form: "form/index.html" };
 const frames = {}, box = document.getElementById("views");
 function show(route) {
   const [v, anchor] = (route || "road").split(":"), name = VIEWS[v] ? v : "road";
-  if (!frames[name]) { const f = document.createElement("iframe"); f.title = name; f.allow = "microphone; autoplay"; f.src = VIEWS[name] + (anchor ? "#" + anchor : ""); box.append(f); frames[name] = f; }
+  if (!frames[name]) { const f = document.createElement("iframe"); f.title = name; f.allow = "microphone; camera; autoplay"; f.src = VIEWS[name] + (anchor ? "#" + anchor : ""); box.append(f); frames[name] = f; }
   else if (anchor) frames[name].contentWindow.location.hash = anchor;
   Object.entries(frames).forEach(([k, f]) => { f.hidden = k !== name; });
   document.querySelectorAll("nav.tabs button[data-v]").forEach(b => { if (b.dataset.v === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
@@ -139,6 +142,7 @@ function status() {
   const last = celloSync.last(), n = celloSync.pending();
   st.textContent = (celloSync.url() ? "送り先：設定済み" : "送り先：まだありません（記録はこのスマホにだけ保存）") + (last ? "／最後に送った日時 " + new Date(last).toLocaleString("ja-JP") : "") + (n ? "／未送信 " + n + "件" : "");
 }
+document.getElementById("open-form").addEventListener("click", () => { document.getElementById("settings").close(); go("form"); });
 document.getElementById("gear").addEventListener("click", () => { urlIn.value = celloSync.url(); status(); renderWho(); dlg.showModal(); });
 // 使う人：選ぶ・足す・名前を変える。切り替えたら全ページを読み込み直す
 const who = document.getElementById("who"), whoName = document.getElementById("who-name"), whoSt = document.getElementById("who-st");
