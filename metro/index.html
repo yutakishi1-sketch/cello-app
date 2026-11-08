@@ -29,8 +29,8 @@ nav a { color: var(--ink); text-decoration: none; } nav a:hover { color: var(--g
 h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 28px; letter-spacing: .08em; text-align: center; text-wrap: balance; }
 .lead { margin: -8px 0 0; text-align: center; font-family: var(--f-fine); font-size: 13.5px; color: var(--muted); }
 .panel { background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 4px var(--bg), inset 0 0 0 5px #2b2618; padding: 24px 20px; display: grid; gap: 16px; justify-items: center; }
-/* 振り子時計：ピラミッド型の箱に振り子。重りの位置で速さが分かる（本物と同じく、上ほど遅い） */
-svg.clock { width: 100%; max-width: 300px; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+/* 天文時計の文字盤：プラハの天文時計を下敷きに。拍ごとに金の輪が1こま回る */
+svg.clock { width: 100%; max-width: 340px; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .word { font-family: var(--f-fine); font-size: 14px; color: var(--muted); min-height: 1.4em; }
 .dots { display: flex; gap: 14px; min-height: 22px; align-items: center; }
 .dots i { width: 18px; height: 18px; border: 1.5px solid var(--gold-dim); transform: rotate(45deg); display: inline-block; transition: background .05s; }
@@ -70,9 +70,9 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   <h1>メトロノーム</h1>
 
   <div class="panel">
-    <svg class="clock" id="clock" viewBox="0 0 300 380" role="button" tabindex="0" aria-label="振り子。押すと鳴らす・止める。重りを上下に動かすと速さが変わる"></svg>
+    <svg class="clock" id="clock" viewBox="0 0 340 340" role="button" tabindex="0" aria-label="文字盤。押すと鳴らす・止める。なぞって回すと速さが変わる"></svg>
     <div class="word" id="word"></div>
-    <div class="dots" id="dots" aria-hidden="true"></div>
+    <div class="dots" id="dots" aria-hidden="true" hidden></div>
     <div class="row">
       <button type="button" class="btn" id="go">▶ 鳴らす</button>
       <button type="button" class="ghost" id="tap">タップで合わせる</button>
@@ -98,12 +98,13 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   </div>
 
   <details class="help-fold"><summary>使い方と音の出どころ</summary>
-  <p class="help"><b>振り子：</b>押すと鳴る・止まる。重りを上下に動かすと速さが変わります（上ほどゆっくり）。音が出ないときは消音スイッチを確かめてください。<br><b>使い方：</b>新しい曲は、まず楽譜の速さの7割くらいから。音程とリズムが崩れずに3回続けて弾けたら、4つずつ上げます。<br><b>タップで合わせる：</b>先生の弾く速さや録音に合わせて、ボタンを何回か押すと、その速さになります。</p>
+  <p class="help"><b>文字盤：</b>押すと鳴る・止まる。文字盤の上を指でなぞって回すと、金の針がついてきて速さが変わります。拍ごとに金の輪が1こま回り、1拍目は強く光ります。音が出ないときは消音スイッチを確かめてください。<br><b>使い方：</b>新しい曲は、まず楽譜の速さの7割くらいから。音程とリズムが崩れずに3回続けて弾けたら、4つずつ上げます。<br><b>タップで合わせる：</b>先生の弾く速さや録音に合わせて、ボタンを何回か押すと、その速さになります。</p>
   <p class="help" style="opacity:.7;font-size:11px">音の録音：振り子（木）＝ Olga Ernst「Sound Classic Metronome 96」（Wikimedia Commons、<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja" target="_blank" rel="noopener">CC BY-SA 4.0</a>、1拍分を切り出して使用）／振り子（プラスチック）＝ Joseph Sardin（BigSoundBank、CC0）</p>
   </details>
 </div>
 
 <script src="art/metro-samples.js"></script>
+<script src="art/orloj-dial.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
@@ -167,7 +168,7 @@ function schedule() {
   while (m.next < ac.currentTime + 0.12) {
     const t = m.next, sub = m.tick % per, beat = Math.floor(m.tick / per) % m.beats;
     click(t, sub ? 0 : (beat === 0 && m.beats > 1 ? 2 : 1));
-    if (!sub) clock.beat(t, beat === 0 && m.beats > 1);
+    if (!sub) clock.beat(t, m.beats > 1 ? beat : -1);
     if (!sub) setTimeout(() => document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("on", i === beat)), Math.max(0, (t - ac.currentTime) * 1000));
     m.tick++; m.next += 60 / m.bpm / per;
   }
@@ -180,98 +181,39 @@ function stop() {
   m.on = false; clearInterval(m.timer); clock.halt(); document.querySelectorAll("#dots i").forEach(d => d.classList.remove("on")); render();
   if (wake) { wake.release().catch(() => {}); wake = null; }
 }
-// ── 振り子時計：ピラミッド型の箱の前で、下の軸を中心に振り子が左右に振れる。
-// 音は振り子が端に来た瞬間に鳴る（本物と同じ）。重りの高さが速さで、上ほど遅い。重りの横の目盛りで速さが読める
+// ── 天文時計の文字盤（art/orloj-dial.js）：拍ごとに金の黄道の輪が「カチッ」と1こま回る。
+// 押すと鳴らす・止める。文字盤の上をなぞって回すと、針がついてきて速さが変わる
 const clock = (() => {
-  const sv = $("clock"), NS = "http://www.w3.org/2000/svg";
-  const PX = 150, PY = 300, AMP = 28, LO = 30, HI = 220;      // 軸の位置・振れ幅（度）・速さの範囲
-  const C = { gold: "#c9a54e", goldS: "#e0c272", hi: "#ffe39a", dim: "#6e5a2c", line: "#3a3322", ink: "#ebe7dc", sub: "#8f95a1", body: "#0f1727", slot: "#0a0f1a" };
-  const LAT = "'Cormorant Garamond',Garamond,serif", FINE = "'Zen Old Mincho','Hiragino Mincho ProN',serif";
-  const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (p || sv).append(e); return e; };
-  const dist = b => 40 + (HI - b) / (HI - LO) * 215;           // 軸から重りまで
-  const bpmAt = y => HI - ((PY - y) - 40) / 215 * (HI - LO);
-  // 金の縁取りのグラデーション
-  const defs = el("defs", {});
-  const lg = el("linearGradient", { id: "mgold", x1: 0, x2: 1, y1: 0, y2: 0 }, defs);
-  [[0, "#6e5a2c"], [0.35, "#f0d98f"], [0.6, "#c9a54e"], [1, "#6e5a2c"]].forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, lg));
-  // 箱（ピラミッド）と屋根
-  el("path", { d: "M60 320L118 44H182L240 320Z", fill: C.body, stroke: C.gold, "stroke-width": 1.4 });
-  el("path", { d: "M68 314L123 50H177L232 314Z", fill: "none", stroke: C.dim, "stroke-width": 0.8 });
-  el("path", { d: "M108 44Q150 10 192 44Z", fill: C.body, stroke: C.gold, "stroke-width": 1.4 });
-  el("path", { d: "M150 4l6 6l-6 6l-6-6z", fill: C.gold });
-  // 目盛りの溝（重りが真ん中に来たとき、横の数字がいまの速さ）
-  el("rect", { x: 138, y: 50, width: 24, height: 226, fill: C.slot, stroke: C.dim, "stroke-width": 0.8 });
-  [40, 50, 60, 72, 84, 100, 120, 144, 168, 208].forEach(b => {
-    const y = PY - dist(b);
-    el("line", { x1: 162, y1: y, x2: 170, y2: y, stroke: C.dim, "stroke-width": 1 });
-    el("text", { x: 174, y: y + 4, "font-family": LAT, "font-weight": 700, "font-size": 12, fill: C.sub }).textContent = b;
-  });
-  for (let b = 40; b <= 208; b += 4) { const y = PY - dist(b); el("line", { x1: 138, y1: y, x2: 143, y2: y, stroke: C.line, "stroke-width": 0.8 }); }
-  // 台座と数字
-  el("path", { d: "M44 320H256V372H44Z", fill: C.body, stroke: C.gold, "stroke-width": 1.4 });
-  el("path", { d: "M50 326H250V366H50Z", fill: "none", stroke: C.dim, "stroke-width": 0.8 });
-  el("text", { x: 112, y: 358, "text-anchor": "end", "font-family": LAT, "font-size": 20, fill: C.sub }).textContent = "♩ =";
-  const num = el("text", { id: "num", x: 120, y: 361, "font-family": LAT, "font-weight": 700, "font-size": 40, fill: C.gold });
-  // 振り子（軸を中心に回す）
-  const rod = el("g", {});
-  el("line", { x1: PX, y1: PY, x2: PX, y2: 30, stroke: C.goldS, "stroke-width": 2.4, "stroke-linecap": "round" }, rod);
-  el("circle", { cx: PX, cy: 30, r: 3, fill: C.goldS }, rod);
-  const wt = el("g", {}, rod);
-  const wbody = el("path", { d: "M-15 -9H15L11 9H-11Z", fill: "url(#mgold)", stroke: "#1a1408", "stroke-width": 1 }, wt);
-  el("path", { d: "M-6 0H6", stroke: "#1a1408", "stroke-width": 1.4 }, wt);
-  el("circle", { cx: PX, cy: PY, r: 9, fill: C.body, stroke: C.gold, "stroke-width": 1.6 });
-  el("circle", { cx: PX, cy: PY, r: 3, fill: C.gold });
-
-  let shownD = dist(72), ang = 0, beatsT = [], stopAt = 0, stopFrom = 0;
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function place(d) { wt.setAttribute("transform", `translate(${PX} ${PY - d})`); }
+  const sv = $("clock"), dial = OrlojDial.create(sv, { bpm: m.bpm, beats: m.beats });
   function frame(once) {
     if (once !== true) requestAnimationFrame(frame);
-    shownD += (dist(m.bpm) - shownD) * 0.25; place(shownD);
-    let glow = 0;
-    if (m.on && ac) {
-      const now = ac.currentTime - (ac.outputLatency || ac.baseLatency || 0);
-      while (beatsT.length > 1 && beatsT[1].t <= now) beatsT.shift();
-      const a = beatsT[0], b = beatsT[1];
-      if (a && now >= a.t) {                          // 端（a）から反対の端へ振れている途中。次の音がまだ予定に無いときは、いまの速さから読む
-        const f = Math.min(1, (now - a.t) / ((b ? b.t : a.t + 60 / m.bpm) - a.t));
-        ang = (a.side * Math.cos(Math.PI * f)) * AMP;
-        glow = Math.exp(-(now - a.t) / 0.09) * (a.first ? 1 : 0.6);
-      } else if (a) ang = a.side * AMP;                 // 最初の音の前は、端で待つ
-    } else if (stopAt) {                              // 止めたら、ゆっくり真ん中へ戻る
-      const f = Math.min(1, (performance.now() - stopAt) / 600); ang = stopFrom * (1 - f) * (1 - f); if (f >= 1) stopAt = 0;
-    }
-    rod.setAttribute("transform", `rotate(${still ? 0 : ang} ${PX} ${PY})`);
-    wbody.style.filter = glow > 0.02 ? `drop-shadow(0 0 ${4 + 10 * glow}px rgba(255,227,154,${glow.toFixed(2)}))` : "none";
+    dial.setBpm(m.bpm);
+    dial.frame(m.on && ac ? ac.currentTime - (ac.outputLatency || ac.baseLatency || 0) : null);
   }
   requestAnimationFrame(frame);
-  window.__clockFrame = () => { frame(true); return { ang: +ang.toFixed(1), d: +shownD.toFixed(1) }; };   // 試験用：1コマだけ進める
-
-  // 押す：鳴らす・止める。重りをつかんで上下：速さを変える
+  window.__clockFrame = () => { frame(true); return sv.querySelector("g[transform]") && [...sv.querySelectorAll("g[transform]")].map(g => g.getAttribute("transform")); };   // 試験用：1コマだけ進める
   let drag = null;
-  const toSvg = e => { const r = sv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * 380 }; };
-  sv.addEventListener("pointerdown", e => {
-    const p = toSvg(e); drag = { y0: p.y, moved: false, onRod: Math.abs(p.x - PX) < 46 && p.y > 40 && p.y < 290 };
-    sv.setPointerCapture(e.pointerId);
-  });
+  const toSvg = e => { const r = sv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 340, y: (e.clientY - r.top) / r.height * 340 }; };
+  sv.addEventListener("pointerdown", e => { const p = toSvg(e); drag = { x0: p.x, y0: p.y, moved: false }; try { sv.setPointerCapture(e.pointerId); } catch (err) { /* 指を追えない環境でも、なぞりは中で続く */ } });
   sv.addEventListener("pointermove", e => {
-    if (!drag || !drag.onRod) return;
-    const p = toSvg(e); if (Math.abs(p.y - drag.y0) > 6) drag.moved = true;
-    if (drag.moved) setBpm(bpmAt(Math.max(PY - 260, Math.min(PY - 40, p.y))));
+    if (!drag) return;
+    const p = toSvg(e); if (Math.hypot(p.x - drag.x0, p.y - drag.y0) > 8) drag.moved = true;
+    if (drag.moved) { const b = dial.bpmAtPoint(p.x, p.y); if (b != null) setBpm(b); }
   });
   sv.addEventListener("pointerup", () => { if (drag && !drag.moved) m.on ? stop() : start(); drag = null; });
   sv.addEventListener("pointercancel", () => { drag = null; });
   sv.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); m.on ? stop() : start(); } });
   return {
-    beat(t, first) { const side = beatsT.length ? -beatsT[beatsT.length - 1].side : -1; beatsT.push({ t, side, first }); if (beatsT.length > 8) beatsT.shift(); },
-    reset() { beatsT = []; },
-    halt() { stopFrom = ang; stopAt = performance.now(); beatsT = []; },
+    beat(t, i) { dial.beat(t, i); },
+    reset() { dial.reset(); },
+    halt() { dial.reset(); },
+    setBeats(n) { dial.setBeats(n); },
   };
 })();
 function word(b) { return b < 56 ? "ラルゴ（とてもゆっくり）" : b < 72 ? "アダージョ（ゆっくり）" : b < 92 ? "アンダンテ（歩く速さ）" : b < 116 ? "モデラート（中くらい）" : b < 150 ? "アレグロ（速く）" : "プレスト（とても速く）"; }
 function setBpm(v) {
   m.bpm = Math.max(30, Math.min(220, Math.round(v)));
-  $("bpm").value = m.bpm; $("num").textContent = m.bpm; $("word").textContent = word(m.bpm); store.set("mt-bpm", String(m.bpm));
+  $("bpm").value = m.bpm; $("word").textContent = word(m.bpm); store.set("mt-bpm", String(m.bpm));
   document.querySelectorAll("#presets button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.v) === m.bpm)));
 }
 function dots() { const d = $("dots"); d.innerHTML = ""; for (let i = 0; i < m.beats; i++) { const x = document.createElement("i"); if (i === 0 && m.beats > 1) x.className = "first"; d.append(x); } }
@@ -282,13 +224,13 @@ PRESETS.forEach(([v, label]) => {
   const n = document.createElement("b"); n.textContent = v; const s = document.createElement("small"); s.textContent = label;
   b.append(n, s); b.setAttribute("aria-label", label + " ♩=" + v); b.addEventListener("click", () => setBpm(v)); $("presets").append(b);
 });
-m.beats = Number(store.get("mt-beats")) || 4; $("beats").value = String(m.beats);
+m.beats = Number(store.get("mt-beats")) || 4; $("beats").value = String(m.beats); clock.setBeats(m.beats);
 m.sub = store.get("mt-sub") === "1"; $("sub8").checked = m.sub;
 setBpm(Number(store.get("mt-bpm")) || 72); dots(); render();
 $("bpm").addEventListener("input", e => setBpm(Number(e.target.value)));
 [["minus", -1], ["plus", 1], ["minus5", -5], ["plus5", 5]].forEach(([id, d]) => $(id).addEventListener("click", () => setBpm(m.bpm + d)));
 $("go").addEventListener("click", () => m.on ? stop() : start());
-$("beats").addEventListener("change", e => { m.beats = Number(e.target.value); store.set("mt-beats", e.target.value); dots(); });
+$("beats").addEventListener("change", e => { m.beats = Number(e.target.value); store.set("mt-beats", e.target.value); dots(); clock.setBeats(m.beats); });
 $("sub8").addEventListener("change", e => { m.sub = e.target.checked; store.set("mt-sub", m.sub ? "1" : "0"); });
 m.snd = store.get("mt-snd") || "classic"; $("snd").value = m.snd;
 $("snd").addEventListener("change", e => { m.snd = e.target.value; store.set("mt-snd", m.snd); });
@@ -314,7 +256,7 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 <style>/* iPad・パソコンの広い画面では、幅を広げて中身も大きくする（スマホはこれまでどおり） */
 @media (min-width: 700px) {
   .wrap { max-width: 760px; }
-  svg.clock { max-width: 380px; }
+  svg.clock { max-width: 420px; }
   .word { font-size: 16px; }
   .dots i { width: 24px; height: 24px; }
   .btn { font-size: 22px; padding: 14px 48px; }
