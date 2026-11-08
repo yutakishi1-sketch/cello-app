@@ -123,7 +123,12 @@
     }
     for (let i = 0; i < 36; i++) { const [x, y] = pol(ZX, ZY, ZR + 12, i * 10 + 5); el("circle", { cx: x, cy: y, r: 0.9, fill: C.goldS }, zod); }
 
-    // ── 拍の針：拍に合わせてなめらかに回る細い針（1小節で1周、小節の頭で真上）。先は小さな星
+    // ── 短針：小節ごとに1目盛り（30°）カチッと進む。短くやや幅のある菱形の先
+    const shortH = el("g", {});
+    el("line", { x1: CX, y1: CY + 12, x2: CX, y2: CY - 58, stroke: "#05080f", "stroke-width": 3, "stroke-linecap": "round", opacity: 0.6 }, shortH);
+    el("line", { x1: CX, y1: CY + 12, x2: CX, y2: CY - 58, stroke: C.goldS, "stroke-width": 1.6, "stroke-linecap": "round" }, shortH);
+    el("path", { d: `M${CX} ${CY - 68}l3 6l-3 6l-3 -6z`, fill: C.goldS, stroke: "#05080f", "stroke-width": 0.6, "paint-order": "stroke" }, shortH);
+    // ── 長針（拍の針）：1拍ごとに1目盛り（30°）カチッと進む。12拍で1周。先は小さな星
     const sweep = el("g", {});
     // 針は下に濃い縁を敷いて、金の文字盤や輪と混ざらず、くっきり見えるようにする
     el("line", { x1: CX, y1: CY + 18, x2: CX, y2: CY - 100, stroke: "#05080f", "stroke-width": 2.2, "stroke-linecap": "round", opacity: 0.6 }, sweep);
@@ -147,8 +152,10 @@
     el("circle", { cx: CX, cy: CY, r: 9, fill: C.night, stroke: C.gold, "stroke-width": 1 });
     el("path", { d: `M${CX} ${CY - 9}A9 9 0 0 1 ${CX} ${CY + 9}Z`, fill: GOLD });
 
-    // ── 動き：輪と拍の針は、拍と拍のあいだを等速でなめらかに回す（止まって跳ぶ動きはしない）
-    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, count = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0;
+    // ── 動き：機械時計のように、拍の瞬間だけ動いて止まる。針は短くカチッ、黄道の輪は歯車のように少し行き過ぎて戻るカチャン
+    // snap: 拍からの経過 dt 秒で 0→1。少しだけ行き過ぎて戻る（easeOutBack）
+    const snap = (dt, dur, k) => { if (dt >= dur) return 1; const p = dt / dur - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
+    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, count = 0, bars = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0, shortA = 0;
     function setBeats(n) {
       perBar = n > 1 ? n : 4;
       lampG.innerHTML = ""; lamps.length = 0;
@@ -170,16 +177,18 @@
           while (beatsT.length > 1 && beatsT[1].t <= now) beatsT.shift();
           const a = beatsT[0], b = beatsT[1];
           if (a && now >= a.t) {
-            if (a !== last) { last = a; count++; }
-            const f = Math.min(1, (now - a.t) / ((b ? b.t : a.t + 60 / want) - a.t));
-            zodA = (count - 1 + f) * 30;                                        // 1拍で30°、等速で
-            const inBar = a.i >= 0 ? a.i : (count - 1) % perBar;
-            sweepA = (inBar + f) / perBar * 360;                                // 1小節で1周
+            const inBar = a.i >= 0 ? a.i : count % perBar;
+            if (a !== last) { last = a; count++; if (inBar === 0) bars++; }
+            const dt = now - a.t;
+            zodA = (count - 1 + snap(dt, 0.18, 2.4)) * 30;                      // 輪：1拍で1こま（30°）。歯車のカチャン
+            sweepA = (count - 1 + snap(dt, 0.07, 1.6)) * 30;                    // 長針：1拍で1目盛り
+            shortA = (bars - (inBar === 0 ? 1 - snap(dt, 0.09, 1.6) : 0)) * 30; // 短針：1小節で1目盛り
             glow = Math.exp(-(now - a.t) / 0.12); lit = a.i;
           }
         }
         zod.setAttribute("transform", `rotate(${zodA} ${ZX} ${ZY})`);
         sweep.setAttribute("transform", `rotate(${sweepA} ${CX} ${CY})`);
+        shortH.setAttribute("transform", `rotate(${shortA} ${CX} ${CY})`);
         const strong = lit === 0 && lamps.length > 1;
         zod.style.filter = glow > 0.02 ? `drop-shadow(0 0 ${3 + 7 * glow}px rgba(255,227,154,${(glow * (strong ? 0.7 : 0.35)).toFixed(2)}))` : "none";
         sunH.style.filter = strong && glow > 0.02 ? `drop-shadow(0 0 ${4 + 10 * glow}px rgba(255,227,154,${glow.toFixed(2)}))` : "none";
