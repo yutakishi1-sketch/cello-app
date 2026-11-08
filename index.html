@@ -9,12 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="チェロ">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600&display=swap">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
 <style>
 /* アプリの外枠：上は余白だけ、下に5つのタブ。各ページは中の窓（iframe）で開いたままにして、切り替えても止まらない */
 :root { color-scheme: dark; --bar: #080c16; --bg: #0a0f1a; --ink: #ebe7dc; --muted: #8f95a1; --gold: #c9a54e; --frame: #3a3322; --line: #22304a; --panel: #0f1727;
-  --f-body: "Hiragino Sans", system-ui, sans-serif; --f-display: "Hiragino Mincho ProN", "Yu Mincho", serif; }
+  --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Hiragino Mincho ProN", "Yu Mincho", serif; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bar); color: var(--ink); font-family: var(--f-body); overflow: hidden; overscroll-behavior: none; touch-action: pan-y; }
 .app { position: fixed; inset: 0; display: grid; grid-template-rows: env(safe-area-inset-top, 0px) minmax(0, 1fr) auto; }
@@ -110,7 +111,7 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
   </details>
   <div class="row"><button type="button" id="close">閉じる</button></div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：240280ebd938</p>
+  <p>アプリの版：40f2df564d74</p>
 </dialog>
 
 <script src="shim.js"></script>
