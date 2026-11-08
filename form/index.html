@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<script src="../shim.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+</head>
+<body>
+<title>フォームを確かめる（ベータ）</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<style>
+/* 弾いている動画から、体の骨組み（肩・ひじ・手首・指の関節）を読み取り、弓の腕・押さえる腕・指・弓の通り道を確かめるベータ版。
+   動画はこのスマホの中だけで調べ、どこにも送らない。読み取りは Google の MediaPipe（ブラウザの中で動く）を使う */
+:root {
+  color-scheme: dark;
+  --bg: #0a0f1a; --panel: #0f1727; --panel-2: #14203a; --ink: #ebe7dc; --muted: #8f95a1; --line: #22304a; --frame: #3a3322;
+  --gold: #c9a54e; --gold-dim: #6e5a2c; --ok: #6fcf8e; --warn: #e8964a;
+  --f-fine: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-latin: "Cormorant Garamond", Garamond, serif;
+  --hair: rgba(201,165,78,.32);
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-fine); margin: 0; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 14px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 16px; }
+h1 { margin: 6px 0 0; font-weight: 600; font-size: 22px; letter-spacing: .14em; text-align: center; }
+h1 small { display: block; font-family: var(--f-latin); font-style: italic; font-size: 13px; letter-spacing: .2em; color: var(--gold); margin-bottom: 4px; }
+.lead { margin: 0; font-size: 13px; line-height: 1.9; color: var(--muted); text-align: center; }
+.card { border: 1px solid var(--hair); padding: 14px; display: grid; gap: 10px; }
+.card h2 { margin: 0; font-weight: 600; font-size: 15px; letter-spacing: .14em; color: var(--gold); }
+.card p, .card li { margin: 0; font-size: 13px; line-height: 1.85; color: var(--ink); }
+.card ul { margin: 0; padding-left: 1.2em; display: grid; gap: 2px; }
+.btn { height: 50px; font-family: var(--f-fine); font-size: 15px; letter-spacing: .3em; color: #f0d98f; background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)); border: 1px solid var(--gold); cursor: pointer; width: 100%; }
+.btn:disabled { opacity: .45; cursor: default; }
+.ghost { height: 36px; font-family: var(--f-fine); font-size: 12.5px; letter-spacing: .12em; color: var(--ink); background: transparent; border: 1px solid var(--hair); padding: 0 12px; cursor: pointer; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.stage { position: relative; background: #000; border: 1px solid var(--hair); }
+.stage video { display: block; width: 100%; height: auto; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.stage.tapping canvas { pointer-events: auto; cursor: crosshair; }
+.bar { height: 4px; background: var(--line); }
+.bar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s; }
+.st { font-size: 12.5px; color: var(--muted); min-height: 1.4em; margin: 0; }
+.finds { display: grid; gap: 8px; }
+.find { border: 1px solid var(--hair); border-left-width: 3px; padding: 10px 12px; display: grid; gap: 4px; }
+.find.ok { border-left-color: var(--ok); } .find.warn { border-left-color: var(--warn); } .find.info { border-left-color: var(--gold-dim); }
+.find b { font-weight: 600; font-size: 14px; letter-spacing: .06em; }
+.find.ok b { color: var(--ok); } .find.warn b { color: var(--warn); }
+.find p { margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--muted); }
+.find .row button { height: 28px; font-size: 11.5px; }
+.note { font-size: 11.5px; color: var(--muted); line-height: 1.8; margin: 0; }
+details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+</style>
+
+<div class="wrap">
+  <h1><small>Beta</small>フォームを確かめる</h1>
+  <p class="lead">弾いている動画から、腕・指・弓の動きを読み取ります。<br>動画はこのスマホの中だけで調べ、どこにも送りません。</p>
+
+  <div class="card">
+    <h2>1　動画を撮る・選ぶ</h2>
+    <ul>
+      <li>正面から、上半身と弓の全体が入るように（スマホは胸の高さ、2mほど離して横向き）。</li>
+      <li>開放弦の長い音や音階を、20〜40秒くらい。明るい部屋で。</li>
+    </ul>
+    <input type="file" id="file" accept="video/*" hidden>
+    <button type="button" class="btn" id="pick">動画を撮る・選ぶ</button>
+  </div>
+
+  <div class="card" id="viewer" hidden>
+    <h2>2　読み取る</h2>
+    <div class="stage" id="stage"><video id="vid" playsinline muted controls></video><canvas id="cv"></canvas></div>
+    <div class="row">
+      <button type="button" class="ghost" id="calib">弦の向きを教える（任意）</button>
+      <span class="st" id="calib-st">弦の上と駒を、動画の上で順に押します</span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+    <p class="st" id="st"></p>
+    <button type="button" class="btn" id="run">読み取って確かめる</button>
+  </div>
+
+  <div class="card" id="result" hidden>
+    <h2>3　気づいたこと</h2>
+    <div class="finds" id="finds"></div>
+    <p class="note">ベータ版です。動画の向きや明るさで外れることがあります。体の形の目安なので、最後は先生に見てもらってください。弦をしっかり押さえているかどうか（音）は動画では分からないので、指の形から推し量っています。</p>
+  </div>
+
+  <details>
+    <summary>何を見ているか</summary>
+    <div class="card" style="margin-top:8px">
+      <ul>
+        <li>弓の腕：手首より肘が下がりすぎ・上がりすぎていないか。肩が上がっていないか。</li>
+        <li>押さえる腕：肘が下がって体にくっついていないか。</li>
+        <li>指：指の関節が伸びきって、寝た形になっていないか（指先で立てて押さえる形か）。</li>
+        <li>弓の向き：手首の通り道が一直線か。弦の向きを教えると、駒と平行に動いているかも見ます。</li>
+        <li>なめらかさ：弓を返すところで止まっていないか。1回の弓の中で速さがばらついていないか。</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const vid = $("vid"), cv = $("cv"), ctx = cv.getContext("2d");
+const MP = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const MODELS = {
+  pose: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+  hand: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+};
+let pose = null, hands = null, frames = [], calib = [], url = null;
+
+// ── 動画を選ぶ
+$("pick").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  if (url) URL.revokeObjectURL(url);
+  url = URL.createObjectURL(f); vid.src = url; frames = []; calib = [];
+  $("viewer").hidden = false; $("result").hidden = true; $("st").textContent = ""; $("prog").style.width = "0";
+  $("calib-st").textContent = "弦の上と駒を、動画の上で順に押します";
+});
+vid.addEventListener("loadedmetadata", () => { cv.width = vid.videoWidth; cv.height = vid.videoHeight; draw(); });
+
+// ── 弦の向き：止めた画面で、弦の上の方 → 駒 の順に押す
+$("calib").addEventListener("click", () => { vid.pause(); calib = []; $("stage").classList.add("tapping"); $("calib-st").textContent = "1点目：指板の上の方（弦の上）を押す"; draw(); });
+cv.addEventListener("pointerdown", e => {
+  if (!$("stage").classList.contains("tapping")) return;
+  const r = cv.getBoundingClientRect();
+  calib.push({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
+  if (calib.length === 1) $("calib-st").textContent = "2点目：駒（弦の下の方）を押す";
+  else { $("stage").classList.remove("tapping"); $("calib-st").textContent = "弦の向きを覚えました"; }
+  draw();
+});
+
+// ── 読み取り（動画を少しずつ進めて、1コマずつ骨組みを読む）
+async function load() {
+  if (pose) return;
+  $("st").textContent = "読み取りの道具を準備しています（初回は数十秒）…";
+  const vision = await import(MP);
+  const files = await vision.FilesetResolver.forVisionTasks(MP + "/wasm");
+  pose = await vision.PoseLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODELS.pose, delegate: "GPU" }, runningMode: "VIDEO", numPoses: 1 });
+  hands = await vision.HandLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODELS.hand, delegate: "GPU" }, runningMode: "VIDEO", numHands: 2 });
+}
+const seek = t => new Promise(ok => { const done = () => { vid.removeEventListener("seeked", done); ok(); }; vid.addEventListener("seeked", done); vid.currentTime = t; });
+$("run").addEventListener("click", async () => {
+  $("run").disabled = true;
+  try {
+    await load();
+    vid.pause(); frames = [];
+    const dur = Math.min(vid.duration || 0, 60), step = 1 / 10;          // 1秒に10コマ、最大60秒
+    for (let t = 0, k = 0; t < dur; t += step, k++) {
+      await seek(t);
+      const ms = Math.round(t * 1000) + 1;
+      const p = pose.detectForVideo(vid, ms);
+      const h = k % 2 === 0 ? hands.detectForVideo(vid, ms) : null;       // 指は1秒に5コマ
+      frames.push({ t, pose: p.landmarks && p.landmarks[0] || null, hands: h ? h.landmarks || [] : null });
+      $("prog").style.width = (t / dur * 100).toFixed(1) + "%";
+      $("st").textContent = `読み取り中… ${t.toFixed(1)} / ${dur.toFixed(1)} 秒`;
+    }
+    $("prog").style.width = "100%";
+    const seen = frames.filter(f => f.pose).length;
+    $("st").textContent = `読み取りました（${frames.length}コマ中 ${seen}コマで体が見えました）`;
+    show(analyze(frames, calib));
+    vid.currentTime = 0; draw();
+  } catch (e) {
+    console.error(e);
+    $("st").textContent = "読み取れませんでした（" + (e && e.message || e) + "）。電波の良い所で、もう一度試してください。";
+  } finally { $("run").disabled = false; }
+});
+
+// ── 調べる（骨組みの数字から、気づいたことを作る）。試験のため window からも呼べる
+const P = { ls: 11, rs: 12, le: 13, re: 14, lw: 15, rw: 16, lh: 23, rh: 24 };
+const med = a => { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+const ang3 = (a, b, c) => { const v1 = [a.x - b.x, a.y - b.y], v2 = [c.x - b.x, c.y - b.y]; const d = Math.hypot(...v1) * Math.hypot(...v2) || 1; return Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / d))) * 180 / Math.PI; };
+function analyze(frames, calib) {
+  const F = frames.filter(f => f.pose), out = [];
+  if (F.length < 20) return [{ kind: "warn", title: "体がうまく見えませんでした", text: "上半身と腕が画面に入るように、正面から撮り直してください。明るい部屋の方が読み取れます。" }];
+  // 弓の腕＝手首が左右によく動く方（動画が鏡写しでも分かるように、動きで決める）
+  const spread = side => { const xs = F.map(f => f.pose[side].x); return Math.max(...xs) - Math.min(...xs); };
+  const bowR = spread(P.rw) >= spread(P.lw);
+  const B = bowR ? { s: P.rs, e: P.re, w: P.rw } : { s: P.ls, e: P.le, w: P.lw };
+  const L = bowR ? { s: P.ls, e: P.le, w: P.lw } : { s: P.rs, e: P.re, w: P.rw };
+  const sw = med(F.map(f => Math.hypot(f.pose[P.ls].x - f.pose[P.rs].x, f.pose[P.ls].y - f.pose[P.rs].y))) || 0.2;
+  const when = test => { const hit = F.filter(test); return { rate: hit.length / F.length, t: hit.length ? hit[Math.floor(hit.length / 2)].t : null }; };
+
+  // 1) 弓の腕の肘の高さ（手首と比べる。下向きが＋）
+  const elbowDrop = med(F.map(f => (f.pose[B.e].y - f.pose[B.w].y) / sw));
+  const low = when(f => (f.pose[B.e].y - f.pose[B.w].y) / sw > 0.55), high = when(f => (f.pose[B.e].y - f.pose[B.w].y) / sw < -0.35);
+  if (low.rate > 0.35) out.push({ kind: "warn", title: "弓の腕：肘が下がっています", text: `時間の${Math.round(low.rate * 100)}%で、肘が手首よりかなり下にあります。腕の重さが弓に乗りにくく、音が細くなりがちです。肘を少し持ち上げ、腕全体で弓を運ぶ感じを試してください。`, t: low.t });
+  else if (high.rate > 0.35) out.push({ kind: "warn", title: "弓の腕：肘が上がりすぎています", text: `時間の${Math.round(high.rate * 100)}%で、肘が手首より上にあります。肩に力が入りやすい形です。弾く弦（低い弦ほど肘は高め）に合わせて、少し下げてみてください。`, t: high.t });
+  else out.push({ kind: "ok", title: "弓の腕：肘の高さは自然です", text: `肘と手首の高さの差は、肩幅の${Math.round(elbowDrop * 100)}%ほどです。` });
+
+  // 2) 肩の上がり（弓の側の肩が、反対より上にある）
+  const lift = when(f => (f.pose[L.s].y - f.pose[B.s].y) / sw > 0.12);
+  if (lift.rate > 0.4) out.push({ kind: "warn", title: "弓の側の肩が上がっています", text: `時間の${Math.round(lift.rate * 100)}%で、弓の側の肩が反対の肩より高くなっています。力みのサインです。息を吐いて肩を下ろしてから弾いてみてください。`, t: lift.t });
+
+  // 3) 押さえる腕：肘が下がって体にくっついていないか
+  const sag = when(f => (f.pose[L.e].y - f.pose[L.w].y) / sw > 0.75 && Math.abs(f.pose[L.e].x - f.pose[L.s].x) / sw < 0.2);
+  if (sag.rate > 0.4) out.push({ kind: "warn", title: "押さえる腕：肘が下がって体に近づいています", text: `時間の${Math.round(sag.rate * 100)}%で、肘が下がり脇がしまっています。指が弦に対して寝やすくなります。肘を少し横に浮かせ、腕の重さを指先に流す形を試してください。`, t: sag.t });
+  else out.push({ kind: "ok", title: "押さえる腕：肘の位置は保てています", text: "肘が体から離れ、腕の高さも保てています。" });
+
+  // 4) 指：押さえる手（手首が押さえる腕の手首に近い手）の指の関節が伸びきっていないか
+  const handFrames = frames.filter(f => f.pose && f.hands && f.hands.length);
+  let flat = 0, seenH = 0, flatT = null;
+  handFrames.forEach(f => {
+    const lw = f.pose[L.w]; let best = null, bd = 1e9;
+    f.hands.forEach(h => { const d = Math.hypot(h[0].x - lw.x, h[0].y - lw.y); if (d < bd) { bd = d; best = h; } });
+    if (!best || bd > 0.15) return;
+    seenH++;
+    const straight = [[5, 6, 7], [9, 10, 11], [13, 14, 15]].filter(([a, b, c]) => ang3(best[a], best[b], best[c]) > 165).length;   // 人差し指・中指・薬指の第2関節
+    if (straight >= 2) { flat++; if (flatT == null) flatT = f.t; }
+  });
+  if (seenH < 5) out.push({ kind: "info", title: "指：手がはっきり映っていませんでした", text: "指の形を見るには、押さえる手がもう少し大きく映るように近づいて撮ってください。" });
+  else if (flat / seenH > 0.35) out.push({ kind: "warn", title: "指：関節が伸びて、寝た形が多めです", text: `手が見えたコマの${Math.round(flat / seenH * 100)}%で、指の第2関節が伸びきっています。指先を立てて、丸い形で押さえると音程と音がはっきりします。`, t: flatT });
+  else out.push({ kind: "ok", title: "指：丸い形が保てています", text: `手が見えたコマの${Math.round((1 - flat / seenH) * 100)}%で、指の関節が曲がった形でした。` });
+
+  // 5) 弓の通り道：手首の動きの向き（主な向き）と、その線からのずれ
+  const W = F.map(f => ({ x: f.pose[B.w].x, y: f.pose[B.w].y * (cv.height / cv.width || 0.5625), t: f.t }));   // 縦横の比を合わせる
+  const mx = W.reduce((a, p) => a + p.x, 0) / W.length, my = W.reduce((a, p) => a + p.y, 0) / W.length;
+  let sxx = 0, syy = 0, sxy = 0; W.forEach(p => { sxx += (p.x - mx) ** 2; syy += (p.y - my) ** 2; sxy += (p.x - mx) * (p.y - my); });
+  const th = 0.5 * Math.atan2(2 * sxy, sxx - syy), ux = Math.cos(th), uy = Math.sin(th);
+  const along = W.map(p => (p.x - mx) * ux + (p.y - my) * uy), across = W.map(p => -(p.x - mx) * uy + (p.y - my) * ux);
+  const len = Math.max(...along) - Math.min(...along) || 1e-6;
+  const wobble = Math.sqrt(across.reduce((a, v) => a + v * v, 0) / across.length) / len;
+  if (len / sw < 0.4) out.push({ kind: "info", title: "弓の動きが小さく、向きは見られませんでした", text: "弓をたっぷり使う長い音で撮ると、通り道を確かめられます。" });
+  else {
+    if (wobble > 0.14) out.push({ kind: "warn", title: "弓の通り道がまっすぐではありません", text: `手首が、弓の向きと直角の方向にも動いています（通り道の長さの${Math.round(wobble * 100)}%）。弓が駒に近づいたり離れたりしやすい形です。鏡の前でゆっくり、駒と平行に運ぶ練習を。` });
+    else out.push({ kind: "ok", title: "弓の通り道はほぼ一直線です", text: `通り道からのずれは長さの${Math.round(wobble * 100)}%ほどでした。` });
+    if (calib.length === 2) {
+      const sx = calib[1].x - calib[0].x, sy = (calib[1].y - calib[0].y) * (cv.height / cv.width || 0.5625);
+      const strAng = Math.atan2(sy, sx), want = strAng + Math.PI / 2;            // 弓は弦と直角が理想
+      let d = (th - want) * 180 / Math.PI; while (d > 90) d -= 180; while (d < -90) d += 180;
+      if (Math.abs(d) > 12) out.push({ kind: "warn", title: `弓の向きが弦と直角から${Math.round(Math.abs(d))}°ずれています`, text: "弓が駒と平行になっていないと、音がかすれたり、弓が指板の方へ滑ったりします。弓先を少し" + (d > 0 ? "手前" : "奥") + "に向けるつもりで試してください（動画の向きによって逆になることがあります）。" });
+      else out.push({ kind: "ok", title: "弓は弦とほぼ直角に動いています", text: `ずれは ${Math.round(Math.abs(d))}° ほどでした。` });
+    } else out.push({ kind: "info", title: "弓の向き（駒と平行か）は未確認", text: "「弦の向きを教える」で弦の上と駒を押すと、弓が弦と直角に動いているかも確かめます。" });
+
+    // 6) なめらかさ：弓を返すところで止まる時間と、1回の弓の中の速さのばらつき
+    const v = []; for (let i = 1; i < along.length; i++) v.push({ v: (along[i] - along[i - 1]) / ((W[i].t - W[i - 1].t) || 0.1), t: W[i].t });
+    const sp = med(v.map(x => Math.abs(x.v))) || 1e-6;
+    let stops = 0, stopT = 0, turns = 0, worst = null, run = 0;
+    for (let i = 1; i < v.length; i++) {
+      if (Math.abs(v[i].v) < sp * 0.2) { run += v[i].t - v[i - 1].t; continue; }
+      if (run > 0) { if (Math.sign(v[i].v) !== Math.sign(v[Math.max(0, i - 1 - Math.round(run * 10))].v)) { turns++; stopT += run; if (run > 0.3) { stops++; if (!worst || run > worst.d) worst = { d: run, t: v[i].t }; } } run = 0; }
+    }
+    if (turns >= 2 && stops / turns > 0.4) out.push({ kind: "warn", title: "弓を返すところで止まっています", text: `弓の返し${turns}回のうち${stops}回で、0.3秒以上止まっていました。返す直前に少しゆるめ、手首と指で円を描くように返すと、音が途切れにくくなります。`, t: worst && worst.t });
+    else if (turns >= 2) out.push({ kind: "ok", title: "弓の返しはなめらかです", text: `弓の返し${turns}回のほとんどで、止まらずに返せていました。` });
+    const cv2 = Math.sqrt(v.reduce((a, x) => a + (Math.abs(x.v) - sp) ** 2, 0) / v.length) / sp;
+    if (cv2 > 0.9) out.push({ kind: "warn", title: "弓の速さがばらついています", text: "1回の弓の中で、速くなったり遅くなったりしています。弓の真ん中で速くなりがちです。メトロノームに合わせて、弓の長さを4つに分けて同じ速さで運ぶ練習を。" });
+  }
+  return out;
+}
+window.__formAnalyze = analyze;
+
+// ── 表示
+function show(list) {
+  const box = $("finds"); box.innerHTML = "";
+  list.sort((a, b) => ({ warn: 0, info: 1, ok: 2 })[a.kind] - ({ warn: 0, info: 1, ok: 2 })[b.kind]).forEach(f => {
+    const d = document.createElement("div"); d.className = "find " + f.kind;
+    const b = document.createElement("b"); b.textContent = (f.kind === "ok" ? "◯ " : f.kind === "warn" ? "△ " : "・ ") + f.title;
+    const p = document.createElement("p"); p.textContent = f.text; d.append(b, p);
+    if (f.t != null) { const r = document.createElement("div"); r.className = "row"; const go = document.createElement("button"); go.type = "button"; go.className = "ghost"; go.textContent = `${f.t.toFixed(1)}秒のところを見る`; go.addEventListener("click", () => { vid.currentTime = Math.max(0, f.t - 0.5); vid.play(); $("stage").scrollIntoView({ behavior: "smooth", block: "center" }); }); r.append(go); d.append(r); }
+    box.append(d);
+  });
+  $("result").hidden = false;
+}
+
+// ── 動画の上に骨組みを重ねる（再生に合わせて、いちばん近いコマを描く）
+const BONES = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]];
+const HAND = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
+function draw() {
+  const W = cv.width, H = cv.height; if (!W) return;
+  ctx.clearRect(0, 0, W, H);
+  const lw = Math.max(2, W / 320);
+  if (frames.length) {
+    const t = vid.currentTime; let f = frames[0]; for (const x of frames) { if (Math.abs(x.t - t) < Math.abs(f.t - t)) f = x; }
+    if (f.pose) {
+      ctx.strokeStyle = "rgba(224,194,114,.9)"; ctx.lineWidth = lw; ctx.lineCap = "round";
+      BONES.forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(f.pose[a].x * W, f.pose[a].y * H); ctx.lineTo(f.pose[b].x * W, f.pose[b].y * H); ctx.stroke(); });
+      [11, 12, 13, 14, 15, 16].forEach(i => { ctx.fillStyle = "#ffe39a"; ctx.beginPath(); ctx.arc(f.pose[i].x * W, f.pose[i].y * H, lw * 2, 0, 7); ctx.fill(); });
+    }
+    let hf = f; if (!hf.hands) { const i = frames.indexOf(f); hf = frames[i - 1] && frames[i - 1].hands ? frames[i - 1] : frames[i + 1] || f; }
+    (hf.hands || []).forEach(h => { ctx.strokeStyle = "rgba(111,207,142,.85)"; ctx.lineWidth = lw * 0.7; HAND.forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(h[a].x * W, h[a].y * H); ctx.lineTo(h[b].x * W, h[b].y * H); ctx.stroke(); }); });
+  }
+  if (calib.length) {
+    ctx.fillStyle = "#e8964a"; ctx.strokeStyle = "#e8964a"; ctx.lineWidth = lw;
+    calib.forEach(p => { ctx.beginPath(); ctx.arc(p.x * W, p.y * H, lw * 3, 0, 7); ctx.fill(); });
+    if (calib.length === 2) { ctx.setLineDash([lw * 4, lw * 3]); ctx.beginPath(); ctx.moveTo(calib[0].x * W, calib[0].y * H); ctx.lineTo(calib[1].x * W, calib[1].y * H); ctx.stroke(); ctx.setLineDash([]); }
+  }
+}
+vid.addEventListener("timeupdate", draw); vid.addEventListener("seeked", draw);
+(function loop() { requestAnimationFrame(loop); if (!vid.paused) draw(); })();
+</script>
+
+<style> html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } </style>
+</body>
+</html>
