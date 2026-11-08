@@ -155,7 +155,7 @@
     // ── 動き：機械時計のように、拍の瞬間だけ動いて止まる。針は短くカチッ、黄道の輪は歯車のように少し行き過ぎて戻るカチャン
     // snap: 拍からの経過 dt 秒で 0→1。少しだけ行き過ぎて戻る（easeOutBack）
     const snap = (dt, dur, k) => { if (dt >= dur) return 1; const p = dt / dur - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
-    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, count = 0, bars = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0, shortA = 0;
+    let want = bpm, handA = angOf(bpm), beatsT = [], last = null, nBeat = 0, nBar = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0, shortA = 0;
     function setBeats(n) {
       perBar = n > 1 ? n : 4;
       lampG.innerHTML = ""; lamps.length = 0;
@@ -166,8 +166,13 @@
     return {
       setBpm(b) { want = b; },
       setBeats,
-      beat(t, i) { beatsT.push({ t, i }); if (beatsT.length > 8) beatsT.shift(); },
-      reset() { beatsT = []; last = null; },
+      beat(t, i) {
+        const down = i >= 0 ? i === 0 : nBeat % perBar === 0;
+        nBeat++; if (down) nBar++;
+        beatsT.push({ t, n: nBeat, bar: nBar, down, i }); if (beatsT.length > 8) beatsT.shift();
+      },
+      // 止めたら、まだ鳴っていない先の拍の番号は取り消す（次に鳴らすとき針が飛ばない）
+      reset() { if (last) { nBeat = last.n; nBar = last.bar; } else { nBeat = 0; nBar = 0; } beatsT = []; last = null; },
       // now: 音の時計の今（無いときは null）。1コマ描く
       frame(now) {
         handA += (angOf(want) - handA) * 0.2; hand.setAttribute("transform", `rotate(${handA} ${CX} ${CY})`);
@@ -177,12 +182,11 @@
           while (beatsT.length > 1 && beatsT[1].t <= now) beatsT.shift();
           const a = beatsT[0], b = beatsT[1];
           if (a && now >= a.t) {
-            const inBar = a.i >= 0 ? a.i : count % perBar;
-            if (a !== last) { last = a; count++; if (inBar === 0) bars++; }
+            last = a;
             const dt = now - a.t;
-            zodA = (count - 1 + snap(dt, 0.18, 2.4)) * 30;                      // 輪：1拍で1こま（30°）。歯車のカチャン
-            sweepA = (count - 1 + snap(dt, 0.07, 1.6)) * 30;                    // 長針：1拍で1目盛り
-            shortA = (bars - (inBar === 0 ? 1 - snap(dt, 0.09, 1.6) : 0)) * 30; // 短針：1小節で1目盛り
+            zodA = (a.n - 1 + snap(dt, 0.18, 2.4)) * 30;                        // 輪：1拍で1こま（30°）。歯車のカチャン
+            sweepA = (a.n - 1 + snap(dt, 0.07, 1.6)) * 30;                      // 長針：1拍で1目盛り
+            shortA = (a.bar - (a.down ? 1 - snap(dt, 0.09, 1.6) : 0)) * 30;     // 短針：1小節で1目盛り
             glow = Math.exp(-(now - a.t) / 0.12); lit = a.i;
           }
         }
