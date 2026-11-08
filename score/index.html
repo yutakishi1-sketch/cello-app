@@ -119,6 +119,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
 
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
 <script src="art/cello-voice.js"></script>
+<script src="art/metro-tick.js"></script>
 <script>
 const STAGE = ["0段 ならし", "1段 いまの曲", "2段 次の一歩", "3段 力をつける", "4段 目標曲", "5段 上のポジションへ"];
 const SONGS = [
@@ -660,12 +661,16 @@ async function playSong(song, btn, opts) {
     voice = await CelloVoice.prepare(ctx, midis);
     if (my !== playSeq) { if (!playing) btn.textContent = "▶ 鳴らす"; return; }   // 読み込み中に止められた
   }
+  // 前奏の数えと拍は、メトロノームのページと同じ本物の録音の「カチッ」で鳴らす（読めないときは作った音）
+  const tickOk = window.MetroTick ? await MetroTick.prepare(ctx) : false;
+  if (my !== playSeq) { if (!playing) btn.textContent = "▶ 鳴らす"; return; }
+  const beep = (t, strong, vol) => (tickOk && MetroTick.tick(ctx, t, { strong, vol })) || tone(t, 0.05, strong ? 1760 : 1320, "square", (strong ? 0.07 : 0.04) * Math.min(1, vol + 0.4));
   const mt = meterOf(song);
   const whole = 60 / opts.bpm / mt.beat;
   const pickup = song.tune.getPickupLength ? song.tune.getPickupLength() : 0;
   const countIn = mt.perBar * mt.beat * whole;
   const tc = ctx.currentTime + 0.15, t0 = tc + countIn, nodes = [];
-  for (let k = 0; k < mt.perBar; k++) nodes.push(tone(tc + k * mt.beat * whole, 0.06, k === 0 ? 1760 : 1320, "square", 0.08));
+  for (let k = 0; k < mt.perBar; k++) nodes.push(beep(tc + k * mt.beat * whole, k === 0, 1));
   let end = 0;
   (seq.tracks || []).forEach(track => track.forEach(ev => {
     if (ev.cmd !== "note" || ev.pitch == null) return;
@@ -677,7 +682,7 @@ async function playSong(song, btn, opts) {
     const first = pickup - Math.floor(pickup / mt.beat + 1e-6) * mt.beat;
     for (let p = first, i = 0; p < end - 1e-6; p += mt.beat, i++) {
       const down = Math.abs(((p - pickup) / mt.beat) % mt.perBar) < 1e-6;
-      nodes.push(tone(t0 + p * whole, 0.05, down ? 1760 : 1320, "square", down ? 0.07 : 0.04));
+      nodes.push(beep(t0 + p * whole, down, 0.55));          // チェロの下で鳴るので小さめに
     }
   }
   btn.textContent = "■ 止める"; btn.classList.add("on");
