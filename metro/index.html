@@ -30,7 +30,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 28px
 .lead { margin: -8px 0 0; text-align: center; font-family: var(--f-fine); font-size: 13.5px; color: var(--muted); }
 .panel { background: var(--panel); border: 1px solid var(--frame); box-shadow: inset 0 0 0 4px var(--bg), inset 0 0 0 5px #2b2618; padding: 24px 20px; display: grid; gap: 16px; justify-items: center; }
 /* 天文時計の文字盤：プラハの天文時計を下敷きに。拍ごとに金の輪が1こま回る */
-svg.clock { width: 100%; max-width: 340px; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+svg.clock { width: 100%; max-width: 380px; height: auto; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .word { font-family: var(--f-fine); font-size: 14px; color: var(--muted); min-height: 1.4em; }
 .dots { display: flex; gap: 14px; min-height: 22px; align-items: center; }
 .dots i { width: 18px; height: 18px; border: 1.5px solid var(--gold-dim); transform: rotate(45deg); display: inline-block; transition: background .05s; }
@@ -70,7 +70,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   <h1>メトロノーム</h1>
 
   <div class="panel">
-    <svg class="clock" id="clock" viewBox="0 0 340 340" role="button" tabindex="0" aria-label="文字盤。押すと鳴らす・止める。なぞって回すと速さが変わる"></svg>
+    <svg class="clock" id="clock" viewBox="-20 -20 380 380" role="button" tabindex="0" aria-label="文字盤。押すと鳴らす・止める。なぞって回すと速さが変わる"></svg>
     <div class="word" id="word"></div>
     <div class="dots" id="dots" aria-hidden="true" hidden></div>
     <div class="row">
@@ -193,7 +193,7 @@ const clock = (() => {
   requestAnimationFrame(frame);
   window.__clockFrame = () => { frame(true); return sv.querySelector("g[transform]") && [...sv.querySelectorAll("g[transform]")].map(g => g.getAttribute("transform")); };   // 試験用：1コマだけ進める
   let drag = null;
-  const toSvg = e => { const r = sv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 340, y: (e.clientY - r.top) / r.height * 340 }; };
+  const toSvg = e => dial.pointOf(e);   // 枠の分だけ座標がずれるので、文字盤の部品に任せる
   sv.addEventListener("pointerdown", e => { const p = toSvg(e); drag = { x0: p.x, y0: p.y, moved: false }; try { sv.setPointerCapture(e.pointerId); } catch (err) { /* 指を追えない環境でも、なぞりは中で続く */ } });
   sv.addEventListener("pointermove", e => {
     if (!drag) return;
