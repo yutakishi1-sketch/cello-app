@@ -157,23 +157,23 @@ const wheel = (() => {
     const letter = s.name ? s.name[0] : "–", acc = s.name ? s.name.slice(1) : "", oct = s.name ? String(s.oct) : "";
     for (let k = 1; k > 0.5; k -= 0.06) {
       g.innerHTML = "";
-      const big = el("text", { x: X, y: CY + 6, "font-family": LAT, "font-weight": 700, "font-size": 78 * k, fill: col, style: s.ok ? "filter:drop-shadow(0 0 10px rgba(111,207,142,.5))" : "" }, g);
+      // 大きな音名は上下のまん中を針の線（CY）にそろえ、その下に3行を置く
+      const big = el("text", { x: X, y: CY + 25 * k, "font-family": LAT, "font-weight": 700, "font-size": 78 * k, fill: col, style: s.ok ? "filter:drop-shadow(0 0 10px rgba(111,207,142,.5))" : "" }, g);
       big.textContent = letter;
       let x2 = X + big.getComputedTextLength() + 3;
-      if (acc) { const a = el("text", { x: x2, y: CY - 28 * k, "font-family": LAT, "font-weight": 700, "font-size": 34 * k, fill: col }, g); a.textContent = acc; x2 += a.getComputedTextLength() + 2; }
-      const o = el("text", { x: x2, y: CY + 6, "font-family": LAT, "font-size": 22 * k, fill: C.sub }, g); o.textContent = oct;
+      if (acc) { const a = el("text", { x: x2, y: CY - 8 * k, "font-family": LAT, "font-weight": 700, "font-size": 34 * k, fill: col }, g); a.textContent = acc; x2 += a.getComputedTextLength() + 2; }
+      const o = el("text", { x: x2, y: CY + 25 * k, "font-family": LAT, "font-size": 22 * k, fill: C.sub }, g); o.textContent = oct;
       if (x2 + o.getComputedTextLength() <= right) break;
     }
     s.lines.forEach(([txt, kind], i) => {
       if (!txt) return;
       const [f, wt, size, fill] = i === 0 ? [JP, 700, 17, C.gold] : i === 1 ? [FINE, 400, 15, kind === "ok" ? C.ok : kind === "warn" ? C.warn : C.sub] : [FINE, 400, 13, C.sub];
-      const t = el("text", { x: X + 3, y: CY + 46 + i * 26, "font-family": f, "font-weight": wt, "font-size": size, fill }, g); t.textContent = txt;
+      const t = el("text", { x: X + 3, y: CY + 66 + i * 26, "font-family": f, "font-weight": wt, "font-size": size, fill }, g); t.textContent = txt;
       const len = t.getComputedTextLength(); if (X + 3 + len > right) t.setAttribute("font-size", (size * (right - X - 3) / len).toFixed(1));
     });
   }
   function draw(p, s) {
     sv.innerHTML = "";
-    corner(312, 12, -1, 1); corner(312, BOT - 12, -1, -1);   // 左は輪がかかるので、飾りの角は右だけ
     el("path", { d: arc(R, -VIS, VIS) + "L" + pt(VIS, R - RW).join(" ") + arc(R - RW, VIS, -VIS).replace(/^M[^A]+A(\S+) (\S+) 0 0 1/, "A$1 $2 0 0 0") + "Z", fill: C.ring });
     [R + 1, R - RW - 1].forEach(r => el("path", { d: arc(r, -VIS, VIS), fill: "none", stroke: C.gold, "stroke-width": 1.4 }));
     [R - 4, R - RW + 4, R - 12, R - 20, R + 12].forEach(r => el("path", { d: arc(r, -VIS, VIS), fill: "none", stroke: C.dim, "stroke-width": 0.8 }));
