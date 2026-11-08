@@ -163,7 +163,9 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
 
 /* 下のタブ */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--bar); border-top: 1px solid var(--frame); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.tabs .wrap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-block: 6px 8px; }
+.tabs .wrap { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding-block: 6px 8px; }
+#v-form iframe { display: block; width: calc(100% + 32px); margin-inline: -16px; height: calc(100dvh - 90px); border: 0; background: var(--bg); }
+.tabs a svg { opacity: .5; } .tabs a.rec { color: var(--ink); } .tabs a.rec svg { opacity: .9; }
 .tabs a { display: grid; justify-items: center; gap: 1px; min-height: 52px; align-content: center; text-decoration: none; color: var(--muted); font-size: 11.5px; }
 .tabs a img { width: 28px; height: 28px; object-fit: contain; opacity: .5; }
 .tabs a[aria-current="page"] { color: var(--gold); font-weight: 700; }
@@ -240,6 +242,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
     </div>
     <div class="plist" id="plist"></div>
   </section>
+  <section class="view" id="v-form" hidden></section>
 </main>
 
 <nav class="tabs" aria-label="画面の切り替え">
@@ -247,6 +250,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
     <a href="#board" data-v="board"><img src="art/lyre.png" alt="">指板</a>
     <a href="#practice" data-v="practice"><img src="art/note.png" alt="">練習</a>
     <a href="#positions" data-v="positions"><img src="art/book.png" alt="">ポジション</a>
+    <a href="#form" data-v="form" class="rec" id="go-form" hidden><svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true" fill="none" stroke="#e0c272" stroke-width="1.3"><path d="M4.5 10.5h4l2-3h7l2 3h4v12h-19z"/><circle cx="14" cy="16" r="4.2"/><circle cx="14" cy="16" r="1.5"/></svg>弾いて撮る</a>
   </div>
 </nav>
 
@@ -500,15 +504,21 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   $('pitch').addEventListener('click', () => { S.a4 = S.a4 === 440 ? 442 : 440; save('a4', S.a4); renderSound(); if (S.sel) play(S.sel.si, S.sel.s); });
 
   // ── 画面の切り替え（#board / #practice / #positions） ──
-  const VIEWS = ['board', 'practice', 'positions'];
+  const VIEWS = ['board', 'practice', 'positions', 'form'];
   function route() {
     const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'board';
     VIEWS.forEach(n => { $('v-' + n).hidden = n !== v; });
+    // 弾いて撮る：運指の中の4つ目の画面として開く（上のタブは残るので、いつでも戻れる）
+    if (v === 'form' && !$('v-form').firstChild) { const f = document.createElement('iframe'); f.src = '../form/index.html'; f.title = '弾いて撮る'; f.allow = 'camera; microphone; autoplay'; $('v-form').append(f); }
     document.querySelectorAll('.tabs a').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
 
+  // 弾いている姿を撮って確かめる（アプリの中だけ。claude.ai ではカメラが使えないので出さない）
+  if (window.celloProfiles && window.top !== window) {
+    $('go-form').hidden = false;
+  }
   renderBoard(); renderInfo(); renderPractice(); renderSound(); route();
 })();
 </script>
