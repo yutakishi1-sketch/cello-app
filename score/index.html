@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}/* 見本（運指・楽譜の新しい形）。既定は切、⚙で入れる */try{if(localStorage.getItem("cello:lab")==="1")document.documentElement.classList.add("lab")}catch(e){}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
 </head>
 <body>
 
@@ -808,6 +808,16 @@ SONGS.forEach(s => {
   // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
   const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
   ctr.append(pen);
+  // 見本（⚙「見本を試す」。2026-11-10 本人指示）：ふだん見えるのは ▶ と速さだけ。ほかは「…」の中にしまう
+  if (document.documentElement.classList.contains("lab")) {
+    const more = document.createElement("button"); more.type = "button"; more.className = "ghost more"; more.textContent = "…"; more.setAttribute("aria-expanded", "false"); more.setAttribute("aria-label", "ほかの操作（音量・クリック・書き込み・撮る）");
+    const panel = document.createElement("div"); panel.className = "more-panel"; panel.hidden = true;
+    const row = document.createElement("div"); row.className = "controls";
+    [...ctr.children].filter(n => n !== btn && n !== speed).forEach(n => row.append(n));
+    panel.append(row); if (parts > 1) panel.append(mixBox);
+    ctr.append(more); ctr.after(panel);
+    more.addEventListener("click", () => { panel.hidden = !panel.hidden; more.setAttribute("aria-expanded", String(!panel.hidden)); });
+  }
   const inkTools = document.createElement("div"); inkTools.className = "controls ink-tools"; inkTools.hidden = true; body.append(inkTools);
   const sheet = document.createElement("div"); sheet.className = "sheet"; sheet.id = "sheet-" + s.id; body.append(sheet);
   const memo = document.createElement("textarea"); memo.className = "memo"; memo.id = "memo-" + s.id; memo.rows = 2;
@@ -869,6 +879,6 @@ openSong(location.hash);
 </script>
 
 
-<style>nav.pages { display: none; } .lead a, .lead br { display: none; } .wrap { padding-block: 14px 40px; gap: 24px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .controls button { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; letter-spacing: .14em; } .controls button.on { background: transparent !important; color: var(--gold) !important; border-color: rgba(201,165,78,.45) !important; } .toc a.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; } .controls .speed { font-family: var(--f-latin); font-weight: 600; font-size: 16px; }</style>
+<style>.more-panel { display: grid; gap: 12px; border: 1px solid rgba(201,165,78,.35); padding: 12px 14px; margin-top: -4px; } .controls button.more { min-width: 52px; letter-spacing: .1em !important; } .lab .controls { column-gap: 10px; } .lab .controls .speed input { width: 84px; } nav.pages { display: none; } .lead a, .lead br { display: none; } .wrap { padding-block: 14px 40px; gap: 24px; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .controls button { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; letter-spacing: .14em; } .controls button.on { background: transparent !important; color: var(--gold) !important; border-color: rgba(201,165,78,.45) !important; } .toc a.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; } .controls .speed { font-family: var(--f-latin); font-weight: 600; font-size: 16px; }</style>
 </body>
 </html>
