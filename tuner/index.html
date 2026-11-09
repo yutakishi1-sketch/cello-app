@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<script src="../shim.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
 </head>
 <body>
 <title>チェロの調弦</title>
@@ -137,6 +137,19 @@ async function toneStart(name, btn) {
   toneNow = (ok && CelloVoice.hold(actx, midi, { rate })) || synthHold(refA / 2 * Math.pow(2, OPEN[name] / 12));
 }
 Object.keys(OPEN).forEach(n => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", n + "線の基準の音を鳴らす"); const x = document.createElement("b"); x.textContent = n; const s = document.createElement("small"); s.textContent = n + "線"; b.append(x, s); b.addEventListener("click", () => toneStart(n, b)); $("tones").append(b); });
+// シンプル表示（2026-11-10 本人指示）：C・G・D・A は1段だけ。マイクを使っていないときに弦を押すと、その弦の基準の音も鳴る（もう一度押すと止まる）
+if (document.documentElement.classList.contains("simple")) {
+  const refPanel = $("tones").closest(".panel"), refRow = $("refa").closest(".row");
+  $("strings").after(refRow); refPanel.hidden = true;
+  document.querySelector('#strings [data-s="all"]').hidden = true;
+  document.querySelector(".lead").textContent = "弦を押すと基準の音が鳴ります。マイクで聴くと、針で合っているかが分かります。";
+  document.querySelectorAll("#strings button").forEach(b => b.addEventListener("click", () => {
+    const n = b.dataset.s;
+    if (!(n in OPEN)) { toneStop(); return; }
+    if (stream) return;                                                 // マイクで聴いている間は鳴らさない（自分の音を拾ってしまう）
+    toneStart(n, [...$("tones").children].find(x => x.querySelector("b").textContent === n));
+  }));
+}
 // ── 文字盤の輪：画面の左の外に大きな輪があり、音名が輪に沿って回る。金の針は固定で、針から目標の音までの弧が光る
 const wheel = (() => {
   const sv = $("wheel"), NS = "http://www.w3.org/2000/svg";
@@ -345,6 +358,7 @@ async function start() {
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   const waking = ctx.resume().catch(() => {});
   try {
+    toneStop();                                                         // 基準の音を鳴らしたままだと、それを拾ってしまう
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   } catch (e) {
     ctx.close().catch(() => {}); ctx = null;
