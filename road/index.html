@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<script src="../shim.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
 </head>
 <body>
 <title>ドヴォルザークへの道</title>
@@ -1243,6 +1243,23 @@ function renderHud(eta) {
 
 /* ── 毎日の練習（チェックリスト・スタンプのカレンダー・いまの課題・成長の記録） ── */
 // チェックの候補（最終的には先生と相談して入れ替える前提）。cat の絵は Gemini 製
+// シンプル表示（アプリの⚙で切り替え。2026-11-10 本人指示）：デイリーミッションと今日のクエストを「今日の練習」1つにまとめ、読み物は一番下の本棚へ
+const SIMPLE = document.documentElement.classList.contains("simple");
+if (SIMPLE) {
+  const ps = document.getElementById("practice-sec"), inner = ps.querySelector(".inner");
+  ps.querySelector(".sec-no").textContent = "Today"; ps.querySelector("h2").textContent = "今日の練習";
+  ps.querySelector(".sec-lead").textContent = "いまの関門と、今日できたことに印を付けます。1つで銅、3つで銀、5つで金のスタンプ。";
+  inner.insertBefore(document.getElementById("quest"), inner.querySelector(".practice"));
+  const det = document.createElement("details"), sm = document.createElement("summary");
+  det.className = "rules-fold"; sm.textContent = "続けるための決まり"; det.append(sm, document.querySelector("#quest-sec .rules")); inner.append(det);
+  document.getElementById("quest-sec").hidden = true;
+  const nav = document.querySelector('.topnav a[href="#practice-sec"]'); if (nav) nav.textContent = "今日";
+  const shelf = document.createElement("section"); shelf.className = "block more"; shelf.id = "shelf";
+  shelf.innerHTML = '<div class="inner"><details class="fold" id="fold-shelf"><summary class="sec-head fold-sum"><span class="sec-no">Bookshelf</span><h2>本棚</h2><p class="sec-lead">ドヴォルザークという人と、チェロの名曲を書いた作曲家たちの読み物。</p><span class="fold-h" aria-hidden="true"></span></summary><div class="shelf-in"></div></details></div>';
+  const about = document.getElementById("about"), comp = document.getElementById("composers-sec");
+  comp.after(shelf); shelf.querySelector(".shelf-in").append(about, comp);
+}
+
 const PRACTICE = [
   { id: "posture", cat: "base", label: "構えを鏡で確かめた", hint: "椅子の高さ・楽器の角度・肩の力。1分" },
   { id: "bowhold", cat: "base", label: "弓の持ち方を確かめた", hint: "親指と中指の位置、手の力を抜く" },
@@ -1344,11 +1361,21 @@ function renderToday() {
     box.append(fl);
   }
   const hereIdx = STATIONS.findIndex(x => st(x) !== "clear"), cur = hereIdx >= 0 ? STATIONS[hereIdx] : null;
+  if (SIMPLE && cur && cur.today) {
+    const g = el("div", "pr-group"); g.append(el("span", "pr-cat", `いまの関門「${cur.title}」`));
+    cur.today.forEach((t, k) => {
+      const id = `q:${cur.id}:${k}`, lab = el("label", "pr-item"), cb = el("input"); cb.type = "checkbox"; cb.id = "pq-" + k; cb.checked = (rec.items || []).includes(id);
+      cb.addEventListener("change", () => { const set = new Set(rec.items || []); cb.checked ? set.add(id) : set.delete(id); saveDay(date, { items: [...set], rest: false }); });
+      lab.append(cb, el("span", null, t)); g.append(lab);
+    });
+    box.append(g);
+  }
   ["base", "book", "read", "piece"].forEach(cat => {
     const g = el("div", "pr-group"); const ct = el("span", "pr-cat"); ct.append(img(CAT[cat].icon, "pr-ico"), CAT[cat].name); g.append(ct);
     PRACTICE.filter(p => p.cat === cat).forEach(p => {
       const label = p.id === "current" ? (cur ? `いまの関門「${cur.title}」を練習した` : p.label) : p.label;
-      if (p.id === "current" && cur && (cur.id === "kodokei")) return;   // 古時計と重なるときは出さない
+      if (p.id === "current" && cur && (cur.id === "kodokei" || SIMPLE)) return;   // シンプル表示では上の「いまの関門」の組が受け持つ
+      if (SIMPLE && cur && p.id === cur.id) return;                       // いまの関門と同じ曲は、上の組と重なるので出さない   // 古時計と重なるときは出さない
       const lab = el("label", "pr-item"), cb = el("input"); cb.type = "checkbox"; cb.id = "pi-" + p.id; cb.checked = (rec.items || []).includes(p.id);
       cb.addEventListener("change", () => { const set = new Set(rec.items || []); cb.checked ? set.add(p.id) : set.delete(p.id); saveDay(date, { items: [...set], rest: false }); });
       const tx = el("span"); tx.append(label); const hint = p.id === "current" && cur ? cur.task : p.hint; if (hint) tx.append(el("small", null, hint));
@@ -1427,7 +1454,7 @@ function renderGrowth() {
   box.append(el("h4", null, "これだけ成長しました"), stats);
   const counts = {}; recs.forEach(r => (r.items || []).forEach(id => counts[id] = (counts[id] || 0) + 1));
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4);
-  if (top.length) { const ul = el("ul", "gr-top"); top.forEach(([id, n]) => { const p = PRACTICE.find(x => x.id === id); ul.append(el("li", null, `${p ? p.label : id}：${n}回`)); }); box.append(el("span", "pr-cat", "よく続けた練習"), ul); }
+  if (top.length) { const ul = el("ul", "gr-top"); top.forEach(([id, n]) => { const p = PRACTICE.find(x => x.id === id), [, qs, qk] = id.split(":"), qst = id.startsWith("q:") && STATIONS.find(x => x.id === qs); ul.append(el("li", null, `${p ? p.label : qst ? qst.today[qk] : "関門の目標"}：${n}回`)); }); box.append(el("span", "pr-cat", "よく続けた練習"), ul); }
   const nos = Object.values(days).filter(r => r.no).sort((a, b) => a.date.localeCompare(b.date));
   if (nos.length) box.append(el("p", "gr-line", `ウェルナー：${nos[0].no}（${nos[0].date.slice(5).replace("-", "/")}）→ ${nos[nos.length - 1].no}`));
   const ms = el("div", "gr-ms");
@@ -1875,6 +1902,7 @@ function renderQuest(hereIdx) {
   b2.addEventListener("click", () => save(s, { status: "clear" }));
   adv.append(b1, b2);
   l.append(adv, el("p", "adv-note", "押すと記録され、地図のピンが次の関門へ進みます。チェックリストを付けても、少しずつ進みます。"));
+  if (SIMPLE) { q.prepend(l); return; }                                // 目標のチェックは「今日の練習」の一番上の組へ
   const r = el("div", "quest-r"); r.append(el("span", "latin", "Objectives"));
   const ol = el("ol", "objs"), doneEl = el("div", "complete");
   const update = () => { const all = [...ol.querySelectorAll("input")].every(c => c.checked); doneEl.textContent = all ? "QUEST COMPLETE" : ""; };
@@ -1999,6 +2027,6 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }
 </style>
 
-<style>.topnav .tn-sep ~ a { display: none; } .topnav { top: 0; } #tools-sec, .topnav a[href="#tools-sec"] { display: none !important; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .btn { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; } .chip-min.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; }</style>
+<style>.topnav .tn-sep ~ a { display: none; } .topnav { top: 0; } #tools-sec, .topnav a[href="#tools-sec"] { display: none !important; } .simple #quest { grid-template-columns: minmax(0, 1fr); margin-bottom: 18px; } .simple .quest-l { border-right: 0; border-bottom: 0; } .rules-fold { margin-top: 14px; } .rules-fold > summary { cursor: pointer; color: var(--gold); font-size: var(--fs-sm); padding: 6px 2px; } .rules-fold .rules { margin-top: 8px; } #shelf .shelf-in > section.block { padding-block: 8px; } #shelf .shelf-in > section .inner { padding-inline: 0; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .btn { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; } .chip-min.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; }</style>
 </body>
 </html>
