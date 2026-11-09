@@ -109,9 +109,12 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
     <button type="button" id="sync-all">全部を送り直す</button>
   </div>
   </details>
+  <h2 style="margin-top:16px">表示</h2>
+  <label class="row" style="gap:10px;align-items:center"><input type="checkbox" id="simple-on" style="width:20px;height:20px">シンプル表示（お試し中）</label>
+  <p>今日の練習を1つにまとめ、読み物は本棚へ、使う回数の少ないボタンは隠します。切ると元の全部入りの表示に戻ります。</p>
   <div class="row"><button type="button" id="close">閉じる</button></div>
   <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：a36c3776c824</p>
+  <p>アプリの版：59bb519bff57</p>
 </dialog>
 
 <script src="shim.js"></script>
@@ -134,6 +137,9 @@ let start = location.hash.slice(1); if (!start) { try { start = localStorage.get
 show(start);
 
 // 記録の送り先
+// シンプル表示（2026-11-10 本人指示。2週間試す）。各ページは開くときに読むので、切り替えたら開き直す
+(() => { const c = document.getElementById("simple-on"); let on = true; try { on = localStorage.getItem("cello:simple") !== "0"; } catch {} c.checked = on;
+  c.addEventListener("change", () => { try { localStorage.setItem("cello:simple", c.checked ? "1" : "0"); } catch {} location.reload(); }); })();
 const dlg = document.getElementById("settings"), urlIn = document.getElementById("sync-url"), st = document.getElementById("sync-st");
 function status() {
   const last = celloSync.last(), n = celloSync.pending();
