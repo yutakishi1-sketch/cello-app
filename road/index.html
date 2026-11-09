@@ -1199,6 +1199,11 @@ function paintRoad() {
       a.append(svgEl("image", { href: "art/ui/" + file + ".png", x: pt.x - size / 2, y: pt.y - size / 2 + dy * k / s, width: size, height: size, opacity }));
     };
     if (boss) { put("map-boss", 28, 0, status === "clear" ? 1 : .85); if (status === "clear") put("map-clear", 11); }
+    if (boss && SIMPLE && status !== "clear") {                         // シンプル表示：門番の体力は地図の上に（門番の欄は隠す）
+      const bw = 30 * k / s, bh = 4 * k / s, y = pt.y + 17 * k / s, hp = LEFT[status];
+      a.append(svgEl("rect", { x: pt.x - bw / 2, y, width: bw, height: bh, rx: bh / 2, fill: "rgba(11,19,34,.85)", stroke: "rgba(208,96,90,.8)", "stroke-width": .6 / s }));
+      a.append(svgEl("rect", { x: pt.x - bw / 2, y, width: bw * hp, height: bh, rx: bh / 2, fill: "#d0605a" }));
+    }
     else if (status === "clear") put("map-clear", 16);
     else if (status === "through") put("map-clear", 16, 0, .55);
     else put("map-todo", 14);
@@ -1210,7 +1215,26 @@ function paintRoad() {
 }
 
 /* ── ステータス ── */
+// シンプル表示のステータス：進み具合は「道のり・教本・目標まで」の3つの数字だけ（2026-11-10 本人指示：進み具合を1本の道にまとめる）
+function renderHudSimple(eta) {
+  const box = $("hud"); clearBox(box); box.classList.add("s3");
+  const N = STATIONS.length, clears = STATIONS.filter(s => st(s) === "clear").length, c = STATIONS.findIndex(x => st(x) !== "clear");
+  const tile = (k, v, sub, cls) => { const d = el("div", "s3t" + (cls ? " " + cls : "")); d.append(el("span", "k", k), el("b", null, v), el("small", null, sub)); return d; };
+  const t1 = tile("道のり", `${clears} / ${N}`, c < 0 ? "プラハ城に到達" : `いまここ：${STATIONS[c].title}`);
+  const tot = bookTotal(werner.book), now = chapterNow(werner.book, curPos());
+  const t2 = tile("教本", now ? now.name : curPos() ? "No." + curPos() : "まだ", tot ? `No.${curPos()}・${Math.min(100, Math.round(curPos() / tot * 100))}%` : BOOKS[werner.book].name);
+  let t3;
+  const need = totalWeeks(targets), w = eta[N - 1] || 0;
+  if (deadline && targets.length) {
+    const avail = (new Date(deadline + "T00:00:00") - new Date()) / 864e5 / 7, ratio = need / Math.max(.1, avail);
+    t3 = ratio <= .9 ? tile("目標まで", "間に合う", `${deadline.replace(/-/g, ".").slice(0, 7)}まで・余裕 約${Math.round(avail - need)}週`, "ok")
+       : ratio <= 1.1 ? tile("目標まで", "ぎりぎり", `必要 約${Math.round(need)}週・残り 約${Math.round(avail)}週`, "warn")
+       : tile("目標まで", `${Math.round(need - avail)}週不足`, "「目標の曲」で練習量か期限を見直す", "bad");
+  } else t3 = tile("目標まで", w > 0 ? `約${months(w)}か月` : "到達", w > 0 ? ym(addWeeks(w)) : "クリア済み");
+  box.prepend(t1, t2, t3);
+}
 function renderHud(eta) {
+  if (SIMPLE) return renderHudSimple(eta);
   const box = $("hud"); clearBox(box);
   const clears = STATIONS.filter(s => st(s) === "clear").length;
   const N = STATIONS.length, need = f => Math.ceil(f * N);
@@ -1256,6 +1280,7 @@ if (SIMPLE) {
   const nav = document.querySelector('.topnav a[href="#practice-sec"]'); if (nav) nav.textContent = "今日";
   const shelf = document.createElement("section"); shelf.className = "block more"; shelf.id = "shelf";
   shelf.innerHTML = '<div class="inner"><details class="fold" id="fold-shelf"><summary class="sec-head fold-sum"><span class="sec-no">Bookshelf</span><h2>本棚</h2><p class="sec-lead">ドヴォルザークという人と、チェロの名曲を書いた作曲家たちの読み物。</p><span class="fold-h" aria-hidden="true"></span></summary><div class="shelf-in"></div></details></div>';
+  document.getElementById("gate-sec").hidden = true;                   // 門番は地図の上（体力の棒つき）。押すと攻略メモが開く
   const about = document.getElementById("about"), comp = document.getElementById("composers-sec");
   comp.after(shelf); shelf.querySelector(".shelf-in").append(about, comp);
 }
@@ -2027,6 +2052,6 @@ html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y;
 @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } }
 </style>
 
-<style>.topnav .tn-sep ~ a { display: none; } .topnav { top: 0; } #tools-sec, .topnav a[href="#tools-sec"] { display: none !important; } .simple #quest { grid-template-columns: minmax(0, 1fr); margin-bottom: 18px; } .simple .quest-l { border-right: 0; border-bottom: 0; } .rules-fold { margin-top: 14px; } .rules-fold > summary { cursor: pointer; color: var(--gold); font-size: var(--fs-sm); padding: 6px 2px; } .rules-fold .rules { margin-top: 8px; } #shelf .shelf-in > section.block { padding-block: 8px; } #shelf .shelf-in > section .inner { padding-inline: 0; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .btn { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; } .chip-min.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; }</style>
+<style>.topnav .tn-sep ~ a { display: none; } .topnav { top: 0; } #tools-sec, .topnav a[href="#tools-sec"] { display: none !important; } .simple #quest { grid-template-columns: minmax(0, 1fr); margin-bottom: 18px; } .simple .quest-l { border-right: 0; border-bottom: 0; } .rules-fold { margin-top: 14px; } .rules-fold > summary { cursor: pointer; color: var(--gold); font-size: var(--fs-sm); padding: 6px 2px; } .rules-fold .rules { margin-top: 8px; } #shelf .shelf-in > section.block { padding-block: 8px; } #shelf .shelf-in > section .inner { padding-inline: 0; } .hud.s3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 14px; } .s3t { display: grid; gap: 2px; text-align: center; border: 1px solid var(--line); padding: 10px 6px; min-width: 0; } .s3t .k { font-size: var(--fs-sm); color: var(--muted); letter-spacing: .12em; } .s3t b { font-family: var(--f-latin); font-size: clamp(20px, 5.4vw, 28px); font-weight: 600; color: #f0d98f; line-height: 1.2; } .s3t small { font-size: 12px; color: var(--muted); line-height: 1.4; overflow-wrap: anywhere; } .s3t.ok b { color: #9cc56a; } .s3t.warn b { color: #e3a33a; } .s3t.bad b { color: #e07a72; } html, body { overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-y; } body::before { content: none !important; display: none !important; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } @media (max-width: 768px) { input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px !important; } } :root { --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", serif; } body { font-family: var(--f-fine); } h1, h2, h3 { letter-spacing: .1em; } .btn { background: linear-gradient(180deg, rgba(201,165,78,.18), rgba(201,165,78,.04)) !important; color: #f0d98f !important; border: 1px solid var(--gold) !important; font-family: var(--f-fine) !important; font-weight: 400 !important; letter-spacing: .24em; clip-path: none !important; } .chip-min.on { background: rgba(201,165,78,.16) !important; color: #f0d98f !important; border-color: var(--gold) !important; }</style>
 </body>
 </html>
