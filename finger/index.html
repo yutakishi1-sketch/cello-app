@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}/* 見本（運指・楽譜の新しい形）。既定は切、⚙で入れる */try{if(localStorage.getItem("cello:lab")==="1")document.documentElement.classList.add("lab")}catch(e){}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
 </head>
 <body>
 
@@ -421,8 +421,15 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
     });
   }
   function corners(box) { ['tl', 'tr', 'bl', 'br'].forEach(p => { const i = el('img', 'corner ' + p); i.src = 'art/corner.png'; i.alt = ''; box.append(i); }); }
+  const LAB = document.documentElement.classList.contains('lab');
   function renderInfo() {
     const box = $('info'); box.textContent = ''; corners(box);
+    // 見本（⚙「見本を試す」）：何も押していないときは、選んだポジションの説明をここに出す（ポジションのタブを1つ減らす）
+    if (!S.sel && LAB) {
+      const P = POSITIONS[S.pos - 1];
+      box.append(el('h2', null, P[1]), el('p', 'ff', P[2]), el('p', null, P[3]), el('p', null, '点をタップすると、音名と指番号が出て音が鳴ります。'));
+      return;
+    }
     if (!S.sel) {
       box.append(el('h2', null, 'はじめに'), el('p', null, '上のポジションを選び、指板の点をタップすると、その音の音名・弦・指番号が表示され、音が鳴ります。0は開放弦です。'));
       return;
@@ -503,6 +510,12 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   $('snd').addEventListener('click', () => { S.sound = !S.sound; save('sound', S.sound); renderSound(); if (S.sound && S.sel) play(S.sel.si, S.sel.s); });
   $('pitch').addEventListener('click', () => { S.a4 = S.a4 === 440 ? 442 : 440; save('a4', S.a4); renderSound(); if (S.sel) play(S.sel.si, S.sel.s); });
 
+  // 見本：手の形は指板の画面の下へ。ポジションのタブは隠す（指板・練習の2つ）
+  if (LAB) {
+    const hand = document.querySelector('#v-positions .board.hand'); hand.querySelector('h2').textContent = '手の形（どのポジションでも同じ）'; $('v-board').append(hand);
+    document.querySelector('.tabs a[data-v="positions"]').hidden = true;
+    if (location.hash === '#positions') location.hash = '#board';
+  }
   // ── 画面の切り替え（#board / #practice / #positions） ──
   const VIEWS = ['board', 'practice', 'positions', 'form'];
   function route() {
