@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{box-sizing:border-box}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<script src="../shim.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
+<script src="../shim.js"></script><script>/* シンプル表示（2026-11-10 本人指示。2週間試して、戻さなかった物は消す）。既定は入、⚙で切れる */try{if(localStorage.getItem("cello:simple")!=="0")document.documentElement.classList.add("simple")}catch(e){document.documentElement.classList.add("simple")}</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Zen+Old+Mincho:wght@400;600&display=swap">
 </head>
 <body>
 
@@ -516,7 +516,8 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   window.addEventListener('hashchange', route);
 
   // 弾いている姿を撮って確かめる（アプリの中だけ。claude.ai ではカメラが使えないので出さない）
-  if (window.celloProfiles && window.top !== window) {
+  // シンプル表示では、入口は楽譜帳の「弾いて撮る」だけにする（2026-11-10 本人指示）
+  if (window.celloProfiles && window.top !== window && !document.documentElement.classList.contains('simple')) {
     $('go-form').hidden = false;
   }
   renderBoard(); renderInfo(); renderPractice(); renderSound(); route();
