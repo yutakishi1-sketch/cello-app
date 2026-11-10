@@ -93,6 +93,9 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .sheet .abcjs-annotation.fg { fill: var(--gold-hi); font-weight: 700; }
 .sheet .abcjs-annotation { fill: var(--gold-soft); }
 .sheet .abcjs-tempo { fill: var(--muted); }
+/* 鳴っている音符を光らせる（2026-11-10 本人指示：どこを弾いているか見失わないように） */
+.sheet .now-note, .sheet .now-note * { fill: #ffd76a !important; stroke: #ffd76a !important; }
+.sheet .now-note { filter: drop-shadow(0 0 3px rgba(255,215,106,.95)) drop-shadow(0 0 8px rgba(255,215,106,.6)); }
 .sheet svg { max-width: 100%; height: auto; }
 .foot { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
 button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
@@ -634,7 +637,7 @@ function stopAll() {
   playSeq++;
   if (!playing) return;
   playing.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
-  clearTimeout(playing.timer); playing.btn.textContent = "▶ 鳴らす"; playing.btn.classList.remove("on"); playing = null;
+  clearTimeout(playing.timer); if (playing.unglow) playing.unglow(); playing.btn.textContent = "▶ 鳴らす"; playing.btn.classList.remove("on"); playing = null;
 }
 // 拍子は abc の M: から。6/8 のように「付点4分を1拍」と数える曲は beatLength が 3/8 になる
 function meterOf(song) {
@@ -650,6 +653,37 @@ function tone(t, d, freq, type, vol) {
   g.gain.setValueAtTime(vol, t + d * 0.8); g.gain.linearRampToValueAtTime(0, t + d * 0.96);
   o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d);
   return o;
+}
+// 楽譜の音符（abc の何文字目か）→ 画面の音符の部品。再生の音と同じ番号で引けるので、鳴っている音符を光らせられる
+function noteParts(song) {
+  if (song._parts && song._parts.tune === song.tune) return song._parts.map;
+  const map = new Map();
+  (song.tune.lines || []).forEach(l => (l.staff || []).forEach(st => (st.voices || []).forEach(v => v.forEach(e => {
+    if (e.el_type === "note" && !e.rest && e.abselem && e.abselem.elemset) map.set(e.startChar, e.abselem.elemset);
+  }))));
+  song._parts = { tune: song.tune, map };
+  return map;
+}
+// 再生に合わせて光らせる。光る音符が画面の外へ出たら、その段が見える所まで送る
+function glowAlong(song, hits, my) {
+  const parts = noteParts(song), lit = new Set();
+  const set = (c, on) => (parts.get(c) || []).forEach(n => n.classList.toggle("now-note", on));
+  const off = () => { lit.forEach(c => set(c, false)); lit.clear(); };
+  const lag = () => ctx.outputLatency || ctx.baseLatency || 0;
+  (function frame() {
+    if (my !== playSeq) return off();
+    const now = ctx.currentTime - lag(), want = new Set();
+    for (const h of hits) if (h.s <= now && now < h.e) want.add(h.c);
+    lit.forEach(c => { if (!want.has(c)) { set(c, false); lit.delete(c); } });
+    want.forEach(c => {
+      if (lit.has(c)) return;
+      set(c, true); lit.add(c);
+      const el = (parts.get(c) || [])[0], r = el && el.getBoundingClientRect();
+      if (r && (r.top < 40 || r.bottom > innerHeight - 90)) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+    requestAnimationFrame(frame);
+  })();
+  return off;
 }
 // 旋律は本物のチェロの録音で鳴らす（art/cello-voice.js）。録音を読めないときは、これまでの作った音で鳴らす
 async function playSong(song, btn, opts) {
@@ -676,12 +710,13 @@ async function playSong(song, btn, opts) {
   const countIn = mt.perBar * mt.beat * whole;
   const tc = ctx.currentTime + 0.15, t0 = tc + countIn, nodes = [];
   for (let k = 0; k < mt.perBar; k++) nodes.push(beep(tc + k * mt.beat * whole, k === 0, 1));
-  let end = 0;
+  let end = 0; const hits = [];
   // パートごとの音量（0〜1）。0 のパートは鳴らさない（長さの計算には入れる）
   (seq.tracks || []).forEach((track, ti) => { const v = opts.mix ? opts.mix(ti) : 1; track.forEach(ev => {
     if (ev.cmd !== "note" || ev.pitch == null) return;
     const d = ev.duration * whole;
     end = Math.max(end, ev.start + ev.duration);
+    if (ev.startChar != null) hits.push({ s: t0 + ev.start * whole, e: t0 + ev.start * whole + d * 0.92, c: ev.startChar });
     if (v <= 0) return;
     nodes.push((voice && CelloVoice.note(ctx, ev.pitch, t0 + ev.start * whole, d, { gain: 1.4 * v })) || tone(t0 + ev.start * whole, d, 440 * Math.pow(2, (ev.pitch - 69) / 12), "triangle", 0.3 * v));
   }); });
@@ -694,7 +729,7 @@ async function playSong(song, btn, opts) {
   }
   btn.textContent = "■ 止める"; btn.classList.add("on");
   const total = countIn + end * whole;
-  playing = { nodes, btn, timer: setTimeout(() => { const again = opts.loop(); stopAll(); if (again) playSong(song, btn, opts); }, (total + 0.3) * 1000) };
+  playing = { nodes, btn, unglow: glowAlong(song, hits, my), timer: setTimeout(() => { const again = opts.loop(); stopAll(); if (again) playSong(song, btn, opts); }, (total + 0.3) * 1000) };
 }
 
 // 楽譜への書き込み。線は楽譜の幅・高さに対する割合で持つので、画面の大きさが変わってもずれない
