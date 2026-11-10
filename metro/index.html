@@ -43,6 +43,13 @@ svg.clock { width: 100%; max-width: 460px; height: auto; display: block; touch-a
 .ghost:hover { border-color: var(--gold); }
 .play .ghost { height: 50px; padding: 0 18px; }
 /* 速さのつまみ：細い金の線と、菱形のつまみ */
+.beats-opt { flex-wrap: wrap; row-gap: 0; padding-bottom: 8px; }
+.beats-opt output { color: var(--gold-soft, #e0c272); letter-spacing: .08em; font-size: 14px; }
+#beats { -webkit-appearance: none; appearance: none; flex: 0 0 100%; height: 28px; margin: 0; background: repeating-linear-gradient(90deg, rgba(201,165,78,.55) 0 1px, transparent 1px calc((100% - 1px) / 11)) 7px 50% / calc(100% - 14px) 7px no-repeat; }
+#beats::-webkit-slider-runnable-track { height: 1px; background: rgba(201,165,78,.5); }
+#beats::-moz-range-track { height: 1px; background: rgba(201,165,78,.5); }
+#beats::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -7px; background: #f0d98f; border: 1px solid #1a1408; transform: rotate(45deg); box-shadow: 0 0 10px rgba(227,196,111,.45); }
+#beats::-moz-range-thumb { width: 12px; height: 12px; background: #f0d98f; border: 1px solid #1a1408; border-radius: 0; transform: rotate(45deg); }
 #bpm { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; }
 #bpm::-webkit-slider-runnable-track { height: 1px; background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim)); }
 #bpm::-moz-range-track { height: 1px; background: var(--gold-dim); }
@@ -108,7 +115,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
     </div>
     <div class="presets" id="presets" aria-label="よく使う速さ"></div>
     <div class="opts">
-      <div class="opt"><label for="beats">拍子</label><select id="beats"><option value="1">拍子なし</option><option value="2">2拍子</option><option value="3">3拍子</option><option value="4" selected>4拍子</option><option value="6">6拍子</option></select></div>
+      <div class="opt beats-opt"><label for="beats">拍子</label><output id="beatsOut" for="beats">4拍子</output><input type="range" id="beats" min="1" max="12" step="1" value="4" aria-label="拍子（1〜12）"></div>
       <div class="opt"><label for="sub8">8分音符も刻む</label><label class="chk"><input type="checkbox" id="sub8"></label></div>
       <div class="opt"><label for="snd">音</label><div class="r"><select id="snd"><option value="classic" selected>振り子（木）</option><option value="plastic">振り子（プラスチック）</option><option value="synth">作った音</option></select><button type="button" class="ghost" id="try">試聴</button></div></div>
     </div>
@@ -156,6 +163,7 @@ function bell(t) {
 }
 function synthClick(t, kind) {
   if (kind === 2) { tick(t, 0.9, 1); bell(t); }
+  else if (kind === 3) tick(t, 1, 0.92);            // まとまりの頭：少し強く、少し低く
   else if (kind === 1) tick(t, 0.8, 1);
   else tick(t, 0.32, 1.25);                          // 裏拍は小さく、少し高く
 }
@@ -177,14 +185,17 @@ function click(t, kind) {
   const buf = real[m.snd + (swing++ % 2)];
   if (m.snd === "synth" || !buf) return synthClick(t, kind);
   const s = ac.createBufferSource(), g = ac.createGain();
-  s.buffer = buf; g.gain.value = kind === 2 ? 0.9 : kind === 1 ? 0.55 : 0.22;   // 1拍目は強く、裏拍はそっと
+  s.buffer = buf; g.gain.value = kind === 2 ? 0.9 : kind === 3 ? 0.75 : kind === 1 ? 0.55 : 0.22;   // 1拍目は強く、裏拍はそっと
   s.connect(g).connect(ac.destination); s.start(t);
 }
+// 6・9・12拍子は3つずつのまとまりで数える（1・4・7・10拍目を強める）。ほかは1拍目だけ
+const grp = n => n >= 6 && n % 3 === 0 ? 3 : n;
+function beatName(n) { return n < 2 ? "拍子なし" : grp(n) === 3 ? `${n}拍子（${Array(n / 3).fill(3).join("＋")}）` : `${n}拍子`; }
 function schedule() {
   const per = m.sub ? 2 : 1;
   while (m.next < ac.currentTime + 0.12) {
     const t = m.next, sub = m.tick % per, beat = Math.floor(m.tick / per) % m.beats;
-    click(t, sub ? 0 : (beat === 0 && m.beats > 1 ? 2 : 1));
+    click(t, sub ? 0 : m.beats < 2 ? 1 : beat === 0 ? 2 : beat % grp(m.beats) === 0 ? 3 : 1);
     if (!sub) clock.beat(t, m.beats > 1 ? beat : -1);
     if (!sub) setTimeout(() => document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("on", i === beat)), Math.max(0, (t - ac.currentTime) * 1000));
     m.tick++; m.next += 60 / m.bpm / per;
@@ -224,7 +235,7 @@ const clock = (() => {
     beat(t, i) { dial.beat(t, i); },
     reset() { dial.reset(); },
     halt() { dial.reset(); },
-    setBeats(n) { dial.setBeats(n); },
+    setBeats(n) { dial.setBeats(n, grp(n)); },
   };
 })();
 function word(b) { return b < 56 ? "ラルゴ（とてもゆっくり）" : b < 72 ? "アダージョ（ゆっくり）" : b < 92 ? "アンダンテ（歩く速さ）" : b < 116 ? "モデラート（中くらい）" : b < 150 ? "アレグロ（速く）" : "プレスト（とても速く）"; }
@@ -241,13 +252,13 @@ PRESETS.forEach(([v, label]) => {
   const n = document.createElement("b"); n.textContent = v; const s = document.createElement("small"); s.textContent = label;
   b.append(n, s); b.setAttribute("aria-label", label + " ♩=" + v); b.addEventListener("click", () => setBpm(v)); $("presets").append(b);
 });
-m.beats = Number(store.get("mt-beats")) || 4; $("beats").value = String(m.beats); clock.setBeats(m.beats);
+m.beats = Math.min(12, Number(store.get("mt-beats")) || 4); $("beats").value = String(m.beats); $("beatsOut").textContent = beatName(m.beats); clock.setBeats(m.beats);
 m.sub = store.get("mt-sub") === "1"; $("sub8").checked = m.sub;
 setBpm(Number(store.get("mt-bpm")) || 72); dots(); render();
 $("bpm").addEventListener("input", e => setBpm(Number(e.target.value)));
 [["minus", -1], ["plus", 1], ["minus5", -5], ["plus5", 5]].forEach(([id, d]) => $(id).addEventListener("click", () => setBpm(m.bpm + d)));
 $("go").addEventListener("click", () => m.on ? stop() : start());
-$("beats").addEventListener("change", e => { m.beats = Number(e.target.value); store.set("mt-beats", e.target.value); dots(); clock.setBeats(m.beats); });
+$("beats").addEventListener("input", e => { const n = Number(e.target.value); if (n === m.beats) return; m.beats = n; store.set("mt-beats", String(n)); $("beatsOut").textContent = beatName(n); dots(); clock.setBeats(n); });
 $("sub8").addEventListener("change", e => { m.sub = e.target.checked; store.set("mt-sub", m.sub ? "1" : "0"); });
 m.snd = store.get("mt-snd") || "classic"; $("snd").value = m.snd;
 $("snd").addEventListener("change", e => { m.snd = e.target.value; store.set("mt-snd", m.snd); });
