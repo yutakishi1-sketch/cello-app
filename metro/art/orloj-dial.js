@@ -156,11 +156,12 @@
     // snap: 拍からの経過 dt 秒で 0→1。少しだけ行き過ぎて戻る（easeOutBack）
     const snap = (dt, dur, k) => { if (dt >= dur) return 1; const p = dt / dur - 1; return 1 + (k + 1) * p * p * p + k * p * p; };
     let want = bpm, handA = angOf(bpm), beatsT = [], last = null, nBeat = 0, nBar = 0, perBar = beats > 1 ? beats : 4, zodA = 0, sweepA = 0, shortA = 0;
-    function setBeats(n) {
+    function setBeats(n, g) {
       perBar = n > 1 ? n : 4;
       lampG.innerHTML = ""; lamps.length = 0;
-      const k = Math.max(1, n), gap = k > 4 ? 15 : 20;
-      for (let i = 0; i < k; i++) { const x = CX + (i - (k - 1) / 2) * gap, y = CY + 58; lamps.push(el("path", { d: `M${x} ${y - 6}l6 6l-6 6l-6-6z`, fill: "none", stroke: i === 0 && k > 1 ? C.goldS : C.dim, "stroke-width": 1.2 }, lampG)); }
+      const k = Math.max(1, n), gr = g && g < k ? g : k, gap = k > 8 ? 10 : k > 4 ? 14 : 20, sep = gr < k ? gap * 0.6 : 0, s = k > 8 ? 4.5 : 6;
+      const w = (k - 1) * gap + (Math.ceil(k / gr) - 1) * sep;
+      for (let i = 0; i < k; i++) { const x = CX - w / 2 + i * gap + Math.floor(i / gr) * sep, y = CY + 58; lamps.push(el("path", { d: `M${x} ${y - s}l${s} ${s}l${-s} ${s}l${-s} ${-s}z`, fill: "none", stroke: k > 1 && i % gr === 0 ? (i === 0 ? C.goldS : C.gold) : C.dim, "stroke-width": 1.2 }, lampG)); }
     }
     setBeats(beats);
     return {
