@@ -40,6 +40,8 @@ dialog input { width: 100%; background: #14203a; color: var(--ink); border: 1px 
 dialog .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 dialog button { font: inherit; font-size: 14px; padding: 8px 14px; border: 1px solid #6e5a2c; background: #14203a; color: var(--ink); cursor: pointer; }
 dialog button.main { background: var(--gold); color: #120d05; border-color: var(--gold); font-weight: 700; }
+dialog a { color: var(--gold); }
+dialog a.btn-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; padding: 0 14px; border: 1px solid var(--gold); text-decoration: none; }   /* ほかのボタンと同じ形の、別ページへの入口 */
 dialog .st { font-size: 13px; color: var(--ink); }
 dialog { max-height: 88vh; overflow-y: auto; }
 dialog details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
@@ -74,7 +76,7 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
   </ol>
   <div class="safe">記録は<b>このスマホの中だけ</b>に保存され、どこにも送られません。機種変更や消えたときに備えて、ときどき ⚙ の「書き出す」で控えを取ってください。</div>
   <input id="welcome-name" type="text" placeholder="呼び名（あとで変えられます）" aria-label="呼び名">
-  <p id="welcome-home" hidden>ホーム画面に置くと、アプリのように開けます：Safari の共有ボタン →「ホーム画面に追加」。</p>
+  <p id="welcome-home" hidden>ホーム画面に置くと、アプリのように開けます：Safari の共有ボタン →「ホーム画面に追加」。<a href="install/">手順を動く見本で見る</a></p>
   <div class="row"><button type="button" class="main" id="welcome-go">はじめる</button></div>
 </dialog>
 
@@ -114,9 +116,11 @@ dialog summary { cursor: pointer; font-size: 14px; color: var(--gold); }
   <p>今日の練習を1つにまとめ、読み物は本棚へ、使う回数の少ないボタンは隠します。切ると元の全部入りの表示に戻ります。</p>
   <label class="row" style="gap:10px;align-items:center"><input type="checkbox" id="lab-on" style="width:20px;height:20px">見本を試す（運指・楽譜の新しい形）</label>
   <p>運指はポジションのタブをなくして指板の画面に、楽譜は ▶ と速さ以外を「…」にしまいます。見比べたら切って戻せます。</p>
+  <h2 style="margin-top:16px">アプリの入れ方</h2>
+  <p>ホーム画面に置く手順を、動く見本で見せるページです。人に教えるときは、このページの住所や QR コードを渡します。</p>
+  <div class="row"><a class="btn-link" href="install/">入れ方のページを開く</a></div>
   <div class="row"><button type="button" id="close">閉じる</button></div>
-  <p>ホーム画面に置くには：Safari の共有ボタン →「ホーム画面に追加」。</p>
-  <p>アプリの版：e9540910f1e6</p>
+  <p>アプリの版：c647b184ab9d</p>
 </dialog>
 
 <script src="shim.js"></script>
