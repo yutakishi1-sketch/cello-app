@@ -97,6 +97,36 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .sheet .now-note, .sheet .now-note * { fill: #ffd76a !important; stroke: #ffd76a !important; }
 .sheet .now-note { filter: drop-shadow(0 0 3px rgba(255,215,106,.95)) drop-shadow(0 0 8px rgba(255,215,106,.6)); }
 .sheet svg { max-width: 100%; height: auto; }
+/* 二重奏を並べる曲: スマホ（640px 未満）は上下に積み、横長は左右に並べる。段の区切りがそろうよう、並べる曲は両パートとも楽譜の書き方で1段4小節にしておく */
+.sheet.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 640px) { .sheet.split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.split-name { font-size: 14px; font-weight: 700; color: var(--gold-soft); margin: 0 0 4px; }
+/* 譜面台: 楽譜をページに分けて、横長の横向きは見開き、スマホの縦は1ページ。払う・端を押す・矢印キー（譜めくりペダル）・再生中の自動でめくる */
+.stand { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; }
+.stand-bar { display: flex; align-items: center; gap: 8px; padding: max(8px, env(safe-area-inset-top)) 12px 8px; }
+.stand-title { flex: 1; min-width: 0; margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stand-no { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stand-bar button { font: inherit; font-weight: 700; font-size: 14px; min-height: 44px; min-width: 44px; padding: 0 14px; border: 0; background: var(--gold); color: var(--on-gold); cursor: pointer; }
+.stand-bar button.on { background: var(--panel-2); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.stand-bar button.ghost { background: none; color: var(--gold); border: 1px solid var(--gold-dim); }
+.stand-pages { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 0 12px max(12px, env(safe-area-inset-bottom)); perspective: 1800px; touch-action: pan-y; }
+.stand.spread .stand-pages { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.sheet.stand-page { height: 100%; padding: 8px 6px; overflow: hidden; box-sizing: border-box; }
+.stand-page.blank > * { visibility: hidden; }
+.stand-clip { overflow: hidden; }
+.stand-edge { position: absolute; top: 0; bottom: 0; width: 18%; border: 0; background: none; color: var(--gold-soft); font-size: 28px; opacity: .45; cursor: pointer; z-index: 1; }
+.stand-edge.prev { left: 0; text-align: left; padding-left: 14px; } .stand-edge.next { right: 0; text-align: right; padding-right: 14px; }
+.stand-edge:disabled { opacity: 0; cursor: default; }
+.stand-page.out-next { animation: turn-out-next .17s ease-in forwards; transform-origin: left center; }
+.stand-page.in-next { animation: turn-in-next .17s ease-out; transform-origin: right center; }
+.stand-page.out-prev { animation: turn-out-prev .17s ease-in forwards; transform-origin: right center; }
+.stand-page.in-prev { animation: turn-in-prev .17s ease-out; transform-origin: left center; }
+@keyframes turn-out-next { to { transform: rotateY(-88deg); opacity: .3; } }
+@keyframes turn-in-next { from { transform: rotateY(88deg); opacity: .3; } }
+@keyframes turn-out-prev { to { transform: rotateY(88deg); opacity: .3; } }
+@keyframes turn-in-prev { from { transform: rotateY(-88deg); opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .stand-page { animation: none !important; } }
+.split-col.quiet .split-name::after { content: "（自分が弾く・音なし）"; font-weight: 400; color: var(--muted); }
 .foot { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
 button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 .pages { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bar); border-bottom: 1px solid var(--frame); }
@@ -181,12 +211,12 @@ K:G clef=bass
 L:1/16
 Q:1/4=80
 K:C clef=bass
-"_G線"!0!G,,4 | !4!C,4 !3!B,,2 C,2 "_D線"!0!D,4 C,2 D,2 | !1!E,4 !2!F,3 E, "_G線"!1!A,,4 "_D線"D,2 D,2 | C,4 C,2 C,2 B,,4 B,,2 B,,2 | C,12 "_G線"G,,2 G,,2 |
-C,4 B,,2 C,2 "_D線"D,4 C,2 D,2 | E,4 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | C,4 C,2 C,2 B,,2 B,,2 B,,4 | C,12 C,2 "_D線"E,2 |
-!4!G,4 E,3 D, C,4 B,,2 C,2 | "_D線"D,2 C,2 B,,2 A,,2 !0!G,,4 C,2 "_D線"E,2 | G,4 E,3 D, C,4 B,,2 C,2 | D,12 "_G線"G,,2 G,,2 |
-C,2 z6 "_D線"D,2 z6 | E, E, E,2 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | C,8 "_G線"B,,8 | C,12 "_D線"G,2 G,2 |
-"_A線"!2!C4 "_D線"G,2 G,2 "_A線"!0!A,2 "_D線"G,2 G,4 | E,2 z2 G,2 z2 E,2 z2 G, z G,2 | "_A線"C4 "_D線"G,2 G,2 "_A線"A,2 "_D線"G,2 G,4 | E,2 z2 G,2 z2 E,2 z2 G, z "_G線"G,,2 |
-C,2 z6 "_D線"D,2 z6 | E, E, E,2 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | C,8 "_G線"B,,8 | C,12 z4 |]` },
+!0!"_G線"G,,4 | !4!C,4 !3!B,,2 C,2 !0!"_D線"D,4 "_G線"C,2 "_D線"D,2 | !1!E,4 !2!F,3 E, !1!"_G線"A,,4 "_D線"D,2 D,2 | "_G線"C,4 C,2 C,2 B,,4 B,,2 B,,2 | C,12 G,,2 G,,2 |
+C,4 B,,2 C,2 "_D線"D,4 "_G線"C,2 "_D線"D,2 | E,4 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | "_G線"C,4 C,2 C,2 B,,2 B,,2 B,,4 | C,12 C,2 "_D線"E,2 |
+!4!G,4 E,3 D, "_G線"C,4 B,,2 C,2 | "_D線"D,2 "_G線"C,2 B,,2 A,,2 !0!G,,4 C,2 "_D線"E,2 | G,4 E,3 D, "_G線"C,4 B,,2 C,2 | "_D線"D,12 "_G線"G,,2 G,,2 |
+C,2 z6 "_D線"D,2 z6 | E, E, E,2 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | "_G線"C,8 B,,8 | C,12 "_D線"G,2 G,2 |
+!2!"_A線"C4 "_D線"G,2 G,2 !0!"_A線"A,2 "_D線"G,2 G,4 | E,2 z2 G,2 z2 E,2 z2 G, z G,2 | "_A線"C4 "_D線"G,2 G,2 "_A線"A,2 "_D線"G,2 G,4 | E,2 z2 G,2 z2 E,2 z2 G, z "_G線"G,,2 |
+C,2 z6 "_D線"D,2 z6 | E, E, E,2 F,3 E, "_G線"A,,4 "_D線"D,2 D,2 | "_G線"C,8 B,,8 | C,12 z4 |]` },
 { id: "joy", title: "歓喜の歌（第九）", stage: 2, diff: 3, tip: "ほぼD線だけ。最後の段の低いラ（G線の1）で弦を移る。", abc:
 `M:4/4
 L:1/4
@@ -223,23 +253,25 @@ Q:1/4=66
 K:D clef=bass
 "_G線"!1!A,, | "_D線"!0!D,2 !3!F,/ !0!D,/ | !3!F,2 !1!E, | !0!D,2 "_G線"!3!B,, | !1!A,,2 !1!A,, | "_D線"!0!D,2 !3!F,/ !0!D,/ | !3!F,2 !1!E,/ !3!F,/ | "_A線"!0!A,3- | !0!A,2 "_D線"!3!F, |
 "_A線"!0!A,2 "_D線"!3!F,/ !0!D,/ | !3!F,2 !1!E, | !0!D,2 "_G線"!3!B,, | !1!A,,2 !1!A,, | "_D線"!0!D,2 !3!F,/ !0!D,/ | !3!F,2 !1!E, | !0!D,3- | !0!D,2 |]` },
-{ id: "amazing-duet1", title: "アメイジング・グレイス 二重奏 パート1（旋律）", stage: 1, diff: 2.1, tip: "友人と弾く 8notes のチェロ二重奏版と同じ、ト長調・3/4拍子・弱起＋16小節（くり返しあり）にそろえて、旋律を書き起こしました。8notes の1パート目とほぼ同じ音です。D線とA線の第1ポジションだけ。3つの小さな音（3連符）は1拍に均等に入れます。細かい所が印刷した譜面と違うときは、印刷を優先してください。旋律は1847年の讃美歌（パブリックドメイン）。", abc:
+{ id: "amazing-duet1", title: "アメイジング・グレイス 二重奏 パート1（旋律）", stage: 1, diff: 2.1, tip: "8notes の二重奏と同じ形の旋律。D線とA線だけ。", abc:
 `M:3/4
 L:1/8
 Q:1/4=72
 K:G clef=bass
 "_D線"!0!D,2 |: !4!G,4 "_A線"(3!1!B,!0!A,"_D線"!4!G, | "_A線"!1!B,4 !0!A,2 | "_D線"!4!G,4 !1!E,2 | !0!D,4 D,2 |
-G,4 "_A線"(3B,A,"_D線"G, | "_A線"B,4 A,2 | !4!D6- | D4 !1!B,2 | (D3 B,) (DB,) | "_D線"G,4 D,2 |
-!1!E,3 !4!G, (G,E,) | !0!D,4 D,2 | G,4 "_A線"(3B,A,"_D線"G, | "_A線"B,4 A,2 | "_D線"G,6- |[1 G,4 D,2 :|[2 G,6 |]` },
-{ id: "amazing-duet2", title: "アメイジング・グレイス 二重奏 パート2（低い声部）", stage: 1, diff: 2.2, warn: "このアプリ用に書いた2パート目です。8notes の2パート目とは音が違います。友人が旋律（パート1）を弾くときに合わせてください。", tip: "パート1の下で和音の土台を作る低い声部。C線・G線の開放弦と、1・3の指だけで弾けます。最初の1拍は休み（パート1の弱起を聞いて入る）。長い音は弓を端まで使って、旋律より少し小さく。", abc:
+G,4 "_A線"(3B,A,"_D線"G, | "_A線"B,4 A,2 | !4!D6- | D4 !1!B,2 |
+(D3 B,) (DB,) | "_D線"G,4 D,2 | !1!E,3 !4!G, (G,E,) | !0!D,4 D,2 |
+G,4 "_A線"(3B,A,"_D線"G, | "_A線"B,4 A,2 | "_D線"G,6- |[1 G,4 D,2 :|[2 G,6 |]` },
+{ id: "amazing-duet2", title: "アメイジング・グレイス 二重奏 パート2（低い声部）", stage: 1, diff: 2.2, warn: "8notes の2パート目とは別の音です。", tip: "C線・G線と1・3の指だけ。最初の1拍は休み。", abc:
 `M:3/4
 L:1/8
 Q:1/4=72
 K:G clef=bass
 z2 |: "_G線"!0!G,,6 | "_D線"!0!D,4 "_G線"!1!A,,2 | "_C線"!0!C,,6 | "_G線"!0!G,,4 !3!B,,2 |
-G,,6 | "_D線"!0!D,4 D,2 | "_C線"!1!D,,6 | "_G線"!1!A,,4 !0!G,,2 | G,,4 !3!B,,2 | B,,4 G,,2 |
-"_C線"!0!C,,4 "_G線"!0!G,,2 | !3!B,,4 G,,2 | G,,4 "_C線"!3!E,,2 | !1!D,,6 | "_G線"!0!G,,6 |[1 G,,4 z2 :|[2 G,,6 |]` },
-{ id: "amazing-duet", title: "アメイジング・グレイス 二重奏（2段で合わせる）", stage: 1, diff: 2.3, tip: "上の段がパート1（旋律）、下の段がパート2。「鳴らす」で2人分が一緒に鳴るので、自分のパートを弾きながら相手の音を聞く練習に。運指と弦の印は、それぞれのパートの楽譜にあります。", abc:
+G,,6 | "_D線"!0!D,4 D,2 | "_C線"!1!D,,6 | "_G線"!1!A,,4 !0!G,,2 |
+G,,4 !3!B,,2 | B,,4 G,,2 | "_C線"!0!C,,4 "_G線"!0!G,,2 | !3!B,,4 G,,2 |
+G,,4 "_C線"!3!E,,2 | !1!D,,6 | "_G線"!0!G,,6 |[1 G,,4 z2 :|[2 G,,6 |]` },
+{ id: "amazing-duet", title: "アメイジング・グレイス 二重奏（並べて合わせる）", stage: 1, diff: 2.3, split: ["amazing-duet1", "amazing-duet2"], tip: "自分のパートの「鳴らす」を外すと、相手だけが鳴ります。", abc:
 `M:3/4
 L:1/8
 Q:1/4=72
@@ -248,10 +280,12 @@ V:1 clef=bass name="パート1"
 V:2 clef=bass name="パート2"
 [V:1] D,2 |: G,4 (3B,A,G, | B,4 A,2 | G,4 E,2 | D,4 D,2 |
 [V:2] z2 |: G,,6 | D,4 A,,2 | C,,6 | G,,4 B,,2 |
-[V:1] G,4 (3B,A,G, | B,4 A,2 | D6- | D4 B,2 | (D3 B,) (DB,) | G,4 D,2 |
-[V:2] G,,6 | D,4 D,2 | D,,6 | A,,4 G,,2 | G,,4 B,,2 | B,,4 G,,2 |
-[V:1] E,3 G, (G,E,) | D,4 D,2 | G,4 (3B,A,G, | B,4 A,2 | G,6- |[1 G,4 D,2 :|[2 G,6 |]
-[V:2] C,,4 G,,2 | B,,4 G,,2 | G,,4 E,,2 | D,,6 | G,,6 |[1 G,,4 z2 :|[2 G,,6 |]` },
+[V:1] G,4 (3B,A,G, | B,4 A,2 | D6- | D4 B,2 |
+[V:2] G,,6 | D,4 D,2 | D,,6 | A,,4 G,,2 |
+[V:1] (D3 B,) (DB,) | G,4 D,2 | E,3 G, (G,E,) | D,4 D,2 |
+[V:2] G,,4 B,,2 | B,,4 G,,2 | C,,4 G,,2 | B,,4 G,,2 |
+[V:1] G,4 (3B,A,G, | B,4 A,2 | G,6- |[1 G,4 D,2 :|[2 G,6 |]
+[V:2] G,,4 E,,2 | D,,6 | G,,6 |[1 G,,4 z2 :|[2 G,,6 |]` },
 { id: "silentnight", title: "きよしこの夜", stage: 2, diff: 4.5, tip: "6/8拍子（1小節を2つに数える）。G線・D線・A線の3本を使う。", abc:
 `M:6/8
 L:1/8
@@ -693,20 +727,157 @@ function noteParts(song) {
   song._parts = { tune: song.tune, map };
   return map;
 }
+// 二重奏を左右に並べる曲（split: [パート1の id, パート2 の id]）。音と光る順番は2段の楽譜（s.abc）から取り、
+// 画面にはそれぞれのパートの楽譜（運指つき）を並べる。2段の楽譜の n 番目の音符 ＝ そのパートの楽譜の n 番目の音符
+function renderSplit(s, sheet) {
+  const look = { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc", staffwidth: 420 };
+  const off = document.createElement("div"); off.style.cssText = "position:absolute;left:-9999px;top:0;width:800px"; document.body.append(off);
+  try { s.tune = ABCJS.renderAbc(off, "X:1\n" + s.abc, { add_classes: true })[0]; } finally { off.remove(); }
+  const names = [...s.abc.matchAll(/V:(\d)[^\n]*?name="([^"]+)"/g)].reduce((o, m) => (o[m[1] - 1] = m[2], o), {});
+  sheet.classList.add("split");
+  const notesOf = (tune, si) => { const out = []; (tune.lines || []).forEach(l => { const st = l.staff && l.staff[si]; if (st) st.voices.forEach(v => v.forEach(e => { if (e.el_type === "note" && !e.rest) out.push(e); })); }); return out; };
+  const map = new Map(); s._partOf = new Map();
+  s.split.forEach((pid, i) => {
+    const src = SONGS.find(x => x.id === pid); if (!src) throw new Error("並べる楽譜が見つかりません: " + pid);
+    const col = document.createElement("div"); col.className = "split-col";
+    const name = document.createElement("p"); name.className = "split-name"; name.textContent = names[i] || "パート" + (i + 1);
+    const box = document.createElement("div"); col.append(name, box); sheet.append(col);
+    const part = ABCJS.renderAbc(box, "X:1\n" + src.abc, look)[0];
+    const a = notesOf(s.tune, i), b = notesOf(part, 0);
+    if (a.length !== b.length) console.warn(s.id, "パート" + (i + 1) + "の音符の数が合いません", a.length, b.length);
+    a.forEach((e, k) => { if (b[k] && b[k].abselem) { map.set(e.startChar, b[k].abselem.elemset); s._partOf.set(e.startChar, i); } });
+  });
+  s._parts = { tune: s.tune, map };
+}
+const Stand = (() => {
+  let el, title, no, play, area, prevB, nextB, song = null, cardBtn = null, copies = [], pages = [], cur = 0, busy = false, lineOf = new Map(), els = new Map(), watch = null, swipeAt = 0;
+  const look = { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc", staffwidth: 520, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: 4 } };
+  function build() {
+    el = document.createElement("div"); el.className = "stand"; el.hidden = true; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
+    const bar = document.createElement("div"); bar.className = "stand-bar";
+    title = document.createElement("p"); title.className = "stand-title";
+    no = document.createElement("span"); no.className = "stand-no";
+    play = document.createElement("button"); play.type = "button"; play.textContent = "▶";
+    const close = document.createElement("button"); close.type = "button"; close.className = "ghost"; close.textContent = "×"; close.setAttribute("aria-label", "閉じる");
+    bar.append(title, no, play, close);
+    area = document.createElement("div"); area.className = "stand-pages";
+    prevB = document.createElement("button"); prevB.type = "button"; prevB.className = "stand-edge prev"; prevB.textContent = "‹"; prevB.setAttribute("aria-label", "前のページ");
+    nextB = document.createElement("button"); nextB.type = "button"; nextB.className = "stand-edge next"; nextB.textContent = "›"; nextB.setAttribute("aria-label", "次のページ");
+    area.append(prevB, nextB); el.append(bar, area); document.body.append(el);
+    play.addEventListener("click", () => cardBtn && cardBtn.click());
+    close.addEventListener("click", shut);
+    prevB.addEventListener("click", () => { if (Date.now() - swipeAt > 400) turn(-1); });
+    nextB.addEventListener("click", () => { if (Date.now() - swipeAt > 400) turn(1); });
+    let x0 = null, y0 = 0;
+    area.addEventListener("pointerdown", e => { x0 = e.clientX; y0 = e.clientY; });
+    area.addEventListener("pointerup", e => { if (x0 == null) return; const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { swipeAt = Date.now(); turn(dx < 0 ? 1 : -1); } });
+    document.addEventListener("keydown", e => {
+      if (!song) return;
+      if (["ArrowRight", "PageDown", "ArrowDown"].includes(e.key)) { e.preventDefault(); turn(1); }
+      else if (["ArrowLeft", "PageUp", "ArrowUp"].includes(e.key)) { e.preventDefault(); turn(-1); }
+      else if (e.key === "Escape") shut();
+    });
+    let t = 0; addEventListener("resize", () => { if (!song) return; clearTimeout(t); t = setTimeout(() => { const line = pages[cur] ? pages[cur].first : 0; layout(); cur = Math.max(0, pages.findIndex(p => line >= p.first && line <= p.last)); show(); }, 200); });
+  }
+  const per = () => copies.length || 1;
+  function layout() {
+    const spread = innerWidth >= 640 && innerWidth > innerHeight;
+    el.classList.toggle("spread", spread);
+    area.querySelectorAll(".stand-page").forEach(n => n.remove());
+    copies = []; lineOf = new Map(); els = new Map();
+    for (let i = 0; i < (spread ? 2 : 1); i++) {
+      const page = document.createElement("div"); page.className = "sheet stand-page";
+      const clip = document.createElement("div"); clip.className = "stand-clip";
+      const box = document.createElement("div"); clip.append(box); page.append(clip); area.insertBefore(page, prevB);
+      copies.push({ page, clip, box });
+    }
+    copies.forEach(cp => {
+      // スマホの縦は1段3小節にして音符を大きく見せる
+      cp.tune = ABCJS.renderAbc(cp.box, "X:1\n" + song.abc, spread ? look : { ...look, staffwidth: 380, wrap: { ...look.wrap, preferredMeasuresPerLine: 3 } })[0];
+      cp.box.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
+      (cp.tune.lines || []).forEach((l, k) => (l.staff || []).forEach(st => st.voices.forEach(v => v.forEach(e => {
+        if (e.el_type !== "note" || e.rest || !e.abselem) return;
+        lineOf.set(e.startChar, k); els.set(e.startChar, (els.get(e.startChar) || []).concat(e.abselem.elemset));
+      }))));
+    });
+    // 段ごとの上下の位置を測って、ページの高さに入るだけ段を詰める
+    const cp = copies[0], svg = cp.box.querySelector("svg"), top = svg.getBoundingClientRect().top;
+    const room = cp.page.clientHeight - 16, lines = [];
+    (cp.tune.lines || []).forEach((l, k) => {
+      let a = Infinity, b = -Infinity;
+      svg.querySelectorAll(".abcjs-l" + k).forEach(n => { const r = n.getBoundingClientRect(); if (!r.width && !r.height) return; a = Math.min(a, r.top - top); b = Math.max(b, r.bottom - top); });
+      if (a < b) lines.push({ k, a, b });
+    });
+    pages = [];
+    lines.forEach((ln, i) => {
+      const last = pages[pages.length - 1];
+      if (last && ln.b - last.y0 <= room) { last.last = ln.k; last.y1 = ln.b + 6; return; }
+      pages.push({ first: ln.k, last: ln.k, y0: i ? ln.a - 6 : 0, y1: ln.b + 6 });
+    });
+    if (!pages.length) pages.push({ first: 0, last: 0, y0: 0, y1: svg.getBoundingClientRect().height });
+  }
+  function show() {
+    cur = Math.max(0, Math.min(cur, pages.length - 1));
+    copies.forEach((cp, j) => {
+      const p = pages[cur + j];
+      cp.page.classList.toggle("blank", !p);
+      if (!p) return;
+      cp.clip.style.height = (p.y1 - p.y0) + "px";
+      cp.box.style.transform = "translateY(" + (-p.y0) + "px)";
+    });
+    const last = Math.min(pages.length, cur + per());
+    no.textContent = (last > cur + 1 ? (cur + 1) + "–" + last : String(cur + 1)) + " / " + pages.length;
+    prevB.disabled = cur <= 0; nextB.disabled = cur + per() >= pages.length;
+  }
+  function go(to, dir) {
+    if (busy || to === cur || to < 0 || to >= pages.length) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { cur = to; show(); return; }
+    busy = true;
+    const d = dir > 0 ? "next" : "prev";
+    copies.forEach(cp => cp.page.classList.add("out-" + d));
+    setTimeout(() => {
+      cur = to; show();
+      copies.forEach(cp => { cp.page.classList.remove("out-" + d); cp.page.classList.add("in-" + d); });
+      setTimeout(() => { copies.forEach(cp => cp.page.classList.remove("in-" + d)); busy = false; }, 180);
+    }, 170);
+  }
+  function turn(dir) { go(dir > 0 ? cur + per() : Math.max(0, cur - per()), dir); }
+  function shut() {
+    if (!song) return;
+    song._pager = null; song = null; cardBtn = null; el.hidden = true; document.documentElement.style.overflow = "";
+    if (watch) { watch.disconnect(); watch = null; }
+  }
+  function open(s, btn) {
+    if (!el) build();
+    if (song) shut();
+    song = s; cardBtn = btn; title.textContent = s.title; el.hidden = false; document.documentElement.style.overflow = "hidden";
+    const mirror = () => { const on = btn.classList.contains("on"); play.textContent = on ? "■" : "▶"; play.classList.toggle("on", on); play.setAttribute("aria-label", on ? "止める" : "鳴らす"); };
+    watch = new MutationObserver(mirror); watch.observe(btn, { attributes: true, childList: true, characterData: true, subtree: true }); mirror();
+    cur = 0; layout(); show();
+    s._pager = {
+      els: c => els.get(c) || [],
+      follow: c => { const k = lineOf.get(c); if (k == null) return; const pi = pages.findIndex(p => k >= p.first && k <= p.last); if (pi >= 0 && (pi < cur || pi >= cur + per())) go(pi, pi > cur ? 1 : -1); }
+    };
+  }
+  return { open };
+})();
 // 再生に合わせて光らせる。光る音符が画面の外へ出たら、その段が見える所まで送る
 function glowAlong(song, hits, my) {
   const parts = noteParts(song), lit = new Set();
-  const set = (c, on) => (parts.get(c) || []).forEach(n => n.classList.toggle("now-note", on));
+  const set = (c, on) => (parts.get(c) || []).concat(song._pager ? song._pager.els(c) : []).forEach(n => n.classList.toggle("now-note", on));
   const off = () => { lit.forEach(c => set(c, false)); lit.clear(); };
   const lag = () => ctx.outputLatency || ctx.baseLatency || 0;
   (function frame() {
     if (my !== playSeq) return off();
     const now = ctx.currentTime - lag(), want = new Set();
+    // 譜面台を開いているときは、少し先に鳴る音のページへめくっておく
+    if (song._pager) { const ahead = now + 0.45; for (const h of hits) if (h.s <= ahead && ahead < h.e) { song._pager.follow(h.c); break; } }
     for (const h of hits) if (h.s <= now && now < h.e) want.add(h.c);
     lit.forEach(c => { if (!want.has(c)) { set(c, false); lit.delete(c); } });
     want.forEach(c => {
       if (lit.has(c)) return;
       set(c, true); lit.add(c);
+      if (song._pager || (song._follow && !song._follow(c))) return;   // 並べた二重奏は、自分が弾くパートの段だけを追って送る
       const el = (parts.get(c) || [])[0], r = el && el.getBoundingClientRect();
       if (r && (r.top < 40 || r.bottom > innerHeight - 90)) el.scrollIntoView({ block: "center", behavior: "smooth" });
     });
@@ -851,13 +1022,14 @@ SONGS.forEach(s => {
   const parts = s.abc.includes("V:2") ? 2 : 1, MIXKEY = "score-mix:" + s.id;
   let mix = (() => { try { return JSON.parse(localStorage.getItem(MIXKEY)) || null; } catch { return null; } })() || [{ on: true, vol: 100 }, { on: true, vol: 70 }];
   const mixBox = document.createElement("div"); mixBox.className = "mix";
+  const markQuiet = () => sheet.querySelectorAll(".split-col").forEach((c, i) => c.classList.toggle("quiet", !!mix[i] && !mix[i].on));
   if (parts > 1) {
     [0, 1].forEach(i => {
       const row = document.createElement("div"); row.className = "mix-row";
       const lab = document.createElement("label"); const on = document.createElement("input"); on.type = "checkbox"; on.checked = mix[i].on;
-      lab.append(on, (i === 0 ? "上の段" : "下の段") + "（" + (names[i] || (i === 0 ? "旋律" : "伴奏")) + "）");
+      lab.append(on, s.split ? (names[i] || "パート" + (i + 1)) + "を鳴らす" : (i === 0 ? "上の段" : "下の段") + "（" + (names[i] || (i === 0 ? "旋律" : "伴奏")) + "）");
       const vol = document.createElement("input"); vol.type = "range"; vol.min = "0"; vol.max = "100"; vol.step = "5"; vol.value = String(mix[i].vol); vol.setAttribute("aria-label", (i === 0 ? "上の段" : "下の段") + "の音量");
-      const save = () => { mix[i] = { on: on.checked, vol: Number(vol.value) }; vol.disabled = !on.checked; try { localStorage.setItem(MIXKEY, JSON.stringify(mix)); } catch {} };
+      const save = () => { mix[i] = { on: on.checked, vol: Number(vol.value) }; vol.disabled = !on.checked; try { localStorage.setItem(MIXKEY, JSON.stringify(mix)); } catch {} markQuiet(); };
       on.addEventListener("change", () => { save(); restartIfPlaying(); }); vol.addEventListener("change", () => { save(); restartIfPlaying(); }); vol.disabled = !on.checked;
       row.append(lab, vol); mixBox.append(row);
     });
@@ -873,6 +1045,11 @@ SONGS.forEach(s => {
   // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
   const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
   ctr.append(pen);
+  if (!s.split) {
+    const standBtn = document.createElement("button"); standBtn.type = "button"; standBtn.className = "ghost"; standBtn.textContent = "▯▯ 譜面台";
+    standBtn.addEventListener("click", () => { prepare(); if (s.tune) Stand.open(s, btn); });
+    ctr.append(standBtn);
+  }
   // 見本（⚙「見本を試す」。2026-11-10 本人指示）：ふだん見えるのは ▶ と速さだけ。ほかは「…」の中にしまう
   if (document.documentElement.classList.contains("lab")) {
     const more = document.createElement("button"); more.type = "button"; more.className = "ghost more"; more.textContent = "…"; more.setAttribute("aria-expanded", "false"); more.setAttribute("aria-label", "ほかの操作（音量・クリック・書き込み・撮る）");
@@ -895,10 +1072,11 @@ SONGS.forEach(s => {
   const prepare = () => {
     if (ready) return; ready = true;
     if (ok) {
-      try { s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
+      try { if (s.split) renderSplit(s, sheet); else s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
         sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); }); }
       catch (e) { console.error(s.id, e); }
     }
+    if (s.split) { s._follow = c => s._partOf.get(c) === (mix[1] && !mix[1].on && (!mix[0] || mix[0].on) ? 1 : 0); markQuiet(); }
     ink.attach();   // 楽譜を描いたあとに、透明な紙を重ねる
     btn.disabled = !s.tune;
     const mt = meterOf(s); base = s.tune ? Math.round(s.tune.getBpm()) : 80;
