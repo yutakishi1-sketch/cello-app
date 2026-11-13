@@ -137,8 +137,10 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .names-sw { display: inline-flex; border: 1px solid var(--gold-dim); }
 .controls .names-sw button { background: none !important; color: var(--gold-soft) !important; border: 0 !important; padding: 0 12px; min-height: 40px; letter-spacing: .08em; }
 .controls .names-sw button[aria-pressed="true"] { background: var(--gold) !important; color: var(--on-gold) !important; font-weight: 700 !important; }
-.sheet text.doremi { fill: var(--gold-hi); font-size: 12px; font-weight: 700; font-family: var(--f-body); display: none; }
-html.doremi .sheet text.doremi { display: inline; }
+/* 指番号のときも幅を測れるように、消すのは display ではなく visibility で */
+.sheet text.doremi { fill: var(--gold-hi); font-size: 12px; font-weight: 700; font-family: var(--f-body); visibility: hidden; pointer-events: none; }
+html.doremi .sheet text.doremi { visibility: visible; }
+.sheet text.doremi tspan.doremi-acc { font-size: 9px; }
 html.doremi .sheet .abcjs-annotation { visibility: hidden; }
 .split-col.quiet .split-name::after { content: "（自分が弾く・音なし）"; font-weight: 400; color: var(--muted); }
 .foot { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
@@ -827,10 +829,10 @@ function noteParts(song) {
 // 音の高さは再生用の音（MIDI）から、♯と♭は書いてある音名から決める。タイでつながった後ろの音には書かない
 const DO_RE_MI = ["ド", "レ", "ミ", "ファ", "ソ", "ラ", "シ"], NAT = [0, 2, 4, 5, 7, 9, 11];
 function addNoteNames(box, tune) {
-  const svg = box.querySelector("svg"); if (!svg || !tune) return;
+  const svg = box.querySelector("svg"); if (!svg || !tune) return null;
   const midi = new Map();
   try { (tune.setUpAudio({}).tracks || []).forEach(t => t.forEach(ev => { if (ev.cmd === "note" && ev.pitch != null && ev.startChar != null && !midi.has(ev.startChar)) midi.set(ev.startChar, ev.pitch); })); }
-  catch (e) { console.warn("ドレミを付けられませんでした", e); return; }
+  catch (e) { console.warn("ドレミを付けられませんでした", e); return null; }
   const NS = "http://www.w3.org/2000/svg", items = [];
   (tune.lines || []).forEach(l => (l.staff || []).forEach(st => (st.voices || []).forEach(v => v.forEach(e => {
     if (e.el_type !== "note" || e.rest || !e.pitches || !midi.has(e.startChar) || !e.abselem || !e.abselem.elemset) return;
@@ -839,25 +841,86 @@ function addNoteNames(box, tune) {
     const p = e.pitches[0].pitch, step = ((p % 7) + 7) % 7, nat = 60 + 12 * Math.floor(p / 7) + NAT[step];
     const d = midi.get(e.startChar) - nat, acc = d === 1 ? "♯" : d === -1 ? "♭" : d === 2 ? "𝄪" : d === -2 ? "𝄫" : "";
     const t = document.createElementNS(NS, "text"); t.setAttribute("class", "doremi"); t.setAttribute("text-anchor", "middle");
-    t.textContent = DO_RE_MI[step] + acc; g.append(t); items.push({ t, head });
+    t.textContent = DO_RE_MI[step];
+    if (acc) { const a = document.createElementNS(NS, "tspan"); a.setAttribute("class", "doremi-acc"); a.textContent = acc; t.append(a); }
+    g.append(t); items.push({ t, head });
   }))));
-  // 位置は楽譜が画面に出てから測る（閉じた曲・隠れた画面では測れない）。同じ段の名前は、いちばん低い音符の下に一列にそろえる
+  // 位置は楽譜が画面に出てから測る（閉じた曲・隠れた画面では測れない）。
+  // 同じ段の名前は、符尾・連桁・加線・スラー・強弱まで含めた「段の下にはみ出すもの」のさらに下に一列にそろえる。
+  // 音符が混んで隣の名前とぶつかるときだけ、一段下にずらして互い違いにする。
+  // 戻り値は、次の段にぶつかって足りない高さ（同じ組の下の段まで＝in、次の組まで＝sys）。測れなかったときは null
+  const UNDER = ".abcjs-notehead,.abcjs-stem,.abcjs-beam-elem,.abcjs-ledger,.abcjs-accidental,.abcjs-slur,.abcjs-tie,.abcjs-decoration,.abcjs-dynamics,.abcjs-rest";
   const place = () => {
-    const staves = [...svg.querySelectorAll("g.abcjs-staff")].map(st => ({ st, b: st.getBBox() })), rows = new Map();
-    items.forEach(({ t, head }) => {
-      const hb = head.getBBox(), cy = hb.y + hb.height / 2;
-      let near = null, gap = Infinity;
-      staves.forEach(s => { const dd = cy < s.b.y ? s.b.y - cy : cy > s.b.y + s.b.height ? cy - s.b.y - s.b.height : 0; if (dd < gap) { gap = dd; near = s; } });
-      if (!near) return;
-      t.setAttribute("x", String(hb.x + hb.width / 2));
-      const row = rows.get(near.st) || { y: near.b.y + near.b.height, ts: [] };
-      row.y = Math.max(row.y, hb.y + hb.height); row.ts.push(t); rows.set(near.st, row);
+    const staves = [...svg.querySelectorAll("g.abcjs-staff")].map(st => {
+      const b = st.getBBox(), w = st.closest("[class*='abcjs-l']"), line = w ? [...w.classList].find(c => /^abcjs-l\d+$/.test(c)) : "";
+      return { top: b.y, high: b.y, low: b.y + b.height, bottom: b.y + b.height, its: [], line, rowEnd: 0 };
+    }).sort((a, b) => a.top - b.top);
+    if (!staves.length) return { in: 0, sys: 0 };
+    const near = cy => staves.reduce((a, s) => { const d = cy < s.top ? s.top - cy : cy > s.bottom ? cy - s.bottom : 0; return d < a.d ? { s, d } : a; }, { s: null, d: Infinity }).s;
+    svg.querySelectorAll(UNDER).forEach(n => {
+      if (n.closest("text.doremi")) return;
+      const b = n.getBBox(); if (!b.width && !b.height) return;
+      const s = near(b.y + b.height / 2);
+      if (s) { s.low = Math.max(s.low, b.y + b.height); s.high = Math.min(s.high, b.y); if (b.y < s.top) (s.above = s.above || []).push(b); }
     });
-    rows.forEach(r => r.ts.forEach(t => t.setAttribute("y", String(r.y + 13))));
+    items.forEach(it => { const hb = it.head.getBBox(), s = near(hb.y + hb.height / 2); if (s) { it.x = hb.x + hb.width / 2; s.its.push(it); } });
+    let maxY = 0;
+    staves.forEach((s, si) => {
+      const nx = staves[si + 1], ends = [-Infinity, -Infinity, -Infinity];
+      const up = nx ? (nx.above || []).concat({ x: -1e9, width: 2e9, y: nx.top, height: nx.bottom - nx.top }) : [];
+      // 次の段の上に飛び出した音（高い音・加線）にかかる列は使わない
+      const hitsNext = (l, r, y) => up.some(b => l < b.x + b.width && b.x < r && y - 10 < b.y + b.height && b.y < y + 3);
+      s.its.sort((a, b) => a.x - b.x).forEach(({ t, x }) => {
+        t.setAttribute("x", String(x));
+        const w = t.getBBox().width, left = x - w / 2, right = x + w / 2, yOf = k => s.low + 13 + k * 13;
+        let tier = ends.findIndex((e, k) => left >= e + 2 && !hitsNext(left, right, yOf(k)));
+        if (tier < 0) tier = ends.findIndex(e => left >= e + 2);
+        if (tier < 0) tier = ends.indexOf(Math.min(...ends));
+        ends[tier] = right;
+        let y = yOf(tier);
+        // それでも次の段の音にかかるときは、4 まで上に詰めてよけてみる
+        if (hitsNext(left, right, y)) {
+          const top = Math.min(...up.filter(b => left < b.x + b.width && b.x < right && y - 10 < b.y + b.height && b.y < y + 3).map(b => b.y));
+          if (top - 3 >= y - 4 && !hitsNext(left, right, top - 3)) y = top - 3;
+        }
+        t.setAttribute("y", String(y));
+        if (hitsNext(left, right, y)) s.rowEnd = Math.max(s.rowEnd, y + 4);
+        maxY = Math.max(maxY, y + 4);
+      });
+    });
+    const need = { in: 0, sys: 0 };
+    staves.forEach((s, i) => {
+      const nx = staves[i + 1]; if (!nx || !s.rowEnd) return;
+      const short = s.rowEnd + 3 - nx.high; if (short <= 0) return;
+      const k = s.line && s.line === nx.line ? "in" : "sys"; need[k] = Math.max(need[k], short);
+    });
+    // 最後の段の下に足りないときは、楽譜の高さを伸ばして切れないようにする
+    const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+    if (vb.length === 4 && maxY > vb[3]) {
+      svg.setAttribute("viewBox", [vb[0], vb[1], vb[2], maxY].join(" "));
+      const wrap = svg.parentElement; if (wrap && wrap.style.paddingBottom) wrap.style.paddingBottom = (maxY / vb[2] * 100) + "%";
+    }
+    return need;
   };
-  if (svg.getBBox().width) { place(); return; }
+  if (svg.getBBox().width) return place();
   const ro = new ResizeObserver(() => { if (!svg.getBBox().width) return; ro.disconnect(); place(); });
   ro.observe(box);
+  return null;
+}
+// 楽譜を描いてドレミを付ける。ドレミが次の段にぶつかる曲だけ、段の間を広げて描き直す
+// （abcjs の段の間の既定は %%staffsep 46・%%sysstaffsep 36。単位は pt で、画面の 1 は 0.75pt）。
+// 段の間は「中身の高さ」と「最小の間」の大きいほうで決まるので、広げた分が吸収されることがある。そのときは3回まで重ねて広げる
+function renderNamed(box, abc, opts) {
+  let tune = ABCJS.renderAbc(box, "X:1\n" + abc, opts)[0];
+  let need = addNoteNames(box, tune), sys = 46, inner = 36;
+  for (let i = 0; i < 3 && need && (need.in > 0 || need.sys > 0); i++) {
+    // 広げすぎて1ページの段が減りすぎないように、上限を既定＋40pt にする
+    if (need.sys > 0) sys = Math.min(86, sys + Math.ceil(need.sys * 0.75) + 2);
+    if (need.in > 0) inner = Math.min(76, inner + Math.ceil(need.in * 0.75) + 2);
+    tune = ABCJS.renderAbc(box, "X:1\n%%staffsep " + sys + "\n%%sysstaffsep " + inner + "\n" + abc, opts)[0];
+    need = addNoteNames(box, tune);
+  }
+  return tune;
 }
 const NAMES_KEY = "score-names";
 let namesMode = "finger";
@@ -884,8 +947,7 @@ function renderSplit(s, sheet) {
     const col = document.createElement("div"); col.className = "split-col";
     const name = document.createElement("p"); name.className = "split-name"; name.textContent = names[i] || "パート" + (i + 1);
     const box = document.createElement("div"); col.append(name, box); sheet.append(col);
-    const part = ABCJS.renderAbc(box, "X:1\n" + src.abc, look)[0];
-    addNoteNames(box, part);
+    const part = renderNamed(box, src.abc, look);
     const a = notesOf(s.tune, i), b = notesOf(part, 0);
     if (a.length !== b.length) console.warn(s.id, "パート" + (i + 1) + "の音符の数が合いません", a.length, b.length);
     a.forEach((e, k) => { if (b[k] && b[k].abselem) { map.set(e.startChar, b[k].abselem.elemset); s._partOf.set(e.startChar, i); } });
@@ -936,9 +998,8 @@ const Stand = (() => {
     }
     copies.forEach(cp => {
       // スマホの縦は1段3小節にして音符を大きく見せる
-      cp.tune = ABCJS.renderAbc(cp.box, "X:1\n" + song.abc, spread ? look : { ...look, staffwidth: 380, wrap: { ...look.wrap, preferredMeasuresPerLine: 3 } })[0];
+      cp.tune = renderNamed(cp.box, song.abc, spread ? look : { ...look, staffwidth: 380, wrap: { ...look.wrap, preferredMeasuresPerLine: 3 } });
       cp.box.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
-      addNoteNames(cp.box, cp.tune);
       // 段ごとの部品。ページに入らない段は隠すので、切れ目に隣の段の指番号や弦の名前がのぞかない
       cp.byLine = new Map();
       cp.box.querySelectorAll("svg [class*='abcjs-l']").forEach(n => {
@@ -1257,9 +1318,9 @@ SONGS.forEach(s => {
   const prepare = () => {
     if (ready) return; ready = true;
     if (ok) {
-      try { if (s.split) renderSplit(s, sheet); else s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
+      try { if (s.split) renderSplit(s, sheet); else s.tune = renderNamed(sheet, s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" });
         sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
-        if (!s.split) addNoteNames(sheet, s.tune); }
+      }
       catch (e) { console.error(s.id, e); }
     }
     if (s.split) { s._follow = c => s._partOf.get(c) === (mix[1] && !mix[1].on && (!mix[0] || mix[0].on) ? 1 : 0); markQuiet(); }
