@@ -140,6 +140,8 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 /* 指番号のときも幅を測れるように、消すのは display ではなく visibility で */
 .sheet text.doremi { fill: var(--gold-hi); font-size: 12px; font-weight: 700; font-family: var(--f-body); visibility: hidden; pointer-events: none; }
 html.doremi .sheet text.doremi { visibility: visible; }
+/* ドレミのときは強弱記号（p・f）をドレミの下へずらす。ずらす量は addNoteNames が記号ごとに --dy で渡す */
+html.doremi svg .abcjs-dynamics { transform: translateY(var(--dy, 0px)); }
 .sheet text.doremi tspan.doremi-acc { font-size: 9px; }
 html.doremi .sheet .abcjs-annotation { visibility: hidden; }
 .split-col.quiet .split-name::after { content: "（自分が弾く・音なし）"; font-weight: 400; color: var(--muted); }
@@ -849,43 +851,68 @@ function addNoteNames(box, tune) {
   // 同じ段の名前は、符尾・連桁・加線・スラー・強弱まで含めた「段の下にはみ出すもの」のさらに下に一列にそろえる。
   // 音符が混んで隣の名前とぶつかるときだけ、一段下にずらして互い違いにする。
   // 戻り値は、次の段にぶつかって足りない高さ（同じ組の下の段まで＝in、次の組まで＝sys）。測れなかったときは null
-  const UNDER = ".abcjs-notehead,.abcjs-stem,.abcjs-beam-elem,.abcjs-ledger,.abcjs-accidental,.abcjs-slur,.abcjs-tie,.abcjs-decoration,.abcjs-dynamics,.abcjs-rest";
+  // スタッカートの点や一部の記号は目印（class）が付かないので、五線と指番号・弦の文字以外の線と文字はすべてよける
+  const lv = el => { const c = el.getAttribute("class") || "", l = c.match(/\babcjs-l(\d+)\b/), v = c.match(/\babcjs-v(\d+)\b/); return l && v ? l[1] + "|" + v[1] : ""; };
+  // ただし小節線・音部記号・段をくくる括弧は2段にまたがって伸びるので数えない（数えると段の下が括弧の端まで下がる）
+  const isUnder = n => !n.closest("text.doremi, .abcjs-staff, .abcjs-annotation, .abcjs-bar, .abcjs-staff-extra")
+    && (n.tagName === "text" || !!n.closest("[class*='abcjs-v']"));
   const place = () => {
     const staves = [...svg.querySelectorAll("g.abcjs-staff")].map(st => {
       const b = st.getBBox(), w = st.closest("[class*='abcjs-l']"), line = w ? [...w.classList].find(c => /^abcjs-l\d+$/.test(c)) : "";
-      return { top: b.y, high: b.y, low: b.y + b.height, bottom: b.y + b.height, its: [], line, rowEnd: 0 };
+      return { top: b.y, high: b.y, low: b.y + b.height, bottom: b.y + b.height, its: [], line, key: lv(st), rowEnd: 0 };
     }).sort((a, b) => a.top - b.top);
     if (!staves.length) return { in: 0, sys: 0 };
+    // 音符がどの段のものかは、楽譜の印（何行目・何声部）で決める。段の間が狭いと、低い音の棒や加線が下の段のほうに近くなるため。
+    // 印で決まらないもの（題・速さなど）だけ、いちばん近い段にする
+    const byKey = new Map(staves.map(s => [s.key, s]));
     const near = cy => staves.reduce((a, s) => { const d = cy < s.top ? s.top - cy : cy > s.bottom ? cy - s.bottom : 0; return d < a.d ? { s, d } : a; }, { s: null, d: Infinity }).s;
-    svg.querySelectorAll(UNDER).forEach(n => {
-      if (n.closest("text.doremi")) return;
+    const staffOf = (n, cy) => { const g = n.closest("[class*='abcjs-v']"); return (g && byKey.get(lv(g))) || near(cy); };
+    svg.querySelectorAll("path,text").forEach(n => {
+      if (!isUnder(n)) return;
       const b = n.getBBox(); if (!b.width && !b.height) return;
-      const s = near(b.y + b.height / 2);
+      const s = staffOf(n, b.y + b.height / 2);
+      // 強弱記号（p・f）は数えない。ドレミを音符のすぐ下に置き、記号のほうをドレミの下へずらす（音とドレミが離れると、どの音の名前か分からなくなる）
+      if (s && n.matches(".abcjs-dynamics")) { (s.dyn = s.dyn || []).push({ n, b }); return; }
       if (s) { s.low = Math.max(s.low, b.y + b.height); s.high = Math.min(s.high, b.y); if (b.y < s.top) (s.above = s.above || []).push(b); }
     });
-    items.forEach(it => { const hb = it.head.getBBox(), s = near(hb.y + hb.height / 2); if (s) { it.x = hb.x + hb.width / 2; s.its.push(it); } });
+    items.forEach(it => { const hb = it.head.getBBox(), s = staffOf(it.head, hb.y + hb.height / 2); if (s) { it.x = hb.x + hb.width / 2; s.its.push(it); } });
     let maxY = 0;
     staves.forEach((s, si) => {
-      const nx = staves[si + 1], ends = [-Infinity, -Infinity, -Infinity];
+      const nx = staves[si + 1], ends = [-Infinity, -Infinity, -Infinity, -Infinity], placed = [];
       const up = nx ? (nx.above || []).concat({ x: -1e9, width: 2e9, y: nx.top, height: nx.bottom - nx.top }) : [];
       // 次の段の上に飛び出した音（高い音・加線）にかかる列は使わない
-      const hitsNext = (l, r, y) => up.some(b => l < b.x + b.width && b.x < r && y - 10 < b.y + b.height && b.y < y + 3);
+      const hitsNext = (l, r, y) => up.some(b => l < b.x + b.width && b.x < r && y - 12 < b.y + b.height && b.y < y + 5);
       s.its.sort((a, b) => a.x - b.x).forEach(({ t, x }) => {
         t.setAttribute("x", String(x));
-        const w = t.getBBox().width, left = x - w / 2, right = x + w / 2, yOf = k => s.low + 13 + k * 13;
-        let tier = ends.findIndex((e, k) => left >= e + 2 && !hitsNext(left, right, yOf(k)));
-        if (tier < 0) tier = ends.findIndex(e => left >= e + 2);
-        if (tier < 0) tier = ends.indexOf(Math.min(...ends));
+        const w = t.getBBox().width, yOf = k => s.low + 15 + k * 14;
+        let left = x - w / 2, right = x + w / 2;
+        let tier = ends.findIndex((e, k) => left >= e + 4 && !hitsNext(left, right, yOf(k)));
+        // 4段目は次の段にぶつからないときだけ使う（下げすぎると段の間が足りなくなる）
+        if (tier < 0) tier = ends.findIndex((e, k) => k < 3 && left >= e + 4);
+        if (tier < 0) tier = ends.indexOf(Math.min(...ends.slice(0, 3)));
+        // どの段も空いていないほど混んだ所（32分音符など）は、重ねずに少し右へずらす
+        const push = Math.max(0, ends[tier] + 4 - left);
+        if (push) { left += push; right += push; t.setAttribute("x", String(x + push)); }
         ends[tier] = right;
         let y = yOf(tier);
-        // それでも次の段の音にかかるときは、4 まで上に詰めてよけてみる
+        // それでも次の段の音にかかるときは、2 まで上に詰めてよけてみる（それ以上は自分の段の音に近づきすぎる）
         if (hitsNext(left, right, y)) {
-          const top = Math.min(...up.filter(b => left < b.x + b.width && b.x < right && y - 10 < b.y + b.height && b.y < y + 3).map(b => b.y));
-          if (top - 3 >= y - 4 && !hitsNext(left, right, top - 3)) y = top - 3;
+          const top = Math.min(...up.filter(b => left < b.x + b.width && b.x < right && y - 12 < b.y + b.height && b.y < y + 5).map(b => b.y));
+          if (top - 5 >= y - 2 && !hitsNext(left, right, top - 5)) y = top - 5;
         }
         t.setAttribute("y", String(y));
-        if (hitsNext(left, right, y)) s.rowEnd = Math.max(s.rowEnd, y + 4);
+        placed.push({ left, right, y });
+        if (hitsNext(left, right, y)) s.rowEnd = Math.max(s.rowEnd, y + 6);
         maxY = Math.max(maxY, y + 4);
+      });
+      (s.dyn || []).forEach(({ n, b }) => {
+        const ys = placed.filter(p => p.left - 6 < b.x + b.width && b.x < p.right + 6).map(p => p.y);
+        // ドレミがあればそのすぐ下、なければ段の音のすぐ下へ寄せる（下に離れすぎると次の段の記号に見える）
+        const dy = (ys.length ? Math.max(...ys) + 6 : s.low + 6) - b.y;
+        if (dy) n.style.setProperty("--dy", dy + "px");
+        const bottom = b.y + dy + b.height;
+        if (up.some(u => b.x < u.x + u.width && u.x < b.x + b.width && bottom + 3 > u.y)) s.rowEnd = Math.max(s.rowEnd, bottom);
+        maxY = Math.max(maxY, bottom + 2);
       });
     });
     const need = { in: 0, sys: 0 };
@@ -909,14 +936,14 @@ function addNoteNames(box, tune) {
 }
 // 楽譜を描いてドレミを付ける。ドレミが次の段にぶつかる曲だけ、段の間を広げて描き直す
 // （abcjs の段の間の既定は %%staffsep 46・%%sysstaffsep 36。単位は pt で、画面の 1 は 0.75pt）。
-// 段の間は「中身の高さ」と「最小の間」の大きいほうで決まるので、広げた分が吸収されることがある。そのときは3回まで重ねて広げる
+// 段の間は「中身の高さ」と「最小の間」の大きいほうで決まるので、広げた分が吸収されることがある。そのときは4回まで重ねて広げる
 function renderNamed(box, abc, opts) {
   let tune = ABCJS.renderAbc(box, "X:1\n" + abc, opts)[0];
   let need = addNoteNames(box, tune), sys = 46, inner = 36;
-  for (let i = 0; i < 3 && need && (need.in > 0 || need.sys > 0); i++) {
-    // 広げすぎて1ページの段が減りすぎないように、上限を既定＋40pt にする
-    if (need.sys > 0) sys = Math.min(86, sys + Math.ceil(need.sys * 0.75) + 2);
-    if (need.in > 0) inner = Math.min(76, inner + Math.ceil(need.in * 0.75) + 2);
+  for (let i = 0; i < 4 && need && (need.in > 0 || need.sys > 0); i++) {
+    // 広げすぎて1ページの段が減りすぎないように、上限を既定＋60pt にする
+    if (need.sys > 0) sys = Math.min(106, sys + Math.ceil(need.sys * 0.75) + 2);
+    if (need.in > 0) inner = Math.min(96, inner + Math.ceil(need.in * 0.75) + 2);
     tune = ABCJS.renderAbc(box, "X:1\n%%staffsep " + sys + "\n%%sysstaffsep " + inner + "\n" + abc, opts)[0];
     need = addNoteNames(box, tune);
   }
