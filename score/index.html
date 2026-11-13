@@ -85,8 +85,15 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .ink.on { pointer-events: auto; touch-action: none; cursor: crosshair; outline: 1px dashed var(--gold-dim); outline-offset: -1px; }
 .ink-tools { padding: 2px 0; }
-.ink-c { width: 30px !important; min-height: 30px !important; height: 30px; padding: 0 !important; border-radius: 50%; background: var(--c) !important; border: 2px solid var(--line) !important; }
-.ink-c[aria-pressed="true"] { border-color: var(--ink) !important; box-shadow: 0 0 0 2px var(--gold); }
+.controls button.ink-c { width: 30px !important; min-height: 30px !important; height: 30px; padding: 0 !important; border-radius: 50%; background: var(--c) !important; border: 2px solid var(--line) !important; }
+.controls button.ink-c[aria-pressed="true"] { border-color: var(--ink) !important; box-shadow: 0 0 0 2px var(--gold); }
+/* 太さは点の大きさで見せる（字は出さない） */
+.ink-sizes { display: inline-flex; gap: 4px; padding-left: 6px; border-left: 1px solid var(--line); }
+.controls button.ink-w { width: 40px !important; min-height: 40px !important; padding: 0 !important; background: none !important; border: 1px solid transparent !important; display: grid; place-items: center; }
+.ink-w::before { content: ""; width: var(--d); height: var(--d); border-radius: 50%; background: var(--c); }
+.controls button.ink-w[aria-pressed="true"] { border-color: var(--gold) !important; }
+.controls button.ink-e[aria-pressed="true"] { background: var(--gold) !important; color: var(--on-gold) !important; }
+.ink.on.erasing { cursor: cell; }
 .memo { width: 100%; min-height: 3.2em; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); padding: 8px 10px; font: inherit; font-size: 14px; line-height: 1.7; resize: vertical; box-sizing: border-box; }
 .memo::placeholder { color: var(--muted); }
 /* 楽譜は白抜き: 五線と音符は羊皮紙の白、指番号は金、弦の名前は淡い金 */
@@ -126,6 +133,13 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 @keyframes turn-out-prev { to { transform: rotateY(88deg); opacity: .3; } }
 @keyframes turn-in-prev { from { transform: rotateY(-88deg); opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .stand-page { animation: none !important; } }
+/* 指番号 / ドレミ の切り替え。ドレミのときは指番号・弦・ポジションの字を隠し、音名を出す */
+.names-sw { display: inline-flex; border: 1px solid var(--gold-dim); }
+.controls .names-sw button { background: none !important; color: var(--gold-soft) !important; border: 0 !important; padding: 0 12px; min-height: 40px; letter-spacing: .08em; }
+.controls .names-sw button[aria-pressed="true"] { background: var(--gold) !important; color: var(--on-gold) !important; font-weight: 700 !important; }
+.sheet text.doremi { fill: var(--gold-hi); font-size: 12px; font-weight: 700; font-family: var(--f-body); display: none; }
+html.doremi .sheet text.doremi { display: inline; }
+html.doremi .sheet .abcjs-annotation { visibility: hidden; }
 .split-col.quiet .split-name::after { content: "（自分が弾く・音なし）"; font-weight: 400; color: var(--muted); }
 .foot { font-family: var(--f-fine); font-size: 12.5px; color: var(--muted); }
 button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
@@ -683,6 +697,88 @@ Q:3/8=50
 K:G clef=bass
 z2 "_G線"!0!G,,2 !1!A,,2 !3!B,,2 "_D線"!0!D,2 "_G線"!4!C,2 C,2 "_D線"!1!E,2 D,2 | D,2 !4!G,2 !3!F,2 G,2 D,2 "_G線"B,,2 G,,2 A,,2 B,,2 | C,2 "_D線"D,2 E,2 D,2 "_G線"C,2 B,,2 A,,2 B,,2 G,,2 | "_C線""^拡張"!4!F,,2 "_G線"G,,2 A,,2 "_C線"!1!D,,2 F,,2 "_G線"A,,2 C,2 B,,2 A,,2 |
 !3!B,,2 !0!G,,2 !1!A,,2 B,,2 "_D線"!0!D,2 "_G線"!4!C,2 C,2 "_D線"!1!E,2 D,2 | D,2 !4!G,2 !3!F,2 G,2 D,2 "_G線"B,,2 G,,2 A,,2 B,,2 | "_C線"!3!E,,2 "_D線"D,2 "_G線"C,2 B,,2 A,,2 G,,2 "_C線"!1!D,,2 "_G線"G,,2 "_C線""^拡張"!4!F,,2 | "_G線"G,,2 B,,2 "_D線"D,2 G,2 D,2 "_G線"B,,2 G,,2 B,,2 "_D線"D,2 |]` },
+{ id: "eine-kleine-1", title: "アイネ・クライネ・ナハトムジーク 第1楽章（チェロのパート）", stage: 4, diff: 8, warn: "8分音符の同じ音の刻みが続きます。最後のほうの高いミだけ「3ポジ」。", tip: "モーツァルト K.525。原曲のチェロ（コントラバスと同じ低音）のパートそのまま、全137小節。出典: Mutopia Project #2230（Breitkopf & Härtel 1883 年版をもとにした浄書、パブリックドメイン）。", abc:
+`M:4/4
+L:1/8
+Q:1/4=120
+K:G clef=bass
+|: "_D線"!4!!f!G,2 z !0!D, !4!G,2 z !0!D,  | !4!G, !0!D, !4!G, "_A線"!1!B, !4!D2 z2  | !2!C2 z !0!A, !2!C2 z !0!A,  |
+!2!C !0!A, "_D線"!3!F, "_A線"!0!A, "_D線"!0!D,2 z2  | !4!G, G, G, G, G, G, G, G,  | G, G, G, G, G, G, G, G,  | G, G, G, G, G, G, G, G,  |
+G, G, G, G, G, G, G, G,  | G, G, "_A線"!0!A, A, !1!B, B, "_D線"!3!F, F,  | !4!G, G, "_A線"!0!A, A, !1!B,2 z2  | z8  |
+("_D線"!0!!p!D,4 !1!E,4)  | "_G線"!4!C,2 C,2 "_D線"!0!D,2 D,2  | "_G線"!3!B,, z "_D線"!0!D, z !4!G,2 z2  | z8  |
+(!0!D,4 !1!E,4)  | "_G線"!4!C,2 C,2 "_D線"!0!D,2 D,2  | !4!!sfz!G, G, G, G, !p!G, G, G, G,  | !sfz!G, G, G, G, !p!G, G, G, G,  |
+G, G, G, G, "_cresc."G, G, G, G,  | G, G, !3!F, F, !4!G, G, !1!E, E,  | !0!!f!D,8  | D,8  |
+D, !1!E, !3!F, !1!E, !0!D, !1!E, !3!F, !0!D,  | !4!G, "_A線"!0!A, !1!B, !0!A, "_D線"!4!G, "_A線"!0!A, !1!B, "_D線""^拡張"!4!^G,  | "_A線"!0!A, A, A, A, A, A, A, A,  | A, "_G線"!1!A,, A,, A,, A,,2 z2  |
+z4 z2 "_D線""^低い1"!1!!p!^D, z  | !1!E, z !0!=D, z "_G線""^拡張"!4!^C, z !1!A,, z  | z2 (!2!^A,,2 !3!B,,) z !0!=G,, z  | !1!=A,,2 "_A線"!0!A,3 "_D線""^拡張"!4!^G, !4!=G, !1!E,  |
+!0!D, z !1!E, z !3!F, z "^低い1"!1!^D, z  | !1!E, z !0!=D, z "_G線""^拡張"!4!^C, z !1!A,, z  | !3!B,, z "_D線"!4!G, z "_A線"!0!A, z "_G線"!1!A,, z  | "_D線"!0!D,2 z2 z4  |
+"_G線"!1!A,,2 z2 z4  | "_D線"!0!D,2 z2 z4  | "_G線"!1!A,,2 z2 z4  | z "_D線"!0!!f!D, !3!F, !1!E, "^低い1"!1!^D, "_G線"!3!B,, "^拡張"!4!^C, "_D線""^低い1"!1!D,  |
+!1!E, !4!G, !1!E, !0!D, "_G線""^拡張"!4!^C, !1!A,, !3!B,, "^拡張"!4!C,  | "_D線"!0!D, D, !1!E, !3!F, !4!G, G, G, G,  | "_A線"!0!A, A, A, A, "_G線"!1!A,, A,, A,, A,,  | "_D線"!0!D,2 z2 z4  |
+"_G線"!1!!p!A,,2 z2 z4  | "_D線"!0!D,2 z2 z4  | "_G線"!1!A,,2 z2 z4  | z "_D線"!0!!f!D, !3!F, !1!E, "^低い1"!1!^D, "_G線"!3!B,, "^拡張"!4!^C, "_D線""^低い1"!1!D,  |
+!1!E, !4!G, !1!E, !0!D, "_G線""^拡張"!4!^C, !1!A,, !3!B,, "^拡張"!4!C,  | "_D線"!0!D, D, !1!E, !3!F, !4!G, G, G, G,  | "_A線"!0!A, A, A, A, "_G線"!1!A,, A,, A,, A,,  | "_D線"!0!D, "_G線"!1!A,, !3!B,, "^拡張"!4!^C, "_D線"!0!D, D, !1!E, E,  |
+!3!F, "_G線""^拡張"!4!^C, "_D線"!0!D, !1!E, !3!F, F, !4!G, G,  | "_A線"!0!A, A, "^低い1"!1!^A, A, !1!B,2 z2  | ("_D線"!4!!p!G,4 "_A線"!0!=A,4)  | "_D線"!0!D, z D, z D, z z2  ::
+!f!D,2 z "_G線"!1!A,, "_D線"!0!D,2 z "_G線"!1!A,,  | "_D線"!0!D, "_G線"!1!A,, "_D線"!0!D, !3!F, "_A線"!0!A,2 z2  | A,2 z "_D線"!3!F, "_A線"!0!A,2 z "_D線"!3!F,  | "_A線"!0!A, "_D線"!3!F, "^低い1"!1!^D, !3!F, "_G線"!3!B,,2 z2  |
+!4!!p!=C,2 z2 z4  | !0!G,,2 z2 z4  | !4!C,2 z2 z4  | !0!G,,2 z2 z4  |
+!4!C,2 z2 z4  | "_D線"!1!E,2 z2 z4  | "_G線"!1!A,,2 z2 z4  | "_D線"!0!D,2 z2 z4  |
+"^低い1"!1!_E,8-  | _E,8  | !0!D,2 z (!f!D, !1!=E, !3!F, !4!G, "_A線"!0!A,  | !2!C "^低い1"!1!_B,) z ("_D線"!3!F, !4!G, "_A線"!0!A, "^低い1"!1!B, !3!^C  |
+"^3ポジ"=E !4!D) z2 z4  | z8  | z8  | "_D線"!0!!p!D,8  |
+!4!!f!G,2 z !0!D, !4!G,2 z !0!D,  | !4!G, !0!D, !4!G, "_A線"!1!B, !4!D2 z2  | !2!C2 z !0!A, !2!C2 z !0!A,  | !2!C !0!A, "_D線"!3!F, "_A線"!0!A, "_D線"!0!D,2 z2  |
+!4!G, G, G, G, G, G, G, G,  | G, G, G, G, G, G, G, G,  | G, G, G, G, G, G, G, G,  | G, G, G, G, G, G, G, G,  |
+G, G, "_A線"!0!A, A, !1!B, B, "_D線"!3!F, F,  | !4!G, G, "_A線"!0!A, A, !1!B,2 z2  | z8  | ("_D線"!0!!p!D,4 !1!E,4)  |
+"_G線"!4!C,2 C,2 "_D線"!0!D,2 D,2  | "_G線"!3!B,, z "_D線"!0!D, z !4!G,2 z2  | z8  | (!0!D,4 !1!E,4)  |
+"_G線"!4!C,2 C,2 "_D線"!0!D,2 D,2  | !4!!sfz!G, G, G, G, !p!G, G, G, G,  | !sfz!G, G, G, G, !p!G, G, G, G,  | G, G, G, G, "_cresc."G, G, G, G,  |
+G, G, !3!F, F, !4!G, G, !1!E, E,  | !0!!f!D,8  | D,8  | D, D, D, D, D, D, D, D,  |
+D, D, D, D, D,2 z2  | z4 z2 "^拡張"!4!!p!^G, z  | "_A線"!0!A, z "_D線"!4!=G, z !3!F, z !0!D, z  | z2 ("^低い1"!1!^D,2 !1!E,) z "_G線"!4!C, z  |
+"_D線"!0!=D,2 ("_A線"!4!D3 !3!^C !2!=C !0!A,)  | "_D線"!4!G, z "_A線"!0!A, z !1!B, z "_D線""^拡張"!4!^G, z  | "_A線"!0!A, z "_D線"!4!=G, z !3!F, z !0!D, z  | !1!E, z "_G線"!4!C, z "_D線"!0!D, z D, z  |
+"_G線"!0!G,,2 z2 z4  | "_D線"!0!D,2 z2 z4  | "_G線"!0!G,,2 z2 z4  | "_D線"!0!D,2 z2 z4  |
+z !4!!f!G, "_A線"!1!B, !0!A, "_D線""^拡張"!4!^G, !1!E, !3!F, "^拡張"!4!G,  | "_A線"!0!A, !2!C !0!A, "_D線"!4!=G, !3!F, !0!D, !1!E, !3!F,  | !4!.G, .G, "_A線"!0!.A, !1!.B, !2!C C C C  | !4!D D D D "_D線"!0!D, D, D, D,  |
+!4!G,2 z2 z4  | !0!!p!D,2 z2 z4  | !4!G,2 z2 z4  | !0!D,2 z2 z4  |
+z !4!!f!G, "_A線"!1!B, !0!A, "_D線""^拡張"!4!^G, !1!E, !3!F, "^拡張"!4!G,  | "_A線"!0!A, !2!C !0!A, "_D線"!4!=G, !3!F, !0!D, !1!E, !3!F,  | !4!.G, .G, "_A線"!0!.A, !1!.B, !2!C C C C  | !4!D D D D "_D線"!0!D, D, D, D,  |
+!4!G, !0!D, !1!E, !3!F, !4!G, G, "_A線"!0!A, A,  | !1!B, "_D線"!3!F, !4!G, "_A線"!0!A, !1!B, B, !2!C C  | !4!D D "^拡張"!4!^D D "^3ポジ"E2 z2  | ("_G線"!4!!p!C,4 "_D線"!0!D,4)  |
+"_G線"!0!G,,2 z2 z4  | (!4!C,4 "_D線"!0!D,4)  | "_G線"!0!G,,2 z2 z4  | !4!C,2 z2 "_D線"!0!!f!D,2 z2  |
+"_G線"!0!G,, G,, G,, G,, G,, G,, G,, G,,  | G,, G,, G,, G,, G,, G,, G,, G,,  | G,, G,, G,, G,, G,, G,, G,, G,,  | G,, G,, G,, G,, G,, G,, G,, G,,  |
+G,, !3!B,, "_D線"!0!D, !4!G, "_A線"!1!B, "_D線"!4!G, "_A線"!4!D !1!B,  | "_D線"!4!G,2 "_G線"!0!G,,3/2 G,,/ G,,2 z2  :|
+`},
+{ id: "eine-kleine-2", title: "アイネ・クライネ・ナハトムジーク 第2楽章 ロマンツェ（チェロのパート）", stage: 3, diff: 7, warn: "途中でハ短調（♭3つ）に変わり、ターン（∽）の飾りが続きます。", tip: "モーツァルト K.525。原曲のチェロのパートそのまま。2分音符を1拍に数えます。出典: Mutopia Project #2230（Breitkopf & Härtel 1883 年版をもとにした浄書、パブリックドメイン）。", abc:
+`M:C|
+L:1/8
+Q:1/2=54
+K:C clef=bass
+|: z4  | "_G線"!4!!p!C,2 C,2 C,2 C,2  | C,2 C,2 z2 C,2  | z2 (C,2 !3!B,,2 !4!C,2)  |
+"_D線"!4!G,2 "_G線"!0!G,,2 z4  | !4!!f!C,2 C,2 C,2 C,2  | C,2 C,2 "_D線"!1!E,2 E,2  | !2!F,2 F,2 !4!G,2 "_G線"!0!G,,2  |
+!4!C,2 z2  :: z4  | !0!!p!G,,2 G,,2 G,,2 G,,2  | G,,2 z2 z4  | "_cresc."G,,2 "_D線"!4!G,2 G,2 G,2  |
+"_G線"!0!!f!G,,2 z2 z4  | (!1!!p!A,,4 "_D線"!0!D,2 "_G線"!3!B,,2)  | !4!C,2 z2 "_D線"!1!!f!E,2 !0!D,2  | "_G線"!4!C,2 "_D線"!2!F,2 !4!G,2 "_G線"!0!G,,2  |
+!4!C,2 z2  :: "_A線"!2!.!p!C .C .C .C  | "_D線"!4!G,2 z2 "_G線"!4!.C, .C, .C, .C,  | !0!G,,2 z2 "_A線"!2!.C .C !0!.A, .A,  | "_D線"!4!G,2 z !1!E, !0!D,2 z D,  |
+"_G線"!0!G,,2- G,, z  :| "_D線"!1!.E, .E, !4!.G, .G,  | "_A線"!0!A,2 z2 "_D線"!0!.D, .D, !2!.F, .F,  | !4!G,2 z2 "_A線"!2!.C .C !0!.A, .A,  | "_D線""^拡張"!4!^G,2 z (!1!E, !2!F,2) z (F,  |
+!1!E,2) z ("^拡張"!4!^G, "_A線"!0!A,) .A, .A, .A,  | "_D線""^拡張"!4!^G,2 z (!1!E, !2!F,2) z (F,  | !1!E,2) z (!2!F, !1!E,2) z2  | z4 z2 z "_G線"!1!A,,  |
+("^低い1"!1!^G,, !3!B,,) "_C線"!3!E,, z z4  | z4 z2 z "_G線"!4!.C,  | (!3!B,, "_D線"!0!D,) "_G線"!0!=G,, !3!B,, !4!C,2 z2  | C,2 C,2 C,2 C,2  |
+C,2 C,2 z2 C,2  | z2 (C,2 !3!B,,2 !4!C,2)  | "_D線"!4!G,2 "_G線"!0!G,,2 z4  | !4!C,2 C,2 C,2 C,2  |
+C,2 C,2 "_D線"!1!E,2 E,2  | !2!F,2 F,2 !4!G,2 "_G線"!0!G,,2  | !4!C,2 z2  |: [K:Cm clef=bass]z4  | z2 "_D線"!4!!p!.G, ("_G線"!3!!turn!=B,, !4!C,) z z2  |
+z2 "_D線"!4!.G, ("_G線"!3!!turn!=B,, !4!C,) z z2  | (!2!"_fp"B,,3 !4!C, "^低い1"!1!A,,) .A,, !2!.B,, .B,,  | "_C線"!2!E,, z z2  :| z4  | z2 "_A線"!2!.C ("_D線"!1!!turn!=E, !2!F,) z z2  |
+z2 "_A線"!4!.D ("_D線"!3!!turn!^F, !4!G,) z z2  | z4 z2 "_A線"!2!.C ("_D線"!3!!turn!^F,  | !4!G,) ("^拡張"!4!!turn!A, !4!G,) (!2!!turn!=F, "^低い1"!1!E,) ("_G線"!3!!turn!=B,, !4!C,) ("^低い1"!1!!turn!A,,  | !0!G,,) z z2 "_D線"!4!.G, ("_G線"!3!!turn!=B,, !4!C,) z  |
+"_D線"!4!.G, ("_G線"!3!!turn!=B,, !4!C,) z "_D線"!4!.G, ("_G線"!3!!turn!B,, !4!C,) z  | z8  | (!0!G,,3 !1!=A,,/ !3!=B,,/ [K:C clef=bass]!4!C,) z z2  | !p!C,2 C,2 C,2 C,2  |
+C,2 C,2 z2 C,2  | z2 (C,2 !3!B,,2 !4!C,2)  | "_D線"!4!G,2 "_G線"!0!G,,2 z4  | !4!!f!C,2 C,2 C,2 C,2  |
+C,2 C,2 "_D線"!1!E,2 E,2  | !2!F,2 F,2 !4!G,2 "_G線"!0!G,,2  | !4!C,2 z2 z4  | !0!!p!G,,2 G,,2 G,,2 G,,2  |
+G,,2 z2 z4  | "_cresc."G,,2 "_D線"!4!G,2 G,2 G,2  | "_G線"!0!!f!G,,2 z2 z4  | (!1!!p!A,,4 "_D線"!0!D,2 "_G線"!3!B,,2)  |
+!4!C,2 z2 "_D線"!1!!f!E,2 !0!D,2  | "_G線"!4!C,2 "_D線"!2!F,2 !4!G,2 "_G線"!0!G,,2  | !4!C,2 z2 "_C線"!3!!f!E,,2 z2  | !4!F,,2 z2 "^拡張"!4!^F,,2 z2  |
+("_G線"!0!!p!G,,8  | !4!C,2) z2 z4  | (!0!G,,8  | !4!C,2) z2 z4  |
+(!0!G,,8  | !4!C,) z !0!G,, z "_C線"!0!C,, z z2  |
+`},
+{ id: "eine-kleine-3", title: "アイネ・クライネ・ナハトムジーク 第3楽章 メヌエットとトリオ（チェロのパート）", stage: 2, diff: 5, tip: "モーツァルト K.525。原曲のチェロのパートそのまま。トリオのあと、メヌエットへ戻って Fine で終わります。出典: Mutopia Project #2230（Breitkopf & Härtel 1883 年版をもとにした浄書、パブリックドメイン）。", abc:
+`M:3/4
+L:1/8
+Q:1/4=116
+K:G clef=bass
+|: z2  | "_A線"!1!.!f!B,2 "_D線"!3!.F,2 !4!.G,2  | "_A線"!0!.A,2 "_D線"!1!.E,2 !3!.F,2  | !4!.G,2 !1!.E,2 "_G線""^拡張"!4!.^C,2  |
+"_D線"!0!.D,2 "_A線"!4!.D2 !2!.=C2  | !1!.B,2 "_D線"!3!.F,2 !4!.G,2  | "_A線"!0!.A,2 "_D線"!0!.D,2 !4!.G,2  | !1!.E,2 "_G線"!4!.C,2 "_D線"!0!.D,2  |
+"_G線"!0!.G,,2 "_D線"!4!.G,2  :: z2  | z2 z2 "_A線"!0!!p!A,2  | ("_D線"!4!G,2 !1!E,2) z2  | z2 z2 !4!G,2  |
+!3!"_cresc."F,2 "_A線"!4!.D2 !2!.C2  | !1!.!f!B,2 !0!.A,2 "_D線"!4!.G,2  | "_A線"!0!.A,2 "_D線"!0!.D,2 !4!.G,2  | !1!.E,2 "_G線"!4!.C,2 "_D線"!0!.D,2  |
+"_G線"!0!.G,,2 "_D線"!4!"^Fine".G,2  :: [K:D clef=bass]z2  | "_C線"!1!.!p!D,,2 "_D線"!0!.D,2 z2  | "_C線"!1!.D,,2 "_D線"!0!.D,2 z2  | "_G線"!1!.A,,2 "_A線"!0!.A,2 z2  |
+"_G線"!1!.A,,2 "_A線"!0!.A,2 z2  | "_D線"!0!.D,2 "_A線"!4!.D2 z2  | "_G線"!3!.B,,2 "_A線"!1!.B,2 z2  | "_D線"!4!.G,2 !1!.E,2 "_A線"!0!.A,2  |
+"_D線"!0!.D,2 "_A線"!4!.D2  :: z2  | "_G線"!1!!f!A,,2 z2 ("^拡張"!4!C,2  | "_D線"!0!D,2) z2 z2  | !1!E,2 z2 "_C線"!3!E,,2  |
+"_G線"!1!.A,,2 "_A線"!0!.A,2 z2  | "_C線"!1!.!p!D,,2 "_D線"!0!.D,2 z2  | "_C線"!1!.D,,2 "_D線"!0!.D,2 z2  | "_G線"!1!.A,,2 "_A線"!0!.A,2 z2  |
+"_G線"!1!.A,,2 "_A線"!0!.A,2 z2  | "_D線"!0!.D,2 "_A線"!4!.D2 z2  | "_G線"!3!.B,,2 "_A線"!1!.B,2 z2  | "_D線"!4!.G,2 !1!.E,2 "_A線"!0!.A,2  |
+"_D線"!0!.D,2 "_A線"!4!"^メヌエットへ戻る".D2  :|
+`},
 ];
 
 const $ = id => document.getElementById(id);
@@ -727,6 +823,52 @@ function noteParts(song) {
   song._parts = { tune: song.tune, map };
   return map;
 }
+// ドレミ（固定ド）を音符ごとに書いておき、「指番号 / ドレミ」の切り替えで出し分ける。
+// 音の高さは再生用の音（MIDI）から、♯と♭は書いてある音名から決める。タイでつながった後ろの音には書かない
+const DO_RE_MI = ["ド", "レ", "ミ", "ファ", "ソ", "ラ", "シ"], NAT = [0, 2, 4, 5, 7, 9, 11];
+function addNoteNames(box, tune) {
+  const svg = box.querySelector("svg"); if (!svg || !tune) return;
+  const midi = new Map();
+  try { (tune.setUpAudio({}).tracks || []).forEach(t => t.forEach(ev => { if (ev.cmd === "note" && ev.pitch != null && ev.startChar != null && !midi.has(ev.startChar)) midi.set(ev.startChar, ev.pitch); })); }
+  catch (e) { console.warn("ドレミを付けられませんでした", e); return; }
+  const NS = "http://www.w3.org/2000/svg", items = [];
+  (tune.lines || []).forEach(l => (l.staff || []).forEach(st => (st.voices || []).forEach(v => v.forEach(e => {
+    if (e.el_type !== "note" || e.rest || !e.pitches || !midi.has(e.startChar) || !e.abselem || !e.abselem.elemset) return;
+    const g = e.abselem.elemset.find(n => n.tagName === "g") || e.abselem.elemset[0];
+    const head = g && g.querySelector(".abcjs-notehead"); if (!head) return;
+    const p = e.pitches[0].pitch, step = ((p % 7) + 7) % 7, nat = 60 + 12 * Math.floor(p / 7) + NAT[step];
+    const d = midi.get(e.startChar) - nat, acc = d === 1 ? "♯" : d === -1 ? "♭" : d === 2 ? "𝄪" : d === -2 ? "𝄫" : "";
+    const t = document.createElementNS(NS, "text"); t.setAttribute("class", "doremi"); t.setAttribute("text-anchor", "middle");
+    t.textContent = DO_RE_MI[step] + acc; g.append(t); items.push({ t, head });
+  }))));
+  // 位置は楽譜が画面に出てから測る（閉じた曲・隠れた画面では測れない）。同じ段の名前は、いちばん低い音符の下に一列にそろえる
+  const place = () => {
+    const staves = [...svg.querySelectorAll("g.abcjs-staff")].map(st => ({ st, b: st.getBBox() })), rows = new Map();
+    items.forEach(({ t, head }) => {
+      const hb = head.getBBox(), cy = hb.y + hb.height / 2;
+      let near = null, gap = Infinity;
+      staves.forEach(s => { const dd = cy < s.b.y ? s.b.y - cy : cy > s.b.y + s.b.height ? cy - s.b.y - s.b.height : 0; if (dd < gap) { gap = dd; near = s; } });
+      if (!near) return;
+      t.setAttribute("x", String(hb.x + hb.width / 2));
+      const row = rows.get(near.st) || { y: near.b.y + near.b.height, ts: [] };
+      row.y = Math.max(row.y, hb.y + hb.height); row.ts.push(t); rows.set(near.st, row);
+    });
+    rows.forEach(r => r.ts.forEach(t => t.setAttribute("y", String(r.y + 13))));
+  };
+  if (svg.getBBox().width) { place(); return; }
+  const ro = new ResizeObserver(() => { if (!svg.getBBox().width) return; ro.disconnect(); place(); });
+  ro.observe(box);
+}
+const NAMES_KEY = "score-names";
+let namesMode = "finger";
+try { namesMode = localStorage.getItem(NAMES_KEY) === "doremi" ? "doremi" : "finger"; } catch (e) { /* 読めないときは指番号 */ }
+document.documentElement.classList.toggle("doremi", namesMode === "doremi");
+function setNames(mode) {
+  namesMode = mode;
+  document.documentElement.classList.toggle("doremi", mode === "doremi");
+  document.querySelectorAll(".names-sw button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  try { localStorage.setItem(NAMES_KEY, mode); } catch (e) { /* 覚えられなくても切り替えはできる */ }
+}
 // 二重奏を左右に並べる曲（split: [パート1の id, パート2 の id]）。音と光る順番は2段の楽譜（s.abc）から取り、
 // 画面にはそれぞれのパートの楽譜（運指つき）を並べる。2段の楽譜の n 番目の音符 ＝ そのパートの楽譜の n 番目の音符
 function renderSplit(s, sheet) {
@@ -743,6 +885,7 @@ function renderSplit(s, sheet) {
     const name = document.createElement("p"); name.className = "split-name"; name.textContent = names[i] || "パート" + (i + 1);
     const box = document.createElement("div"); col.append(name, box); sheet.append(col);
     const part = ABCJS.renderAbc(box, "X:1\n" + src.abc, look)[0];
+    addNoteNames(box, part);
     const a = notesOf(s.tune, i), b = notesOf(part, 0);
     if (a.length !== b.length) console.warn(s.id, "パート" + (i + 1) + "の音符の数が合いません", a.length, b.length);
     a.forEach((e, k) => { if (b[k] && b[k].abselem) { map.set(e.startChar, b[k].abselem.elemset); s._partOf.set(e.startChar, i); } });
@@ -757,7 +900,7 @@ const Stand = (() => {
     const bar = document.createElement("div"); bar.className = "stand-bar";
     title = document.createElement("p"); title.className = "stand-title";
     no = document.createElement("span"); no.className = "stand-no";
-    play = document.createElement("button"); play.type = "button"; play.textContent = "▶";
+    play = document.createElement("button"); play.type = "button"; play.textContent = "▶ 鳴らす";
     const close = document.createElement("button"); close.type = "button"; close.className = "ghost"; close.textContent = "×"; close.setAttribute("aria-label", "閉じる");
     bar.append(title, no, play, close);
     area = document.createElement("div"); area.className = "stand-pages";
@@ -795,6 +938,13 @@ const Stand = (() => {
       // スマホの縦は1段3小節にして音符を大きく見せる
       cp.tune = ABCJS.renderAbc(cp.box, "X:1\n" + song.abc, spread ? look : { ...look, staffwidth: 380, wrap: { ...look.wrap, preferredMeasuresPerLine: 3 } })[0];
       cp.box.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
+      addNoteNames(cp.box, cp.tune);
+      // 段ごとの部品。ページに入らない段は隠すので、切れ目に隣の段の指番号や弦の名前がのぞかない
+      cp.byLine = new Map();
+      cp.box.querySelectorAll("svg [class*='abcjs-l']").forEach(n => {
+        const m = [...n.classList].find(c => /^abcjs-l\d+$/.test(c)); if (!m || n.parentElement.closest("[class*='abcjs-l']")) return;
+        const k = Number(m.slice(7)); cp.byLine.set(k, (cp.byLine.get(k) || []).concat(n));
+      });
       (cp.tune.lines || []).forEach((l, k) => (l.staff || []).forEach(st => st.voices.forEach(v => v.forEach(e => {
         if (e.el_type !== "note" || e.rest || !e.abselem) return;
         lineOf.set(e.startChar, k); els.set(e.startChar, (els.get(e.startChar) || []).concat(e.abselem.elemset));
@@ -803,16 +953,16 @@ const Stand = (() => {
     // 段ごとの上下の位置を測って、ページの高さに入るだけ段を詰める
     const cp = copies[0], svg = cp.box.querySelector("svg"), top = svg.getBoundingClientRect().top;
     const room = cp.page.clientHeight - 16, lines = [];
-    (cp.tune.lines || []).forEach((l, k) => {
+    [...cp.byLine.keys()].sort((x, y) => x - y).forEach(k => {
       let a = Infinity, b = -Infinity;
-      svg.querySelectorAll(".abcjs-l" + k).forEach(n => { const r = n.getBoundingClientRect(); if (!r.width && !r.height) return; a = Math.min(a, r.top - top); b = Math.max(b, r.bottom - top); });
+      cp.byLine.get(k).forEach(n => { const r = n.getBoundingClientRect(); if (!r.width && !r.height) return; a = Math.min(a, r.top - top); b = Math.max(b, r.bottom - top); });
       if (a < b) lines.push({ k, a, b });
     });
     pages = [];
     lines.forEach((ln, i) => {
       const last = pages[pages.length - 1];
-      if (last && ln.b - last.y0 <= room) { last.last = ln.k; last.y1 = ln.b + 6; return; }
-      pages.push({ first: ln.k, last: ln.k, y0: i ? ln.a - 6 : 0, y1: ln.b + 6 });
+      if (last && ln.b + 4 - last.y0 <= room) { last.last = ln.k; last.y1 = ln.b + 4; return; }
+      pages.push({ first: ln.k, last: ln.k, y0: i ? Math.max(0, ln.a - 4) : 0, y1: ln.b + 4 });
     });
     if (!pages.length) pages.push({ first: 0, last: 0, y0: 0, y1: svg.getBoundingClientRect().height });
   }
@@ -822,6 +972,7 @@ const Stand = (() => {
       const p = pages[cur + j];
       cp.page.classList.toggle("blank", !p);
       if (!p) return;
+      cp.byLine.forEach((ns, k) => { const v = k >= p.first && k <= p.last ? "" : "hidden"; ns.forEach(n => { n.style.visibility = v; }); });
       cp.clip.style.height = (p.y1 - p.y0) + "px";
       cp.box.style.transform = "translateY(" + (-p.y0) + "px)";
     });
@@ -851,7 +1002,7 @@ const Stand = (() => {
     if (!el) build();
     if (song) shut();
     song = s; cardBtn = btn; title.textContent = s.title; el.hidden = false; document.documentElement.style.overflow = "hidden";
-    const mirror = () => { const on = btn.classList.contains("on"); play.textContent = on ? "■" : "▶"; play.classList.toggle("on", on); play.setAttribute("aria-label", on ? "止める" : "鳴らす"); };
+    const mirror = () => { const on = btn.classList.contains("on"), wait = btn.textContent === "読み込み中…"; play.textContent = on ? "■ 止める" : wait ? "…" : "▶ 鳴らす"; play.classList.toggle("on", on); };
     watch = new MutationObserver(mirror); watch.observe(btn, { attributes: true, childList: true, characterData: true, subtree: true }); mirror();
     cur = 0; layout(); show();
     s._pager = {
@@ -932,6 +1083,8 @@ async function playSong(song, btn, opts) {
   playing = { nodes, btn, unglow: glowAlong(song, hits, my), timer: setTimeout(() => { const again = opts.loop(); stopAll(); if (again) playSong(song, btn, opts); }, (total + 0.3) * 1000) };
 }
 
+const INK_KEY = "score-ink-tool", INK_PREF = { c: "#e0c272", w: 0.0045, erase: false };
+try { Object.assign(INK_PREF, JSON.parse(localStorage.getItem(INK_KEY))); } catch (e) { /* 前回の道具が読めないときは金・ふつう */ }
 // 楽譜への書き込み。線は楽譜の幅・高さに対する割合で持つので、画面の大きさが変わってもずれない
 function setupInk(id, sheet, pen, tools, memo) {
   const key = "score-notes:" + id;
@@ -940,14 +1093,35 @@ function setupInk(id, sheet, pen, tools, memo) {
   const save = () => { try { localStorage.setItem(key, JSON.stringify(notes)); } catch (e) { console.warn("書き込みを保存できませんでした", e); } };
   memo.value = notes.memo || "";
   let mt = 0; memo.addEventListener("input", () => { clearTimeout(mt); mt = setTimeout(() => { notes.memo = memo.value; save(); }, 400); });
+  // 色・太さ・消しゴムは、どの曲でも前回のままにする（この端末に覚える）
   const COLORS = [["#e0c272", "金"], ["#ebe7dc", "白"], ["#7fb4ff", "青"]];
-  let color = COLORS[0][0], canvas = null, g = null, cur = null, on = false;
+  const SIZES = [[0.0025, "細い線", 6], [0.0045, "ふつうの線", 10], [0.009, "太い線", 16]];
+  const pref = INK_PREF;
+  let canvas = null, g = null, cur = null, on = false;
+  const sizeBtns = [], colorBtns = [];
+  const eraser = document.createElement("button"); eraser.type = "button"; eraser.className = "ghost ink-e"; eraser.textContent = "消しゴム";
+  function mark() {
+    colorBtns.forEach(b => b.setAttribute("aria-pressed", String(!pref.erase && b.dataset.c === pref.c)));
+    sizeBtns.forEach(b => { b.setAttribute("aria-pressed", String(Number(b.dataset.w) === pref.w)); b.style.setProperty("--c", pref.erase ? "var(--ink-2)" : pref.c); });
+    eraser.setAttribute("aria-pressed", String(pref.erase)); eraser.classList.toggle("on", pref.erase);
+    if (canvas) canvas.classList.toggle("erasing", pref.erase);
+    try { localStorage.setItem(INK_KEY, JSON.stringify(pref)); } catch (e) { /* 覚えられなくても書ける */ }
+  }
   COLORS.forEach(([c, label]) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "ink-c"; b.style.setProperty("--c", c);
-    b.setAttribute("aria-label", label + "で書く"); b.setAttribute("aria-pressed", String(c === color));
-    b.addEventListener("click", () => { color = c; tools.querySelectorAll(".ink-c").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
-    tools.append(b);
+    const b = document.createElement("button"); b.type = "button"; b.className = "ink-c"; b.style.setProperty("--c", c); b.dataset.c = c;
+    b.setAttribute("aria-label", label + "で書く");
+    b.addEventListener("click", () => { pref.c = c; pref.erase = false; mark(); });
+    colorBtns.push(b); tools.append(b);
   });
+  const sizes = document.createElement("span"); sizes.className = "ink-sizes";
+  SIZES.forEach(([w, label, px]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "ink-w"; b.dataset.w = String(w); b.style.setProperty("--d", px + "px");
+    b.setAttribute("aria-label", label);
+    b.addEventListener("click", () => { pref.w = w; mark(); });
+    sizeBtns.push(b); sizes.append(b);
+  });
+  eraser.addEventListener("click", () => { pref.erase = !pref.erase; mark(); });
+  tools.append(sizes, eraser);
   const undo = document.createElement("button"); undo.type = "button"; undo.className = "ghost"; undo.textContent = "1つ戻す";
   undo.addEventListener("click", () => { notes.strokes.pop(); save(); draw(); });
   const clear = document.createElement("button"); clear.type = "button"; clear.className = "ghost"; clear.textContent = "全部消す";
@@ -962,11 +1136,14 @@ function setupInk(id, sheet, pen, tools, memo) {
     g.clearRect(0, 0, canvas.width, canvas.height);
     g.lineCap = "round"; g.lineJoin = "round";
     notes.strokes.forEach(st => {
-      g.strokeStyle = st.c; g.lineWidth = Math.max(1.5, st.w * canvas.width);
+      // 消しゴムは「消す線」として残す。1つ戻すで消したのも戻せる
+      g.globalCompositeOperation = st.e ? "destination-out" : "source-over";
+      g.strokeStyle = st.e ? "#000" : st.c; g.lineWidth = Math.max(1.5, st.w * canvas.width);
       g.beginPath(); st.p.forEach(([x, y], i) => i ? g.lineTo(x * canvas.width, y * canvas.height) : g.moveTo(x * canvas.width, y * canvas.height));
       if (st.p.length === 1) g.lineTo(st.p[0][0] * canvas.width + 0.1, st.p[0][1] * canvas.height);
       g.stroke();
     });
+    g.globalCompositeOperation = "source-over";
   }
   function fit() {
     if (!canvas) return;
@@ -977,15 +1154,16 @@ function setupInk(id, sheet, pen, tools, memo) {
   function attach() {
     canvas = document.createElement("canvas"); canvas.className = "ink" + (on ? " on" : ""); canvas.setAttribute("aria-hidden", "true");
     sheet.append(canvas); g = canvas.getContext("2d");
-    canvas.addEventListener("pointerdown", e => { if (!on) return; e.preventDefault(); canvas.setPointerCapture(e.pointerId); cur = { c: color, w: 0.0045, p: [at(e)] }; notes.strokes.push(cur); draw(); });
+    canvas.addEventListener("pointerdown", e => { if (!on) return; e.preventDefault(); canvas.setPointerCapture(e.pointerId); cur = pref.erase ? { e: 1, w: Math.max(0.012, pref.w * 4), p: [at(e)] } : { c: pref.c, w: pref.w, p: [at(e)] }; notes.strokes.push(cur); draw(); });
     canvas.addEventListener("pointermove", e => { if (!cur) return; e.preventDefault(); cur.p.push(at(e).map(v => Math.round(v * 10000) / 10000)); draw(); });
     const end = () => { if (cur) { cur = null; save(); } };
     canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
-    new ResizeObserver(fit).observe(sheet); fit();
+    new ResizeObserver(fit).observe(sheet); fit(); mark();
   }
+  mark();
   pen.addEventListener("click", () => {
     on = !on; pen.setAttribute("aria-pressed", String(on)); pen.textContent = on ? "✎ 書き込みを終える" : "✎ 書き込む";
-    pen.classList.toggle("on", on); tools.hidden = !on; if (canvas) canvas.classList.toggle("on", on);
+    pen.classList.toggle("on", on); tools.hidden = !on; if (canvas) canvas.classList.toggle("on", on); if (on) mark();
   });
   return { attach };
 }
@@ -1045,6 +1223,13 @@ SONGS.forEach(s => {
   // ── 書き込み（指でなぞる・ペンで書く）とメモ。この端末に、曲ごとに残す ──
   const pen = document.createElement("button"); pen.type = "button"; pen.className = "ghost"; pen.textContent = "✎ 書き込む"; pen.setAttribute("aria-pressed", "false");
   ctr.append(pen);
+  // 音符の下に出すのを「指番号（と弦）」か「ドレミ」かで切り替える。全曲・譜面台に同じものが効く
+  const sw = document.createElement("span"); sw.className = "names-sw"; sw.setAttribute("role", "group"); sw.setAttribute("aria-label", "音符に出すもの");
+  [["finger", "指番号"], ["doremi", "ドレミ"]].forEach(([mode, label]) => {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.mode = mode; b.textContent = label; b.setAttribute("aria-pressed", String(namesMode === mode));
+    b.addEventListener("click", () => setNames(mode)); sw.append(b);
+  });
+  ctr.append(sw);
   if (!s.split) {
     const standBtn = document.createElement("button"); standBtn.type = "button"; standBtn.className = "ghost"; standBtn.textContent = "▯▯ 譜面台";
     standBtn.addEventListener("click", () => { prepare(); if (s.tune) Stand.open(s, btn); });
@@ -1073,7 +1258,8 @@ SONGS.forEach(s => {
     if (ready) return; ready = true;
     if (ok) {
       try { if (s.split) renderSplit(s, sheet); else s.tune = ABCJS.renderAbc(sheet, "X:1\n" + s.abc, { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc" })[0];
-        sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); }); }
+        sheet.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
+        if (!s.split) addNoteNames(sheet, s.tune); }
       catch (e) { console.error(s.id, e); }
     }
     if (s.split) { s._follow = c => s._partOf.get(c) === (mix[1] && !mix[1].on && (!mix[0] || mix[0].on) ? 1 : 0); markQuiet(); }
