@@ -136,6 +136,9 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
 .now .r { display: grid; justify-items: center; gap: 4px; }
 .now .dot { width: 60px; height: 60px; font-size: 31px; }
 .now .st { font-size: 12.5px; font-weight: 700; color: var(--gold); }
+.now .tip { font-family: var(--f-fine); font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+.now .tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--gold-dim); color: var(--gold); font-size: 11.5px; font-weight: 700; }
+.info .go-ext { justify-self: start; margin-top: 4px; min-height: 40px; padding: 0 14px; border: 1px solid var(--gold-dim); background: var(--panel); color: var(--gold); font-size: 13px; font-weight: 700; }
 .progress { display: flex; justify-content: center; gap: 8px; }
 .progress i { width: 8px; height: 8px; background: var(--line); }
 .progress i.done { background: var(--gold-dim); }
@@ -211,6 +214,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       <p class="lead">第1ポジション ・ 1オクターブ</p>
     </div>
     <div class="chips" id="key-chips" role="group" aria-label="調" style="--n: 3"></div>
+    <div class="chips" id="ext-chips" role="group" aria-label="指を広げる練習" style="--n: 2"></div>
     <div class="ornate now" id="now"></div>
     <div class="ornate board"><div class="fb" id="fb2"></div></div>
     <div class="progress" id="prog" aria-hidden="true"></div>
@@ -282,7 +286,20 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       ['D','レ',2,0,0],['E','ミ',2,2,1],['F♯','ファ♯',2,4,3],['G','ソ',2,5,4]] },
     D: { label: 'ニ長調', steps: [
       ['D','レ',2,0,0],['E','ミ',2,2,1],['F♯','ファ♯',2,4,3],['G','ソ',2,5,4],
-      ['A','ラ',3,0,0],['B','シ',3,2,1],['C♯','ド♯',3,4,3],['D','レ',3,5,4]] }
+      ['A','ラ',3,0,0],['B','シ',3,2,1],['C♯','ド♯',3,4,3],['D','レ',3,5,4]] },
+    // 指を広げる練習。6番目は「拡張」か「低い1」の印
+    // イ長調：1の指はそのまま、2の指を全音離して置き、4の指で半音先まで届かせる（前への拡張）
+    EXT: { label: 'イ長調', sub: '拡張', steps: [
+      ['A','ラ',1,2,1],['B','シ',1,4,2,'拡張'],['C♯','ド♯',1,6,4,'拡張'],
+      ['D','レ',2,0,0],['E','ミ',2,2,1],['F♯','ファ♯',2,4,2,'拡張'],['G♯','ソ♯',2,6,4,'拡張'],['A','ラ',3,0,0]] },
+    // 変ロ長調：1の指だけ半音うしろへ伸ばす（うしろへの拡張）。ほかの指はいつもの場所
+    LOW: { label: '変ロ長調', sub: '低い1', steps: [
+      ['B♭','シ♭',1,3,2],['C','ド',1,5,4],['D','レ',2,0,0],['E♭','ミ♭',2,1,1,'低い1'],
+      ['F','ファ',2,3,2],['G','ソ',2,5,4],['A','ラ',3,0,0],['B♭','シ♭',3,1,1,'低い1']] }
+  };
+  const EXT_TIP = {
+    '拡張': '1の指は置いたまま。2の指を全音（指1本分）離し、4の指を半音先まで伸ばす。1が動いたら手ごとずれています。',
+    '低い1': '1の指だけ半音うしろへ伸ばす。2・3・4の指はいつもの場所に残します。'
   };
   const POSITIONS = [
     ['1','第1ポジション','A弦の1の指 = B（シ）','最初に習う基本の位置。開放弦と組み合わせて、ハ長調・ト長調・ニ長調の1オクターブが弾けます。', 1],
@@ -435,25 +452,36 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       return;
     }
     const st = STRINGS[S.sel.si], s = S.sel.s, finger = fingerAt(s), inPos = s === 0 || finger > 0;
+    // 第1ポジションのすぐ外の音は、指を広げれば届く（楽譜の「拡張」「低い1」）
+    const ext = S.pos === 1 && s === 6 ? '拡張' : S.pos === 1 && s === 1 ? '低い1' : null;
     const nt = el('div', 'nt'); nt.append(el('span', 'big', NAMES[(st.base + s) % 12]), el('span', 'sub', st.n + '弦 ・ 第' + S.pos + 'ポジション'));
     box.append(nt,
-      el('div', 'fg', s === 0 ? '開放弦（0）' : finger ? finger + 'の指' : 'このポジションでは押さえません'),
-      el('p', null, inPos ? TIPS[s === 0 ? 0 : finger] : '別のポジションに移動するか、拡張（エクステンション）で届く音です。'));
+      el('div', 'fg', s === 0 ? '開放弦（0）' : finger ? finger + 'の指' : ext === '拡張' ? '4の指（拡張）' : ext ? '1の指（低い1）' : 'このポジションでは押さえません'),
+      el('p', null, inPos ? TIPS[s === 0 ? 0 : finger] : ext ? EXT_TIP[ext] : '別のポジションに移動するか、拡張（エクステンション）で届く音です。'));
+    if (ext) {
+      const b = el('button', 'go-ext', ext + 'の練習へ'); b.type = 'button';
+      b.addEventListener('click', () => { S.key = ext === '拡張' ? 'EXT' : 'LOW'; S.step = 0; save('key', S.key); location.hash = '#practice'; renderPractice(); });
+      box.append(b);
+    }
   }
 
   // ── 練習 ──
   function renderPractice() {
     const steps = SCALES[S.key].steps, step = Math.min(S.step, steps.length - 1), cur = steps[step];
-    const kc = $('key-chips'); kc.textContent = '';
+    const kc = $('key-chips'), xc = $('ext-chips'); kc.textContent = ''; xc.textContent = '';
     Object.keys(SCALES).forEach(k => {
-      const c = el('button', 'chip', SCALES[k].label); c.type = 'button';
+      const sc = SCALES[k], c = el('button', 'chip' + (sc.sub ? ' two' : ''), sc.sub ? null : sc.label); c.type = 'button';
+      if (sc.sub) c.append(el('b', null, sc.sub), el('small', null, sc.label));
       c.setAttribute('aria-pressed', String(k === S.key));
-      c.addEventListener('click', () => { S.key = k; S.step = 0; save('key', k); renderPractice(); const f = SCALES[k].steps[0]; play(f[2], f[3]); });
-      kc.append(c);
+      c.addEventListener('click', () => { S.key = k; S.step = 0; save('key', k); renderPractice(); const f = sc.steps[0]; play(f[2], f[3]); });
+      (sc.sub ? xc : kc).append(c);
     });
     const now = $('now'); now.textContent = ''; corners(now);
     const l = el('div', 'l'); const nt = el('div', 'nt'); nt.append(el('span', 'big', cur[0]), el('span', 'sol', cur[1]));
-    l.append(el('span', 'step', (step + 1) + ' / ' + steps.length + ' 音目'), nt);
+    const stepLine = el('span', 'step', (step + 1) + ' / ' + steps.length + ' 音目');
+    if (cur[5]) stepLine.append(el('span', 'tag', cur[5]));
+    l.append(stepLine, nt);
+    if (cur[5]) l.append(el('span', 'tip', EXT_TIP[cur[5]]));
     const r = el('div', 'r');
     const m = el('button', 'dot ' + (cur[4] === 0 ? 'open sel' : 'medal'), String(cur[4])); m.type = 'button';
     m.setAttribute('aria-label', 'もう一度鳴らす（' + STRINGS[cur[2]].n + '弦 ' + cur[0] + '）');
@@ -462,7 +490,8 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
     now.append(l, r);
 
     const fb = $('fb2'); fb.textContent = ''; headRow(fb);
-    for (let s = 0; s <= 5; s++) {
+    const rows = Math.max(5, ...steps.map(x => x[3]));
+    for (let s = 0; s <= rows; s++) {
       fb.append(el('div', 'rl', s === 0 ? '開放' : (ROMANS[s] || '')));
       STRINGS.forEach((st, si) => {
         const cell = el('div', 'cell'); cell.style.setProperty('--w', st.w + 'px');
