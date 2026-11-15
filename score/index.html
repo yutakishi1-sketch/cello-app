@@ -890,7 +890,72 @@ const PRIV_KEY = "score-private-v1";
 let PRIVATE = [];
 try { PRIVATE = ((JSON.parse(localStorage.getItem(PRIV_KEY)) || {}).songs) || []; } catch (e) { PRIVATE = []; }
 if (PRIVATE.length) { STAGE.push("合奏"); PRIVATE.forEach((p, i) => SONGS.push(Object.assign({ diff: i, priv: true }, p, { stage: STAGE.length - 1 }))); }
+// 自分の楽譜の中に、楽譜帳の曲と同じ本（group が楽譜帳の曲の id）の版があれば、楽譜帳の曲を本の代表にして版で切り替える
+const PUBLIC_VERSION = { canon: "旋律と低音（楽譜帳）" };
+(() => {
+  const gs = new Set(PRIVATE.map(p => p.group).filter(Boolean));
+  SONGS.forEach(s => { if (!s.priv && gs.has(s.id) && !s.group) { s.group = s.id; s.version = PUBLIC_VERSION[s.id] || "楽譜帳の版"; } });
+})();
 
+// どの曲も「1段＝4小節」にそろえる（2026-11-15 本人「4段と2段が混ざると見にくい。4小節一定で」）。
+// 描く前に楽譜の文字の改行を4小節ごとに付け直す。弱起の小節は最初の段に足す。声部が2つある曲は声部ごとに区切ってから交互に並べ直す
+// 1段の小節数は画面の幅で決める：スマホの幅（640px 未満）は2小節、iPad・パソコンは4小節（2026-11-15 本人指示）。幅がまたいだら読み直す
+const BARS_PER_LINE = innerWidth < 640 ? 2 : 4;
+addEventListener("resize", () => { if ((innerWidth < 640 ? 2 : 4) !== BARS_PER_LINE && !document.querySelector(".stand:not([hidden])")) location.reload(); });
+function fourBars(abc, per = BARS_PER_LINE) {
+  if (!window.ABCJS) return abc;
+  let pickup = 0;
+  try { const t = ABCJS.parseOnly("X:1\n" + abc)[0]; pickup = t.getPickupLength ? t.getPickupLength() : 0; } catch (e) { return abc; }
+  const head = [], voices = new Map(), order = [];
+  let cur = "", started = false;
+  const add = (v, txt) => { if (!voices.has(v)) { voices.set(v, ""); order.push(v); } voices.set(v, voices.get(v) + " " + txt); };
+  for (const raw of abc.split("\n")) {
+    const ln = raw.replace(/\\\s*$/, "");
+    if (/^\s*%/.test(ln) || !ln.trim()) continue;
+    if (!started && /^[A-Za-z]:/.test(ln)) { head.push(ln); continue; }
+    started = true;
+    const vm = ln.match(/^\[V:\s*([^\]\s]+)[^\]]*\]\s*(.*)$/), vl = ln.match(/^V:\s*(\S+)/);
+    if (vm) { cur = vm[1]; add(cur, vm[2]); }
+    else if (vl) cur = vl[1];
+    else if (/^[A-Za-z]:/.test(ln)) add(cur, "[" + ln.trim() + "]");
+    else add(cur, ln);
+  }
+  const chunk = text => {
+    const out = []; let buf = "", bars = pickup > 1e-6 ? -1 : 0, content = false, i = 0;
+    const until = (close, from) => { const j = text.indexOf(close, from); return j < 0 ? text.length : j + 1; };
+    while (i < text.length) {
+      const ch = text[i], nx = text[i + 1] || "";
+      if (ch === '"') { const e = until('"', i + 1); buf += text.slice(i, e); i = e; continue; }
+      if (ch === "!") { const e = until("!", i + 1); buf += text.slice(i, e); i = e; continue; }
+      if (ch === "{") { const e = until("}", i + 1); buf += text.slice(i, e); i = e; continue; }
+      if (ch === "[" && /[A-Za-z]/.test(nx) && text[i + 2] === ":") { const e = until("]", i + 1); buf += text.slice(i, e); i = e; continue; }
+      if (ch === "|" || (ch === ":" && /[|:]/.test(nx)) || (ch === "[" && nx === "|")) {
+        let j = i;
+        while (j < text.length && /[|:\[\]]/.test(text[j]) && !(text[j] === "[" && /[A-Za-z]/.test(text[j + 1] || ""))) j++;
+        while (j < text.length && /[0-9,\-]/.test(text[j])) j++;
+        const tok = text.slice(i, j); i = j;
+        // 段の終わりで 1番・2番かっこが始まるときは、かっこを次の段の頭に回す（右端に「2」だけが残らないように）
+        const em = tok.match(/^(.*\|[\]:]*)\[?(\d[\d,\-]*)$/);
+        if (content) {
+          bars++; content = false;
+          // ただしタイがかっこをまたぐ所（「- |[1」）で分けると、つながりが切れるのでそのままにする
+          if (bars > 0 && bars % per === 0) { if (em && !/-\s*\|\[?\d/.test(buf)) { out.push((buf + em[1]).trim()); buf = "[" + em[2] + " "; } else { out.push((buf + tok).trim()); buf = ""; } continue; }
+        }
+        buf += tok;
+        continue;
+      }
+      if (/[A-Ga-gzxZ]/.test(ch)) content = true;
+      buf += ch; i++;
+    }
+    if (buf.trim()) out.push(buf.trim());
+    return out;
+  };
+  const parts = order.map(v => [v, chunk(voices.get(v).trim())]);
+  const n = Math.max(...parts.map(p => p[1].length)), body = [];
+  for (let k = 0; k < n; k++) parts.forEach(([v, ch]) => { if (ch[k]) body.push((v ? "[V:" + v + "] " : "") + ch[k]); });
+  return head.join("\n") + "\n" + body.join("\n");
+}
+SONGS.forEach(s => { try { s.abc0 = s.abc; s.abc = fourBars(s.abc); } catch (e) { console.warn(s.id, "4小節にそろえられませんでした", e); s.abc = s.abc0; } });
 const $ = id => document.getElementById(id);
 const toc = $("toc"), main = $("songs");
 const VOLS = [{r:2.595,l:13.1,w:73.9,t:21.7,h:9.8},{r:4.1,l:10.4,w:77.9,t:21,h:10.2},{r:6.721,l:9.9,w:79.3,t:21.7,h:9.8},{r:4.1,l:11.2,w:77.9,t:21.3,h:10.7},{r:5.083,l:9.6,w:80.8,t:21.3,h:10.2},{r:4.786,l:11.3,w:76.6,t:21.5,h:10.8},{r:2.863,l:12.1,w:74.9,t:21.5,h:10.5},{r:4.556,l:9.1,w:81.1,t:21,h:10.5}];   // art/vol-N.jpg の縦÷横と、題名の札の位置（%）
@@ -1399,7 +1464,7 @@ function renderSplit(s, sheet) {
 }
 const Stand = (() => {
   let el, title, no, play, area, prevB, nextB, song = null, cardBtn = null, copies = [], pages = [], cur = 0, busy = false, lineOf = new Map(), els = new Map(), watch = null, swipeAt = 0;
-  const look = { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc", staffwidth: 520, wrap: { minSpacing: 1.8, maxSpacing: 2.7, preferredMeasuresPerLine: 4 } };
+  const look = { responsive: "resize", add_classes: true, paddingtop: 4, paddingbottom: 4, foregroundColor: "#ebe7dc", staffwidth: 520 };   // 段の区切りは楽譜の文字の側で4小節ごと（fourBars）
   function build() {
     el = document.createElement("div"); el.className = "stand"; el.hidden = true; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
     const bar = document.createElement("div"); bar.className = "stand-bar";
@@ -1441,7 +1506,7 @@ const Stand = (() => {
     }
     copies.forEach(cp => {
       // スマホの縦は1段3小節にして音符を大きく見せる
-      cp.tune = renderNamed(cp.box, song.abc, spread ? look : { ...look, staffwidth: 380, wrap: { ...look.wrap, preferredMeasuresPerLine: 3 } });
+      cp.tune = renderNamed(cp.box, song.abc, spread ? look : { ...look, staffwidth: 380 });
       cp.box.querySelectorAll("text.abcjs-annotation").forEach(n => { if (/^[0-4]$/.test(n.textContent.trim())) n.classList.add("fg"); });
       // 段ごとの部品。ページに入らない段は隠すので、切れ目に隣の段の指番号や弦の名前がのぞかない
       cp.byLine = new Map();
