@@ -110,6 +110,8 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
 .dot.e { width: 40px; height: 40px; opacity: .85; }
 .dot.sel { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 14px rgba(224, 194, 114, .55); }
 .dot.ring.small { width: 16px; height: 16px; opacity: .4; }
+.dot.x { width: 34px; height: 34px; font-size: 17px; }
+.dot.x::after { content: attr(data-tag); position: absolute; top: 50%; left: calc(100% + 3px); transform: translateY(-50%); font-family: var(--f-body); font-weight: 700; font-size: 10px; line-height: 1; color: var(--gold); white-space: nowrap; pointer-events: none; }
 .dot.stud.small { width: 10px; height: 10px; background-size: contain; opacity: .7; }
 .dot.done { width: 28px; height: 28px; font-size: 15px; opacity: .55; }
 .dot.next { width: 28px; height: 28px; font-size: 15px; }
@@ -416,9 +418,12 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
         light(cell, si, s, S.sel);
         const finger = fingerAt(s);
         const note = NAMES[(st.base + s) % 12];
-        const b = el('button', 'dot ' + (s === 0 ? 'open' : finger ? 'medal f' : 'stud e'), s === 0 ? '0' : finger ? String(finger) : '');
+        // 第1ポジションでは、指を広げて届く「低い1」（1の指を半音下げる）と「拡張」（4の指を半音伸ばす）も、輪の点で常に見せる（2026-11-15 本人指示）
+        const ext = S.pos === 1 && s === 1 ? '低い1' : S.pos === 1 && s === 6 ? '拡張' : null;
+        const b = el('button', 'dot ' + (s === 0 ? 'open' : finger ? 'medal f' : ext ? 'ring x' : 'stud e'), s === 0 ? '0' : finger ? String(finger) : ext ? (ext === '拡張' ? '4' : '1') : '');
+        if (ext) b.dataset.tag = ext;
         b.type = 'button';
-        b.setAttribute('aria-label', st.n + '弦 ' + note + (s === 0 ? ' 開放弦' : finger ? ' ' + finger + 'の指' : ''));
+        b.setAttribute('aria-label', st.n + '弦 ' + note + (s === 0 ? ' 開放弦' : finger ? ' ' + finger + 'の指' : ext ? ' ' + ext : ''));
         if (S.sel && S.sel.s === s && S.sel.si === si) b.classList.add('sel');
         b.addEventListener('click', () => { S.sel = { s, si }; renderBoard(); renderInfo(); play(si, s); ping(document.querySelector('#fb .dot.sel')); });
         cell.append(b); fb.append(cell);
