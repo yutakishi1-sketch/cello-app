@@ -92,6 +92,9 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .controls button.icon { min-width: 44px; padding: 0 10px; }
 .controls .from { flex-wrap: nowrap; gap: 6px; }
 .controls .from .unit { font-size: 12px; color: var(--muted); }
+.versions { display: flex; flex-wrap: wrap; gap: 6px; }
+.versions button { font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); background: none; color: var(--ink-2, #cfcabe); cursor: pointer; }
+.versions button[aria-pressed="true"] { border-color: var(--gold); background: rgba(201,165,78,.18); color: #f0d98f; }
 .notes, .about-all { border-top: 1px solid var(--line); padding-top: 4px; font-size: 13px; color: var(--muted); }
 .notes > summary, .about-all > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; min-height: 40px; color: var(--gold-soft); font-size: 13px; }
 .notes > summary::-webkit-details-marker, .about-all > summary::-webkit-details-marker { display: none; }
@@ -99,6 +102,16 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .notes > summary::after, .about-all > summary::after { content: "Open ▾"; margin-left: auto; font-family: var(--f-latin); font-size: 14px; color: var(--gold); }
 .notes[open] > summary::after, .about-all[open] > summary::after { content: "Close ▴"; }
 .about-all ul { margin: 4px 0 8px; padding-left: 1.2em; line-height: 1.8; }
+#dict-in { display: grid; gap: 14px; padding: 6px 0 12px; }
+.dict-cat { margin: 6px 0 0; font-size: 14px; color: var(--gold); font-weight: 700; letter-spacing: .08em; }
+.dict-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.dict-item { display: grid; grid-template-rows: 56px auto auto; gap: 2px; padding: 8px; border: 1px solid var(--line); background: var(--panel-2); }
+.dict-sym { display: grid; align-items: center; overflow: hidden; }
+.dict-sym > div { width: 100%; }
+.dict-sym svg { display: block; width: 100%; height: auto; max-height: 56px; }
+.dict-word { font-family: var(--f-latin); font-style: italic; font-weight: 700; font-size: 22px; color: var(--gold-hi); }
+.dict-item b { font-size: 13px; color: var(--ink); }
+.dict-item span { font-size: 12px; color: var(--muted); line-height: 1.5; }
 .mix { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
 .mix-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 40%); gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
 .mix-row label { display: flex; gap: 6px; align-items: center; } .mix-row input[type=checkbox] { accent-color: var(--gold); } .mix-row input[type=range] { width: 100%; accent-color: var(--gold); } .mix-row input[type=range]:disabled { opacity: .35; }
@@ -223,6 +236,8 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   <nav class="toc" id="toc" aria-label="曲の目次"><img class="corner tl" src="art/corner.png" alt=""><img class="corner tr" src="art/corner.png" alt=""><img class="corner bl" src="art/corner.png" alt=""><img class="corner br" src="art/corner.png" alt=""></nav>
   <main id="songs" hidden></main>
   <p class="foot" id="fallback" hidden>楽譜の表示部品を読み込めませんでした。時間をおいて開き直してください。</p>
+  <!-- 記号と言葉の辞典（2026-11-15 本人「記号の意味やアンダンテなどの言葉をまとめたものを」）。記号は abcjs で実際の楽譜の形に描く -->
+  <details class="about-all" id="dict"><summary>記号と言葉の辞典</summary><div id="dict-in"></div></details>
   <!-- 説明は全部ここに1か所（2026-11-15 本人「説明が多すぎて鬱陶しい。必要な人が見られるように1か所にまとめて」） -->
   <details class="about-all"><summary>この楽譜帳について</summary>
     <ul>
@@ -888,7 +903,8 @@ const LABELS = { mary: "Mary Had a Little Lamb", twinkle: "Twinkle Twinkle", kae
 // 本は段階で棚を分けず、やさしい順に続けて詰める。段階の境目は本1冊分あけて、小さな数字の目印を立てる（2026-11-15 本人指示）
 const shelfItems = [], shelf = {};
 STAGE.forEach((name, i) => {
-  const list = SONGS.filter(s => s.stage === i && !s.hidden).sort((a, b) => (a.diff || 0) - (b.diff || 0)); if (!list.length) return;
+  // 同じ曲の別の版（group）は1冊にまとめ、代表の版だけを棚に出す
+  const list = SONGS.filter(s => s.stage === i && !s.hidden && (!s.group || s.group === s.id)).sort((a, b) => (a.diff || 0) - (b.diff || 0)); if (!list.length) return;
   const mark = document.createElement("span"); mark.className = "stage-mark"; mark.title = name; mark.setAttribute("aria-label", name);
   mark.textContent = name;
   shelfItems.push(mark);
@@ -941,6 +957,108 @@ document.fonts && document.fonts.ready.then(() => document.querySelectorAll(".to
   let fs = parseFloat(getComputedStyle(t).fontSize);
   for (let i = 0; i < 8 && (t.scrollWidth > t.clientWidth + 0.5 || t.scrollHeight > t.clientHeight + 0.5) && fs > 4.5; i++) { fs -= 0.5; t.style.fontSize = fs + "px"; t.style.letterSpacing = "0"; }
 }));
+// ── 記号と言葉の辞典。記号（abc）は楽譜の形で、言葉（w）は文字で見せる。開いたときに初めて描く ──
+const DICT = [
+  ["音符と休符", [
+    { abc: "C,4", name: "全音符", say: "4拍のばす（4/4拍子で1小節まるごと）" },
+    { abc: "C,2", name: "2分音符", say: "2拍のばす" },
+    { abc: "C,", name: "4分音符", say: "1拍" },
+    { abc: "C,/2", name: "8分音符", say: "半拍。2つで1拍" },
+    { abc: "C,/4", name: "16分音符", say: "4分の1拍。4つで1拍" },
+    { abc: "C,3/2", name: "付点", say: "点の付いた音は、元の長さの1.5倍" },
+    { abc: "(3C,/D,/E,/", name: "3連符", say: "2つ分の長さに3つの音を均等に入れる" },
+    { abc: "z", name: "休符", say: "音を出さない。長さは音符と同じ数え方" },
+    { abc: "C,2-C,2", name: "タイ", say: "同じ高さの音を弧でつなぐ。2つ目は弾き直さずにのばす" },
+    { abc: "(C,D,E,F,)", name: "スラー", say: "違う高さの音を弧でくくる。ひと弓でなめらかに" } ]],
+  ["音部記号・調・拍子", [
+    { abc: "", head: "K:C clef=bass", name: "ヘ音記号", say: "チェロのふだんの記号。2つの点の間の線がファ" },
+    { abc: "", head: "K:C clef=tenor", name: "テナー記号", say: "高い音が続くときのチェロの記号。中心の線がド" },
+    { abc: "", head: "K:C clef=treble", name: "ト音記号", say: "ヴァイオリンの記号。チェロのとても高い所でも使う" },
+    { abc: "", head: "K:C clef=alto", name: "アルト記号", say: "ヴィオラの記号" },
+    { abc: "^F,", name: "♯ シャープ", say: "半音上げる" },
+    { abc: "_B,", name: "♭ フラット", say: "半音下げる" },
+    { abc: "=F,", name: "♮ ナチュラル", say: "♯や♭を取り消して元の高さに" },
+    { abc: "", head: "K:D clef=bass", name: "調号", say: "最初に並ぶ♯♭。曲の間ずっとその音に効く" },
+    { abc: "", head: "M:3/4\nK:C clef=bass", name: "拍子記号", say: "上が1小節の拍の数、下が1拍の音符（3/4＝4分音符が3つ）" },
+    { abc: "", head: "M:C|\nK:C clef=bass", name: "¢ アラ・ブレーヴェ", say: "2/2拍子。2分音符を1拍として2つに数える" } ]],
+  ["小節線とくり返し", [
+    { abc: "C,2D,2 || E,4", name: "複縦線", say: "曲の区切り。ここから雰囲気が変わることが多い" },
+    { abc: "C,4 |]", name: "終止線", say: "曲の終わり" },
+    { abc: "|: C,2D,2 :|", name: "くり返し記号", say: "|: から :| までをもう一度弾く" },
+    { abc: "C,4 |1 D,4 :|2 E,4 |]", name: "1番かっこ・2番かっこ", say: "1回目は1番を、くり返した2回目は1番を飛ばして2番を弾く" },
+    { abc: "[P:A] C,4", name: "練習番号", say: "四角の A・B…。合わせるとき「Bから」と場所を言うための目印" },
+    { w: "D.C.", name: "ダ・カーポ", say: "曲のはじめに戻る" },
+    { w: "D.S.", name: "ダル・セーニョ", say: "𝄋 の印に戻る" },
+    { w: "Fine", name: "フィーネ", say: "戻ったあと、ここで終わる" },
+    { w: "Coda", name: "コーダ", say: "𝄌 の印から終わりの部分へ飛ぶ" } ]],
+  ["強さ", [
+    { abc: "!pp!C,", name: "ピアニッシモ", say: "とても弱く" },
+    { abc: "!p!C,", name: "ピアノ", say: "弱く" },
+    { abc: "!mp!C,", name: "メゾピアノ", say: "少し弱く" },
+    { abc: "!mf!C,", name: "メゾフォルテ", say: "少し強く" },
+    { abc: "!f!C,", name: "フォルテ", say: "強く" },
+    { abc: "!ff!C,", name: "フォルティッシモ", say: "とても強く" },
+    { abc: "!<(!C,D,E,!<)!F,", name: "クレッシェンド", say: "だんだん強く（cresc. とも書く）" },
+    { abc: "!>(!F,E,D,!>)!C,", name: "デクレッシェンド", say: "だんだん弱く（dim.・decresc. とも書く）" },
+    { abc: "!sfz!C,", name: "スフォルツァンド", say: "その音だけ急に強く" },
+    { abc: "!fp!C,", name: "フォルテピアノ", say: "強く出てすぐ弱く" } ]],
+  ["弾き方・弓", [
+    { abc: ".C,.D,", name: "スタッカート", say: "音を短く切る" },
+    { abc: "!>!C,", name: "アクセント", say: "その音を目立たせる" },
+    { abc: "!tenuto!C,", name: "テヌート", say: "音の長さいっぱいに保つ" },
+    { abc: "!fermata!C,2", name: "フェルマータ", say: "ほどよくのばして止まる" },
+    { abc: "!downbow!C,", name: "ダウンボウ", say: "弓を元（手元）から先へ。右へ引く" },
+    { abc: "!upbow!C,", name: "アップボウ", say: "弓を先から元へ。左へ押す" },
+    { w: "pizz.", name: "ピチカート", say: "弓を使わず指で弦をはじく" },
+    { w: "arco", name: "アルコ", say: "弓で弾くのに戻る" } ]],
+  ["速さの言葉", [
+    { w: "Largo", name: "ラルゴ", say: "幅広く、とてもゆっくり" },
+    { w: "Adagio", name: "アダージョ", say: "ゆっくり" },
+    { w: "Andante", name: "アンダンテ", say: "歩くくらいの速さで" },
+    { w: "Moderato", name: "モデラート", say: "中くらいの速さで" },
+    { w: "Allegro", name: "アレグロ", say: "速く・快活に" },
+    { w: "Presto", name: "プレスト", say: "とても速く" },
+    { w: "♩=72", name: "メトロノーム記号", say: "1分間に4分音符を72回の速さ" },
+    { w: "rit.", name: "リタルダンド", say: "だんだん遅く（rall. も同じ）" },
+    { w: "allarg.", name: "アラルガンド", say: "だんだん遅く、音を大きく幅広く" },
+    { w: "accel.", name: "アッチェレランド", say: "だんだん速く" },
+    { w: "a tempo", name: "ア・テンポ", say: "元の速さに戻る" } ]],
+  ["表情の言葉", [
+    { w: "dolce", name: "ドルチェ", say: "やさしく、甘く" },
+    { w: "cantabile", name: "カンタービレ", say: "歌うように" },
+    { w: "espressivo", name: "エスプレッシーヴォ", say: "表情豊かに" },
+    { w: "festivo", name: "フェスティーヴォ", say: "祝祭的に、晴れやかに（Andante festivo＝晴れやかな歩みで）" },
+    { w: "maestoso", name: "マエストーソ", say: "堂々と、荘厳に" },
+    { w: "sostenuto", name: "ソステヌート", say: "音を保って" },
+    { w: "meno", name: "メーノ", say: "より少なく（meno f＝少し弱めて）" },
+    { w: "poco / molto", name: "ポーコ・モルト", say: "少し／とても（poco rit.＝少し遅く）" },
+    { w: "sempre", name: "センプレ", say: "ずっと、いつも" },
+    { w: "assai", name: "アッサイ", say: "非常に（f assai＝とても強く）" } ]],
+  ["この楽譜帳の印", [
+    { abc: '"_D線"!1!E,', name: "指番号と弦", say: "上の数字が指（0＝開放弦）、下が弦の名前" },
+    { abc: '"^低い1"!1!_E,', name: "低い1", say: "1の指を少し下げて押さえる" },
+    { abc: '"^拡張"!4!^F,', name: "拡張", say: "4の指を伸ばして届かせる" },
+    { abc: '"^4ポジ"G', name: "4ポジ・5ポジ", say: "その小節は第1ポジションから上がる。指使いは先生と" } ]],
+];
+function renderDict() {
+  const box = $("dict-in"); if (box.childElementCount || !window.ABCJS) return;
+  DICT.forEach(([cat, items]) => {
+    box.append(Object.assign(document.createElement("p"), { className: "dict-cat", textContent: cat }));
+    const grid = document.createElement("div"); grid.className = "dict-grid"; box.append(grid);
+    items.forEach(it => {
+      const card = document.createElement("div"); card.className = "dict-item";
+      const sym = document.createElement("div"); sym.className = "dict-sym"; card.append(sym);
+      const nm = document.createElement("b"); nm.textContent = it.name; const sy = document.createElement("span"); sy.textContent = it.say;
+      card.append(nm, sy); grid.append(card);
+      if (it.w) { const w = document.createElement("span"); w.className = "dict-word"; w.textContent = it.w; sym.append(w); return; }
+      const head = (it.head || "K:C clef=bass").replace(/\\n/g, "\n");
+      const abc = "X:1\nL:1/4\n" + (/^M:/m.test(head) ? "" : "M:none\n") + head + "\n" + (it.abc || "x");
+      try { ABCJS.renderAbc(sym, abc, { responsive: "resize", staffwidth: 150, paddingtop: 0, paddingbottom: 0, paddingleft: 2, paddingright: 2, foregroundColor: "#ebe7dc" }); }
+      catch (e) { console.warn("辞典の記号を描けませんでした", it.name, e); }
+    });
+  });
+}
+$("dict").addEventListener("toggle", () => { if ($("dict").open) renderDict(); });
 // 自分の楽譜を読み込む（.json）。読み込んだ曲は「合奏（この端末だけ）」の段に並ぶ
 (() => {
   const row = document.createElement("div"); row.className = "toc-row priv-row";
@@ -1577,11 +1695,22 @@ SONGS.forEach(s => {
   const body = document.createElement("div"); body.className = "song-body";
   const h = document.createElement("h2");
   // 曲名の（…）は小さく2行目へ。閉じた一覧が縦に伸びないように
-  const tm = s.title.match(/^(.+?)\s*(（.+）)$/);
+  const tm = (s.group ? s.title.replace(/（原曲）/, "") : s.title).match(/^(.+?)\s*(（.+）)$/);
   h.textContent = tm ? tm[1] : s.title;
   if (tm) { const sub = document.createElement("small"); sub.textContent = tm[2]; h.append(sub); }
   const st = document.createElement("span"); st.className = "stage"; st.textContent = STAGE[s.stage];
   head.append(h, st); sec.append(head, body);
+  // 版の切り替え（同じ曲の別の編曲）。押すとその版の楽譜に替わる
+  const sibs = s.group ? SONGS.filter(x => x.group === s.group) : [];
+  if (sibs.length > 1) {
+    const vs = document.createElement("div"); vs.className = "versions"; vs.setAttribute("role", "group"); vs.setAttribute("aria-label", "版");
+    sibs.forEach(x => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = x.version || x.title; b.setAttribute("aria-pressed", String(x.id === s.id));
+      b.addEventListener("click", () => { if (x.id === s.id) return; openSong("#" + x.id); try { history.replaceState(null, "", "#" + x.id); } catch (e) { /* 開くだけはする */ } });
+      vs.append(b);
+    });
+    body.append(vs);
+  }
   // 解説（弾き方の注意・拍子・出典）は曲のいちばん下にたたんでおく
   const notes = document.createElement("details"); notes.className = "notes";
   const ns = document.createElement("summary"); ns.textContent = "解説"; notes.append(ns);
@@ -1747,7 +1876,7 @@ SONGS.forEach(s => {
   };
   sec.addEventListener("toggle", () => {
     if (sec.open) prepare(); else if (playing && playing.btn === btn) stopAll();
-    const link = toc.querySelector('.toc-row a[href="#' + s.id + '"]'); if (link) link.classList.toggle("on", sec.open);
+    const link = toc.querySelector('.toc-row a[href="#' + (s.group || s.id) + '"]'); if (link) link.classList.toggle("on", sec.open);
   });
   const PAN = { violin: -0.35, viola: 0.2 };
   const opts = () => ({ from: startAt(), bpm: Number(range.value), click: click.checked, loop: () => loop.checked,
