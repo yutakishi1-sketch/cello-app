@@ -43,6 +43,14 @@ select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--
 button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .help { font-family: var(--f-fine); font-size: 13px; color: var(--muted); line-height: 1.9; margin: 0; }
 .help b { color: var(--ink); font-family: var(--f-body); }
+/* 使い方は普段は閉じておき、困ったときだけ開く（標準仕様⓪: 説明は折りたたみ）。閉じた帯は左に◇・右端に Open ▾ */
+.tips { width: 100%; border-top: 1px solid var(--line); }
+.tips summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-size: 14px; color: var(--muted); }
+.tips summary::-webkit-details-marker { display: none; }
+.tips summary::before { content: "◇"; color: var(--gold); font-size: 12px; }
+.tips summary::after { content: "Open ▾"; margin-left: auto; font-family: var(--f-latin); font-size: 14px; color: var(--gold); }
+.tips[open] summary::after { content: "Close ▴"; }
+.tips .help { padding-bottom: 12px; }
 .err { color: var(--warn); font-size: 13.5px; text-align: center; min-height: 1em; margin: 0; }
 h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 18px; letter-spacing: .06em; }
 .tones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; }
@@ -74,7 +82,7 @@ h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 18px
     <h2>基準の音（開放弦）</h2>
     <div class="tones" id="tones"></div>
     <div class="row"><label for="refa">ラの高さ</label><select id="refa"><option value="440">A = 440 Hz</option><option value="441">A = 441 Hz</option><option value="442">A = 442 Hz</option><option value="443">A = 443 Hz</option></select></div>
-    <p class="help">押すと鳴り続け、もう一度押すと止まります。鳴らしながら同じ弦を弾き、うなり（ワンワンという揺れ）が消えるところが合った位置です。ラの高さは先生に合わせてください。</p>
+    <details class="tips"><summary>困ったら</summary><p class="help">押すと鳴り続け、もう一度押すと止まります。鳴らしながら同じ弦を弾き、うなり（ワンワンという揺れ）が消えるところが合った位置です。ラの高さは先生に合わせてください。</p></details>
   </div>
 
   <div class="panel">
@@ -95,7 +103,7 @@ h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 18px
     <p class="err" id="err"></p>
   </div>
 
-  <p class="help"><b>マイクの使い方：</b>「マイクで聴く」を押すと、マイクの使用を確認する表示が出るので「許可」を押します。開放弦を1本ずつ、まっすぐ弓で弾いてください。針がまん中（緑）に来て、文字が緑になれば合っています。左に振れたら低い（ペグや微調整ねじで上げる）、右なら高い（下げる）です。<br><b>うまく拾えないとき：</b>まず「音の大きさ」の棒を見ます。弾いても棒が動かなければマイクに音が届いていません（許可・つなぎ直しを確かめる）。棒が金の線より左なら「感度」を上げるか、楽器に近づけてください。音階を確かめるときは「全音」にします。ラの高さ（440〜443）は先生に合わせてください。</p>
+  <details class="tips"><summary>困ったら</summary><p class="help"><b>マイクの使い方：</b>「マイクで聴く」を押すと、マイクの使用を確認する表示が出るので「許可」を押します。開放弦を1本ずつ、まっすぐ弓で弾いてください。針がまん中（緑）に来て、文字が緑になれば合っています。左に振れたら低い（ペグや微調整ねじで上げる）、右なら高い（下げる）です。<br><b>うまく拾えないとき：</b>まず「音の大きさ」の棒を見ます。弾いても棒が動かなければマイクに音が届いていません（許可・つなぎ直しを確かめる）。棒が金の線より左なら「感度」を上げるか、楽器に近づけてください。音階を確かめるときは「全音」にします。ラの高さ（440〜443）は先生に合わせてください。</p></details>
 </div>
 
 <script src="art/cello-voice.js"></script>
