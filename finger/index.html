@@ -147,6 +147,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
 .btn { min-height: 52px; font-size: 15px; font-weight: 700; border: 1px solid var(--gold-dim); background: var(--panel); color: var(--gold); }
 .btn.main { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
 .hint { margin: 0; text-align: center; font-family: var(--f-fine); font-size: 12px; color: var(--muted); }
+.hint.credit { font-size: 11px; opacity: .6; }
 
 /* ポジション */
 .hand { padding: 18px; display: grid; gap: 12px; }
@@ -193,7 +194,6 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       <div>
         <div class="eyebrow">Fingerboard</div>
         <h1 id="h-board">指板</h1>
-        <p class="lead">点をタップすると、音名と指番号を表示して音を鳴らします</p>
       </div>
       <div class="head-tools">
         <button type="button" class="pitch" id="pitch" aria-label="ラの高さを切り替える">A=440</button>
@@ -222,8 +222,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       <button type="button" class="btn" id="prev">前へ</button>
       <button type="button" class="btn main" id="next">次へ</button>
     </div>
-    <p class="hint">「次へ」を押すたびに次の音が鳴ります。メダルを押すともう一度。</p>
-    <p class="hint">チェロの音：FluidR3 GM（Frank Wen、CC BY 3.0）</p>
+    <p class="hint credit">音：FluidR3 GM（Frank Wen、CC BY 3.0）</p>
   </section>
 
   <!-- ポジション -->
@@ -232,7 +231,6 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
       <div class="eyebrow">Positions</div>
       <h1 id="h-positions">ポジション</h1>
       <img class="divider" src="art/divider.png" alt="">
-      <p class="lead">左手の基本の形と、各ポジションの1の指の位置</p>
     </div>
     <div class="ornate board hand">
       <h2>手の形（第1ポジション）</h2>
@@ -242,7 +240,6 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
         <div><span class="dot medal">3</span>薬指</div>
         <div><span class="dot medal">4</span>小指</div>
       </div>
-      <p>隣り合う指は半音ずつ。1から4の指まで短3度（半音3つ分）をカバーします。肘は軽く張り、指は上から丸く弦に置きます。</p>
     </div>
     <div class="plist" id="plist"></div>
   </section>
@@ -440,24 +437,22 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 27px
   function corners(box) { ['tl', 'tr', 'bl', 'br'].forEach(p => { const i = el('img', 'corner ' + p); i.src = 'art/corner.png'; i.alt = ''; box.append(i); }); }
   const LAB = document.documentElement.classList.contains('lab');
   function renderInfo() {
-    const box = $('info'); box.textContent = ''; corners(box);
+    // 説明は出さない（2026-11-15 本人「ここもシンプルでいい」）。何も押していないときは枠ごと隠し、押した音は音名・弦・指だけ
+    const box = $('info'); box.textContent = ''; corners(box); box.hidden = !S.sel;
     // 見本（⚙「見本を試す」）：何も押していないときは、選んだポジションの説明をここに出す（ポジションのタブを1つ減らす）
     if (!S.sel && LAB) {
       const P = POSITIONS[S.pos - 1];
       box.append(el('h2', null, P[1]), el('p', 'ff', P[2]), el('p', null, P[3]), el('p', null, '点をタップすると、音名と指番号が出て音が鳴ります。'));
       return;
     }
-    if (!S.sel) {
-      box.append(el('h2', null, 'はじめに'), el('p', null, '上のポジションを選び、指板の点をタップすると、その音の音名・弦・指番号が表示され、音が鳴ります。0は開放弦です。'));
-      return;
-    }
+    if (!S.sel) return;
     const st = STRINGS[S.sel.si], s = S.sel.s, finger = fingerAt(s), inPos = s === 0 || finger > 0;
     // 第1ポジションのすぐ外の音は、指を広げれば届く（楽譜の「拡張」「低い1」）
     const ext = S.pos === 1 && s === 6 ? '拡張' : S.pos === 1 && s === 1 ? '低い1' : null;
     const nt = el('div', 'nt'); nt.append(el('span', 'big', NAMES[(st.base + s) % 12]), el('span', 'sub', st.n + '弦 ・ 第' + S.pos + 'ポジション'));
     box.append(nt,
       el('div', 'fg', s === 0 ? '開放弦（0）' : finger ? finger + 'の指' : ext === '拡張' ? '4の指（拡張）' : ext ? '1の指（低い1）' : 'このポジションでは押さえません'),
-      el('p', null, inPos ? TIPS[s === 0 ? 0 : finger] : ext ? EXT_TIP[ext] : '別のポジションに移動するか、拡張（エクステンション）で届く音です。'));
+    );
     if (ext) {
       const b = el('button', 'go-ext', ext + 'の練習へ'); b.type = 'button';
       b.addEventListener('click', () => { S.key = ext === '拡張' ? 'EXT' : 'LOW'; S.step = 0; save('key', S.key); location.hash = '#practice'; renderPractice(); });
