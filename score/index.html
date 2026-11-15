@@ -59,7 +59,7 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
   color: #e9cf86; text-shadow: 0 1px 1px rgba(0,0,0,.85); overflow: hidden; white-space: nowrap; }
 .toc a.book:hover { transform: translateY(-3px); }
 .toc a.book.on { transform: translateY(-14px); filter: drop-shadow(0 0 7px rgba(224,194,114,.6)) brightness(1.12); }
-.stage-mark { flex: 0 0 29px; align-self: flex-end; height: 26px; display: grid; place-items: center; font-family: var(--f-latin); font-size: 14px; font-weight: 700; color: var(--gold);
+.stage-mark { flex: 0 0 45px; align-self: flex-end; height: 26px; display: grid; place-items: center; font-family: var(--f-latin); font-size: 14px; white-space: nowrap; letter-spacing: .04em; font-weight: 700; color: var(--gold);
   border-bottom: 2px solid var(--gold-dim); margin-bottom: 2px; text-shadow: 0 1px 2px #000; }
 .toc a.book .lock { writing-mode: horizontal-tb; position: absolute; top: -12px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--gold); }
 /* 曲は1曲ずつ開け閉めする（縦に長くなりすぎないように）。楽譜は開いたときに初めて描く */
@@ -226,7 +226,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
   <!-- 説明は全部ここに1か所（2026-11-15 本人「説明が多すぎて鬱陶しい。必要な人が見られるように1か所にまとめて」） -->
   <details class="about-all"><summary>この楽譜帳について</summary>
     <ul>
-      <li>棚は段階（0〜5）ごと。上の段ほどポジション移動や速い音が増えます。本をタップするとその曲が開きます。</li>
+      <li>本はやさしい順（Lv.0〜Lv.5）に並び、境目に Lv の札が立っています。Lv が上がるほどポジション移動や速い音が増えます。本をタップするとその曲が開きます。</li>
       <li>音符の上の数字は指番号（0＝開放弦）、下は弦。「ドレミ」に切り替えると音名が出ます。</li>
       <li>▶ で1小節数えてから鳴ります。−＋の数字で始める小節を選べ、音符や A・B をタップしてもそこから始まります。くり返しの中は「1回目／2回目」を選べます。</li>
       <li>▯▯ は譜面台（ページをめくって弾く画面）。… の中に、速さを戻す・メトロノーム・くり返し・書き込み・指番号／ドレミ・パートの音量があります。</li>
@@ -243,7 +243,7 @@ button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible
 <script src="art/metro-tick.js"></script>
 <script>
 // 段階は難しさの順（2026-11-08 本人指示）。ポジション移動・指を伸ばす音・一番短い音符・音の数・音域・調・速さを点数にして 0〜5 に分け、段階の中は diff（点数）の小さい順に並べる
-const STAGE = ["0段階", "1段階", "2段階", "3段階", "4段階", "5段階"];
+const STAGE = ["Lv.0", "Lv.1", "Lv.2", "Lv.3", "Lv.4", "Lv.5"];   // 2026-11-15 本人「レベル表記に」
 const SONGS = [
 { id: "mary", title: "メリーさんの羊", stage: 0, diff: 0, tip: "D線の0・1・3の指だけ。いちばん最初の1曲に。", abc:
 `M:4/4
@@ -871,7 +871,7 @@ K:G clef=bass
 const PRIV_KEY = "score-private-v1";
 let PRIVATE = [];
 try { PRIVATE = ((JSON.parse(localStorage.getItem(PRIV_KEY)) || {}).songs) || []; } catch (e) { PRIVATE = []; }
-if (PRIVATE.length) { STAGE.push("合奏（この端末だけ）"); PRIVATE.forEach((p, i) => SONGS.push(Object.assign({ diff: i, priv: true }, p, { stage: STAGE.length - 1 }))); }
+if (PRIVATE.length) { STAGE.push("合奏"); PRIVATE.forEach((p, i) => SONGS.push(Object.assign({ diff: i, priv: true }, p, { stage: STAGE.length - 1 }))); }
 
 const $ = id => document.getElementById(id);
 const toc = $("toc"), main = $("songs");
@@ -890,7 +890,7 @@ const shelfItems = [], shelf = {};
 STAGE.forEach((name, i) => {
   const list = SONGS.filter(s => s.stage === i && !s.hidden).sort((a, b) => (a.diff || 0) - (b.diff || 0)); if (!list.length) return;
   const mark = document.createElement("span"); mark.className = "stage-mark"; mark.title = name; mark.setAttribute("aria-label", name);
-  mark.textContent = /^\d/.test(name) ? name.replace(/段階$/, "") : "◆";
+  mark.textContent = name;
   shelfItems.push(mark);
   list.forEach(s => {
     // 背表紙: 題名の（…）は省き、長さで本の高さと厚みを決める。色は曲ごとに決まった夜の色（赤は使わない）
@@ -923,7 +923,7 @@ function packShelves() {
   const open = () => { cur = document.createElement("div"); cur.className = "shelf"; bookcase.append(cur); used = 0; };
   open();
   shelfItems.forEach((n, i) => {
-    const w = n.classList.contains("stage-mark") ? 30 : parseFloat(n.style.getPropertyValue("--w")) + 1;
+    const w = n.classList.contains("stage-mark") ? 46 : parseFloat(n.style.getPropertyValue("--w")) + 1;
     if (used + w > room && used > 0) { if (n.classList.contains("stage-mark") || i === 0) { open(); } else open(); }
     if (n.classList.contains("stage-mark") && used === 0 && i !== 0) n.classList.add("lead"); else n.classList.remove("lead");
     cur.append(n); used += w;
