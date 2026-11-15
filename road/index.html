@@ -597,12 +597,13 @@ footer { padding-block: 84px 48px; }
 
   <section class="block" id="lesson-sec">
     <div class="inner">
-      <div class="sec-head">
+      <!-- 2026-11-15 本人「教本とレッスンはオープン・クローズできるように」 -->
+      <details class="fold" id="fold-lesson-sec" data-default="closed">
+        <summary class="sec-head fold-sum">
         <span class="sec-no">Lesson</span>
         <h2>教本とレッスン</h2>
         <img class="divider" src="art/ui/divider.png" alt="">
-        <p class="sec-lead">レッスンで合格した教本の番号（No.）を入れると、何％進んだか・いまどの章か・章の期限に間に合うかが出ます。関門は、その章まで進むと挑戦できるようになります。</p>
-      </div>
+      <span class="fold-h" aria-hidden="true"></span></summary>
       <div class="lesson ornate">
         <div class="ls-grid">
           <div class="ls-box" id="ls-book"></div>
@@ -617,6 +618,7 @@ footer { padding-block: 84px 48px; }
         </div>
         <div class="ls-box" id="ls-log"></div>
       </div>
+      </details>
     </div>
   </section>
   <section class="block" id="tools-sec">
@@ -1272,7 +1274,6 @@ const SIMPLE = document.documentElement.classList.contains("simple");
 if (SIMPLE) {
   const ps = document.getElementById("practice-sec"), inner = ps.querySelector(".inner");
   ps.querySelector(".sec-no").textContent = "Today"; ps.querySelector("h2").textContent = "今日の練習";
-  ps.querySelector(".sec-lead").textContent = "いまの関門と、今日できたことに印を付けます。1つで銅、3つで銀、5つで金のスタンプ。";
   inner.insertBefore(document.getElementById("quest"), inner.querySelector(".practice"));
   const det = document.createElement("details"), sm = document.createElement("summary");
   det.className = "rules-fold"; sm.textContent = "続けるための決まり"; det.append(sm, document.querySelector("#quest-sec .rules")); inner.append(det);
@@ -1280,21 +1281,11 @@ if (SIMPLE) {
   const nav = document.querySelector('.topnav a[href="#practice-sec"]'); if (nav) nav.textContent = "今日";
   const shelf = document.createElement("section"); shelf.className = "block more"; shelf.id = "shelf";
   shelf.innerHTML = '<div class="inner"><details class="fold" id="fold-shelf"><summary class="sec-head fold-sum"><span class="sec-no">Bookshelf</span><h2>本棚</h2><p class="sec-lead">ドヴォルザークという人と、チェロの名曲を書いた作曲家たちの読み物。</p><span class="fold-h" aria-hidden="true"></span></summary><div class="shelf-in"></div></details></div>';
-  // 見比べ用（2026-11-10 本人指示「まとめるか、枠の間を広げるか、どっちも見られるように」）。決まったら片方を残して消す
-  const pick = document.createElement("div"); pick.className = "tf-pick"; pick.setAttribute("role", "group"); pick.setAttribute("aria-label", "枠の見せ方を見比べる");
-  pick.append(Object.assign(document.createElement("span"), { textContent: "見比べ用" }));
-  const TF = [["one", "ひとつの枠"], ["gap", "枠の間を広げる"]];
-  const setTF = v => {
-    ps.classList.toggle("tf-one", v === "one"); ps.classList.toggle("tf-gap", v === "gap");
-    const q = document.getElementById("quest"), pr = inner.querySelector(".practice");
-    if (v === "one") pr.prepend(q); else inner.insertBefore(q, pr);
-    pick.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
-    try { localStorage.setItem("cello:todayFrame", v); } catch {}
-  };
-  TF.forEach(([v, t]) => { const b = document.createElement("button"); b.type = "button"; b.dataset.v = v; b.textContent = t; b.addEventListener("click", () => setTF(v)); pick.append(b); });
-  ps.querySelector(".sec-head").append(pick);
-  let tf0 = "one"; try { tf0 = localStorage.getItem("cello:todayFrame") || "one"; } catch {}
-  setTF(tf0);
+  // 枠は分けたまま（2026-11-15 本人が「枠の間を広げる」に決定。見比べ用の切り替えは外した）
+  ps.classList.add("tf-gap"); inner.insertBefore(document.getElementById("quest"), inner.querySelector(".practice"));
+  ps.querySelector(".sec-lead").remove();
+  // 「いまの課題」（先生に直された点）は、教本とレッスンの中へ
+  document.querySelector("#lesson-sec .lesson").prepend(document.getElementById("pr-focus"));
   document.getElementById("gate-sec").hidden = true;                   // 門番は地図の上（体力の棒つき）。押すと攻略メモが開く
   const about = document.getElementById("about"), comp = document.getElementById("composers-sec");
   comp.after(shelf); shelf.querySelector(".shelf-in").append(about, comp);
@@ -1313,7 +1304,9 @@ const PRACTICE = [
   { id: "free", cat: "piece", label: "好きな曲を弾いた", hint: "楽しむ時間も練習のうち" },
 ];
 const CAT = { base: { name: "土台", icon: "art/ui/cat-base.png" }, book: { name: "教本", icon: "art/ui/cat-book.png" }, read: { name: "楽譜", icon: "art/ui/cat-read.png" }, piece: { name: "曲", icon: "art/ui/cat-piece.png" } };
-const TIERS = [[5, "gold", "金のスタンプ", "素晴らしい1日！"], [3, "silver", "銀のスタンプ", "しっかり積み上げました"], [1, "bronze", "銅のスタンプ", "今日も弾きました。えらい！"]];
+// シンプル表示はチェックが4つなので、4つで金・2つで銀（2026-11-15）
+const TIERS = SIMPLE ? [[4, "gold", "金のスタンプ", "素晴らしい1日！"], [2, "silver", "銀のスタンプ", "しっかり積み上げました"], [1, "bronze", "銅のスタンプ", "今日も弾きました。えらい！"]]
+  : [[5, "gold", "金のスタンプ", "素晴らしい1日！"], [3, "silver", "銀のスタンプ", "しっかり積み上げました"], [1, "bronze", "銅のスタンプ", "今日も弾きました。えらい！"]];
 const MILESTONES = [1, 7, 14, 30, 50, 100, 200];
 const DEFAULT_FOCUS = [
   { text: "弓の持ち方（親指と中指の位置、手の力を抜く）", since: "" },
@@ -1379,7 +1372,7 @@ function renderFocus() {
     add.addEventListener("click", () => { focus.items.push({ text: "新しい課題", since: todayStr() }); saveFocus(); renderPractice(); setTimeout(() => $("focus-" + (focus.items.length - 1))?.select(), 0); });
     box.append(add);
   }
-  box.append(el("p", "pr-note", "課題は3つまで。先生に直された点を入れ、できるようになったら「卒業」へ。卒業した課題は、成長の記録に残ります。"));
+  if (!SIMPLE) box.append(el("p", "pr-note", "課題は3つまで。先生に直された点を入れ、できるようになったら「卒業」へ。卒業した課題は、成長の記録に残ります。"));
 }
 
 function renderToday() {
@@ -1387,11 +1380,27 @@ function renderToday() {
   const box = $("pr-today"); box.innerHTML = "";
   const head = el("div", "pr-head");
   const dt = new Date(date + "T00:00:00");
-  head.append(el("h4", null, (date === todayStr() ? "今日の練習" : `${dt.getMonth() + 1}月${dt.getDate()}日の練習`) + "（できたものに印）"));
+  head.append(el("h4", null, (date === todayStr() ? "今日の練習" : `${dt.getMonth() + 1}月${dt.getDate()}日の練習`) + (SIMPLE ? "" : "（できたものに印）")));
   if (date !== todayStr()) { const back = el("button", "btn ghost", "今日に戻る"); back.type = "button"; back.addEventListener("click", () => { practiceDay = null; renderPractice(); }); head.append(back); }
   box.append(head);
+  const hereIdx0 = STATIONS.findIndex(x => st(x) !== "clear"), cur0 = hereIdx0 >= 0 ? STATIONS[hereIdx0] : null;
+  // シンプル表示：チェックは4つだけ（いまの関門・開放弦・ウェルナー・好きな曲）。説明・分類は出さない（2026-11-15 本人「項目が多すぎる」）
+  if (SIMPLE) {
+    const g = el("div", "pr-group");
+    [["current", cur0 ? `いまの関門「${cur0.title}」` : "いまの関門"], ["openstr", "開放弦のロングトーン"], ["werner", "ウェルナーの課題"], ["free", "好きな曲"]].forEach(([id, label]) => {
+      const lab = el("label", "pr-item"), cb = el("input"); cb.type = "checkbox"; cb.id = "pi-" + id; cb.checked = (rec.items || []).includes(id);
+      cb.addEventListener("change", () => { const set = new Set(rec.items || []); cb.checked ? set.add(id) : set.delete(id); saveDay(date, { items: [...set], rest: false }); });
+      const tx = el("span"); tx.append(label); lab.append(cb, tx); g.append(lab);
+      if (id === "werner") {
+        const no = el("input"); no.type = "text"; no.id = "pr-no"; no.className = "pr-no"; no.placeholder = "No."; no.value = rec.no || ""; no.setAttribute("aria-label", "ウェルナーの番号");
+        no.addEventListener("change", () => { saveDay(date, { no: no.value.trim() }); if (no.value.trim() && date === todayStr()) saveWerner({ no: no.value.trim() }); });
+        no.addEventListener("click", e => e.stopPropagation()); tx.append(no);
+      }
+    });
+    box.append(g);
+  }
   // 課題（いちばん上）
-  if (focus.items.length) {
+  if (!SIMPLE && focus.items.length) {
     const fl = el("div", "pr-group"); fl.append(el("span", "pr-cat", "課題を意識して弾いた"));
     focus.items.forEach((f, i) => {
       const lab = el("label", "pr-item focus"), cb = el("input"); cb.type = "checkbox"; cb.id = `pf-${i}`; cb.checked = (rec.focus || []).includes(f.text);
@@ -1401,7 +1410,7 @@ function renderToday() {
     box.append(fl);
   }
   const hereIdx = STATIONS.findIndex(x => st(x) !== "clear"), cur = hereIdx >= 0 ? STATIONS[hereIdx] : null;
-  if (SIMPLE && cur && cur.today) {
+  if (false && SIMPLE && cur && cur.today) {
     const g = el("div", "pr-group"); g.append(el("span", "pr-cat", `いまの関門「${cur.title}」`));
     cur.today.forEach((t, k) => {
       const id = `q:${cur.id}:${k}`, lab = el("label", "pr-item"), cb = el("input"); cb.type = "checkbox"; cb.id = "pq-" + k; cb.checked = (rec.items || []).includes(id);
@@ -1410,7 +1419,7 @@ function renderToday() {
     });
     box.append(g);
   }
-  ["base", "book", "read", "piece"].forEach(cat => {
+  if (!SIMPLE) ["base", "book", "read", "piece"].forEach(cat => {
     const g = el("div", "pr-group"); const ct = el("span", "pr-cat"); ct.append(img(CAT[cat].icon, "pr-ico"), CAT[cat].name); g.append(ct);
     PRACTICE.filter(p => p.cat === cat).forEach(p => {
       const label = p.id === "current" ? (cur ? `いまの関門「${cur.title}」を練習した` : p.label) : p.label;
@@ -1442,7 +1451,7 @@ function renderToday() {
   mins.append(mi); box.append(mins);
   const foot = el("div", "pr-foot");
   const n = dayCount(rec), t = tierOf(rec);
-  const now = el("span", "pr-tier"); if (rec.rest) now.append(img("art/ui/stamp-rest.png", "pr-mini"), "休みの日（休みも計画のうち）"); else if (t) now.append(img("art/ui/stamp-" + t[1] + ".png", "pr-mini"), `${t[2]}（${n}個）`); else now.append("1つ印を付けると銅、3つで銀、5つで金のスタンプ");
+  const now = el("span", "pr-tier"); if (rec.rest) now.append(img("art/ui/stamp-rest.png", "pr-mini"), "休みの日（休みも計画のうち）"); else if (t) now.append(img("art/ui/stamp-" + t[1] + ".png", "pr-mini"), `${t[2]}（${n}個）`); else if (!SIMPLE) now.append("1つ印を付けると銅、3つで銀、5つで金のスタンプ");
   const rest = el("button", "btn ghost", rec.rest ? "休みを取り消す" : "今日は休み"); rest.type = "button";
   rest.addEventListener("click", () => saveDay(date, rec.rest ? { rest: false } : { rest: true, items: [], focus: [] }));
   foot.append(now, rest); box.append(foot);
@@ -1941,7 +1950,7 @@ function renderQuest(hereIdx) {
   b1.addEventListener("click", () => save(s, { status: "through" }));
   b2.addEventListener("click", () => save(s, { status: "clear" }));
   adv.append(b1, b2);
-  l.append(adv, el("p", "adv-note", "押すと記録され、地図のピンが次の関門へ進みます。チェックリストを付けても、少しずつ進みます。"));
+  l.append(adv); if (!SIMPLE) l.append(el("p", "adv-note", "押すと記録され、地図のピンが次の関門へ進みます。チェックリストを付けても、少しずつ進みます。"));
   if (SIMPLE) { q.prepend(l); return; }                                // 目標のチェックは「今日の練習」の一番上の組へ
   const r = el("div", "quest-r"); r.append(el("span", "latin", "Objectives"));
   const ol = el("ol", "objs"), doneEl = el("div", "complete");
