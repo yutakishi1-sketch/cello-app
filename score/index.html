@@ -67,6 +67,9 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .song:not([open]) { display: none; }
 .wrap > .song { border-top: 1px solid var(--frame); border-bottom: 1px solid var(--frame); padding: 10px 0 14px; }
 .priv-row { justify-content: flex-end; }
+.priv-lock { display: flex; gap: 6px; flex: 1 1 100%; justify-content: flex-end; }
+.priv-lock input { min-height: 34px; width: 11em; padding: 0 10px; border: 1px solid var(--gold-dim); background: var(--panel-2); color: var(--ink); font: inherit; font-size: 16px; }
+.priv-btn.sub { border-style: dotted; opacity: .7; }
 .priv-btn { font: inherit; font-size: 12.5px; color: var(--gold-soft); background: none; border: 1px dashed var(--gold-dim); padding: 4px 12px; cursor: pointer; min-height: 32px; }
 .song > summary { list-style: none; cursor: pointer; }
 .song > summary::-webkit-details-marker { display: none; }
@@ -1059,28 +1062,73 @@ function renderDict() {
   });
 }
 $("dict").addEventListener("toggle", () => { if ($("dict").open) renderDict(); });
-// 自分の楽譜を読み込む（.json）。読み込んだ曲は「合奏（この端末だけ）」の段に並ぶ
+// 自分の楽譜。アプリには合言葉で鍵をかけた art/mine.dat を置き、合言葉を一度入れた端末だけが開ける（2026-11-15 本人「アプリのリンクに上げておいて」→ 合言葉つきを選択）。
+// 開いた楽譜はこの端末に覚え、mine.dat が新しくなっていたら自動で入れ替えて1回だけ読み直す。ファイルから読み込む形も残す
+const MINE_KEY = "score-private-key";
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0)), unb64 = u => btoa(String.fromCharCode(...new Uint8Array(u)));
+async function openMine(box, rawKey) {
+  const key = await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["decrypt"]);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(box.iv) }, key, b64(box.data));
+  const d = JSON.parse(new TextDecoder().decode(plain));
+  if (d.kind !== "cello-app-private-scores" || !Array.isArray(d.songs)) throw new Error("形が違います");
+  return d;
+}
+async function keyFrom(box, pass) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass.trim()), "PBKDF2", false, ["deriveKey"]);
+  const k = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(box.salt), iterations: box.iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, true, ["decrypt"]);
+  return crypto.subtle.exportKey("raw", k);
+}
+function keepMine(d, stamp) {
+  localStorage.setItem(PRIV_KEY, JSON.stringify({ kind: d.kind, songs: d.songs, stamp }));
+}
 (() => {
   const row = document.createElement("div"); row.className = "toc-row priv-row";
+  const lock = document.createElement("form"); lock.className = "priv-lock"; lock.hidden = true;
+  const pw = document.createElement("input"); pw.type = "password"; pw.autocomplete = "off"; pw.placeholder = "合言葉"; pw.setAttribute("aria-label", "自分の楽譜の合言葉");
+  const go = document.createElement("button"); go.type = "submit"; go.className = "priv-btn"; go.textContent = "自分の楽譜を開く";
+  lock.append(pw, go); row.append(lock);
+  let box = null, saved = null;
+  try { saved = localStorage.getItem(MINE_KEY); } catch (e) { saved = null; }
+  const cachedStamp = (() => { try { return (JSON.parse(localStorage.getItem(PRIV_KEY)) || {}).stamp || ""; } catch (e) { return ""; } })();
+  fetch("art/mine.dat", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(async j => {
+    if (!j || !j.data) return;
+    box = j;
+    if (saved) {
+      try {
+        const d = await openMine(box, b64(saved));
+        if (box.stamp !== cachedStamp) { keepMine(d, box.stamp); location.reload(); }
+        return;
+      } catch (e) { console.warn("覚えた合言葉で開けませんでした。入れ直してください", e); try { localStorage.removeItem(MINE_KEY); } catch (er) { /* そのまま */ } }
+    }
+    lock.hidden = false;
+  }).catch(e => console.warn("自分の楽譜の置き場所を読めませんでした", e));
+  lock.addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!box || !pw.value.trim()) return;
+    go.disabled = true; go.textContent = "開いています…";
+    try {
+      const raw = await keyFrom(box, pw.value), d = await openMine(box, raw);
+      localStorage.setItem(MINE_KEY, unb64(raw)); keepMine(d, box.stamp); location.reload();
+    } catch (e) { go.disabled = false; go.textContent = "合言葉が違います"; pw.select(); }
+  });
+  // ファイルから読み込む形（予備）
   const pick = document.createElement("input"); pick.type = "file"; pick.accept = ".json,application/json"; pick.hidden = true;
-  const load = document.createElement("button"); load.type = "button"; load.className = "priv-btn"; load.textContent = PRIVATE.length ? "自分の楽譜を読み込み直す" : "自分の楽譜を読み込む";
+  const load = document.createElement("button"); load.type = "button"; load.className = "priv-btn sub"; load.textContent = "ファイルから読み込む";
   load.addEventListener("click", () => pick.click());
   pick.addEventListener("change", async () => {
     const f = pick.files && pick.files[0]; if (!f) return;
     try {
       const d = JSON.parse(await f.text());
       if (d.kind !== "cello-app-private-scores" || !Array.isArray(d.songs) || !d.songs.every(s => s && typeof s.id === "string" && typeof s.abc === "string")) throw new Error("形が違います");
-      localStorage.setItem(PRIV_KEY, JSON.stringify({ kind: d.kind, songs: d.songs }));
-      location.reload();
+      keepMine(d, "file"); location.reload();
     } catch (e) { load.textContent = "読み込めませんでした（" + e.message + "）"; console.warn("自分の楽譜を読み込めませんでした", e); }
   });
   row.append(load, pick);
   if (PRIVATE.length) {
-    const del = document.createElement("button"); del.type = "button"; del.className = "priv-btn"; del.textContent = "この端末から消す";
-    let armed = 0;   // 確認の画面は出せないので、2回押しで消す
+    const del = document.createElement("button"); del.type = "button"; del.className = "priv-btn sub"; del.textContent = "この端末から消す";
+    let armed = 0;   // 確認の画面は出せないので、2回押しで消す（合言葉も忘れる）
     del.addEventListener("click", () => {
       if (!armed) { del.textContent = "もう一度押すと消す"; armed = setTimeout(() => { armed = 0; del.textContent = "この端末から消す"; }, 3000); return; }
-      try { localStorage.removeItem(PRIV_KEY); } catch (e) { /* 消せないときはそのまま */ } location.reload();
+      try { localStorage.removeItem(PRIV_KEY); localStorage.removeItem(MINE_KEY); } catch (e) { /* 消せないときはそのまま */ } location.reload();
     });
     row.append(del);
   }
