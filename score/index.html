@@ -968,7 +968,7 @@ const LABELS = { mary: "Mary Had a Little Lamb", twinkle: "Twinkle Twinkle", kae
   "tchaikovsky-andante": "Andante Cantabile", american: "American", "bach-musette": "Musette", "schumann-happy-farmer": "Happy Farmer", "flies-wiegenlied": "Schlafe, mein Prinzchen",
   "handel-largo": "Ombra mai fù", "gounod-ave-maria": "Ave Maria", "bach-jesu-joy": "Jesu, Joy", "eine-kleine-1": "Nachtmusik I", "eine-kleine-2": "Nachtmusik II", "eine-kleine-3": "Nachtmusik III",
   "ens-noel": "The First Nowell", "ens-hark": "Hark! the Herald", "ens-whitexmas": "White Christmas", "ens-aveverum": "Ave Verum", "ens-andante": "Andante Festivo",
-  "ens-bach1043-1": "Double Concerto", "ens-capriol-1": "Capriol Suite", "ens-irish-irish-washerwoman": "Irish Tunes", "ens-k136-1": "Divertimento K.136", "ens-dancing-1": "Dancing Pieces", "ens-boccherini-1": "Quintetto (Boccherini)", "ens-something": "Something", "ens-yesterday": "Yesterday", "ens-fux-1": "Sonata a tre (Fux)", "ens-schubert-804-1": "Rosamunde Quartet", "ens-serenade-1": "Serenade for Strings" };
+  "ens-bach1043-1": "Double Concerto", "ens-capriol-1": "Capriol Suite", "ens-irish-irish-washerwoman": "Irish Tunes", "ens-k136-1": "Divertimento K.136", "ens-dancing-1": "Dancing Pieces", "ens-boccherini-1": "Quintetto (Boccherini)", "ens-something": "Something", "ens-yesterday": "Yesterday", "ens-fux-1": "Sonata a tre (Fux)", "ens-schubert-804-1": "Rosamunde Quartet", "ens-ravel-quartet-1": "Quatuor (Ravel)", "ens-serenade-1": "Serenade for Strings" };
 // 本は段階で棚を分けず、やさしい順に続けて詰める。段階の境目は本1冊分あけて、小さな数字の目印を立てる（2026-11-15 本人指示）
 const shelfItems = [], shelf = {};
 STAGE.forEach((name, i) => {
@@ -2004,9 +2004,12 @@ SONGS.forEach(s => {
     }
     btn.disabled = !s.tune;
     const mt = meterOf(s); base = s.tune ? Math.round(s.tune.getBpm()) : 80;
-    const dotted = Math.abs(mt.beat - 0.375) < 1e-6, beatSym = dotted ? "♩." : "♩";
+    // 速さの数字は abcjs の拍（getBeatLength）で数えるので、記号もその拍に合わせる（5/8 拍子は8分音符で数える）。2分音符の記号は手元の文字に無く四角になるので、文字で書く
+    const bl = s.tune && s.tune.getBeatLength ? s.tune.getBeatLength() : mt.beat;
+    const near = v => Math.abs(bl - v) < 1e-6, dotted = near(0.375);
+    const [beatSym, beatName] = dotted ? ["♩.", "付点4分音符"] : near(0.125) ? ["♪", "8分音符"] : near(0.5) ? ["2分", "2分音符"] : ["♩", "4分音符"];
     mark.textContent = beatSym + "=";
-    meterLine.textContent = mt.num + "/" + mt.den + "拍子：1小節を" + mt.perBar + "つに数える（1拍＝" + (dotted ? "付点4分音符" : "4分音符") + "）。ふつうの速さは " + beatSym + "=" + base + "。";
+    meterLine.textContent = mt.num + "/" + mt.den + "拍子：1小節を" + mt.perBar + "つに数える（1拍＝" + beatName + "）。ふつうの速さは " + beatSym + "=" + base + "。";
     range.min = String(Math.max(30, Math.round(base * 0.5))); range.max = String(Math.round(base * 1.6)); range.step = "1"; range.value = String(base);
     val.textContent = range.value;
   };
