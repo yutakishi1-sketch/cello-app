@@ -59,6 +59,20 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
   color: #e9cf86; text-shadow: 0 1px 1px rgba(0,0,0,.85); overflow: hidden; white-space: nowrap; }
 .toc a.book:hover { transform: translateY(-3px); }
 .toc a.book.on { transform: translateY(-14px); filter: drop-shadow(0 0 7px rgba(224,194,114,.6)) brightness(1.12); }
+/* 平置き（2026-11-17 本人指示「英語の背表紙は小さくて見にくい」「平置きにして表紙に合わせて」）。
+   表紙の絵は Gemini 製（art/cover-1〜8.jpg、題名の札は無地）。題名は日本語で札の中に重ねる。棚1段に横長は5冊・スマホは3冊 */
+.shelf.flat { display: grid; grid-template-columns: repeat(var(--per), minmax(0, 1fr)); gap: 0 14px; align-items: end; padding: 24px 16px 22px; min-height: 0;
+  background: url(art/plank.jpg) left bottom / 100% 30px no-repeat, linear-gradient(180deg, #050608, #0d0b09 40%, #120e0a); }
+.toc .shelf.flat a.book { width: auto; height: auto; aspect-ratio: 3 / 4; background: var(--img) center / cover no-repeat; border-radius: 2px 5px 5px 2px;
+  box-shadow: inset 4px 0 6px -3px rgba(0,0,0,.7); filter: drop-shadow(0 6px 6px rgba(0,0,0,.75)); }
+/* 絵の札は小さく、スマホでは字が読めない大きさになるので、札の上に大きめの札を重ねる（絵の札を覆う大きさ・同じ金の二重枠） */
+.toc .shelf.flat a.book .t { left: 10%; width: 80%; top: 14%; height: 38%; font-family: var(--f-display); font-weight: 600; text-transform: none; letter-spacing: .04em; line-height: 1.22; white-space: normal;
+  word-break: keep-all; overflow-wrap: anywhere; color: #f0d68f; padding: 2px 5%; box-sizing: border-box;
+  background: linear-gradient(180deg, #17120c, #0c0a07); border: 1px solid #c4a159; border-radius: 2px; box-shadow: inset 0 0 0 2px #0c0a07, inset 0 0 0 3px #8a6f39, 0 1px 3px rgba(0,0,0,.6); }
+.toc .shelf.flat a.book .t.en { font-family: var(--f-latin); font-weight: 700; letter-spacing: .03em; line-height: 1.08; }
+.toc .shelf.flat a.book .lv { position: absolute; left: -2px; top: -16px; font-family: var(--f-latin); font-weight: 700; font-size: 14px; color: var(--gold); text-shadow: 0 1px 2px #000; letter-spacing: .04em; }
+.toc .shelf.flat a.book .lock { top: auto; bottom: 6%; font-size: 10px; }
+.toc .shelf.flat a.book.on { transform: translateY(-8px); }
 .stage-mark { flex: 0 0 45px; align-self: flex-end; height: 26px; display: grid; place-items: center; font-family: var(--f-latin); font-size: 14px; white-space: nowrap; letter-spacing: .04em; font-weight: 700; color: var(--gold);
   border-bottom: 2px solid var(--gold-dim); margin-bottom: 2px; text-shadow: 0 1px 2px #000; }
 .toc a.book .lock { writing-mode: horizontal-tb; position: absolute; top: -12px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--gold); }
@@ -971,13 +985,73 @@ const LABELS = { mary: "Mary Had a Little Lamb", twinkle: "Twinkle Twinkle", kae
   "ens-bach1043-1": "Double Concerto", "ens-capriol-1": "Capriol Suite", "ens-irish-irish-washerwoman": "Irish Tunes", "ens-k136-1": "Divertimento K.136", "ens-dancing-1": "Dancing Pieces", "ens-boccherini-1": "Quintetto (Boccherini)", "ens-something": "Something", "ens-yesterday": "Yesterday", "ens-fux-1": "Sonata a tre (Fux)", "ens-schubert-804-1": "Rosamunde Quartet", "ens-ravel-quartet-1": "Quatuor (Ravel)", "ens-cavalleria": "Intermezzo (Cavalleria)", "ens-fascinating": "Fascinating Rhythm", "ens-whole-new-world": "A Whole New World", "ens-kimi-wo-nosete": "Carrying You", "ens-wish-upon-star": "When You Wish upon a Star", "ens-lascia": "Lascia ch'io pianga", "ens-hana-wa-saku": "Hana wa Saku", "ens-libertango": "Libertango", "ens-let-it-go": "Let It Go", "ens-waltz-debby": "Waltz for Debby", "ens-merry-go-round": "Merry-Go-Round of Life", "ens-serenade-1": "Serenade for Strings" };
 // 本は段階で棚を分けず、やさしい順に続けて詰める。段階の境目は本1冊分あけて、小さな数字の目印を立てる（2026-11-15 本人指示）
 const shelfItems = [], shelf = {};
+const FLAT = true;   // 平置き（表紙）。false で前の背表紙の棚に戻る
+const COVER_LANG = new URLSearchParams(location.search).get("t") === "en" ? "en" : "ja";
+const PLATE = { l: 25.8, w: 48.8, t: 23.6, h: 16.5 };   // art/cover-N.jpg の題名の札の位置（%）。8枚とも同じ構図で作った
+// 表紙の題名は短く（長い題名は字が小さくなりすぎるため）。（…）の補足・楽章の名前・長い作品名は省く
+const SHORT = { "ens-irish-irish-washerwoman": "アイルランドの曲集", "ens-ravel-quartet-1": "ラヴェル 弦楽四重奏" };
+function shortTitle(t, id) {
+  if (SHORT[id]) return SHORT[id];
+  return t.replace(/[（(].*$/, "").replace(/\s\d+\.\s.*$/, "").replace("アイネ・クライネ・ナハトムジーク", "アイネ・クライネ").replace(/(第\d+楽章).*$/, "$1")
+    .replace(/^ラルゴ「(.+)」$/, "$1").replace("無伴奏チェロ組曲 第1番 ", "無伴奏組曲 ").trim();
+}
+// 日本語の題名を、言葉の切れ目（空白・「・」・「の」のあと、「第」の前）で行に分ける。「メリーさ/んの羊」のような切れ方を防ぐ
+function jaLines(t) {
+  const n = [...t].length; if (n <= 6) return [t];
+  if (!/[\u3000-\u30ff\u4e00-\u9fff\uff00-\uffef]/.test(t)) {   // 欧文だけの題名（é などを含む）は空白でだけ分ける
+    const w = t.split(/\s+/); if (w.length < 2) return [t];
+    let best = null; for (let i = 1; i < w.length; i++) { const L = [w.slice(0, i).join(" "), w.slice(i).join(" ")], m = Math.max(...L.map(x => x.length)); if (!best || m < best.m) best = { L, m }; }
+    return best.L;
+  }
+  const cs = [...t], cut = [];   // cut: [位置, 強さ]。空白・「・」・「第」の前は強い切れ目
+  const kata = ch => /[ァ-ヴー]/.test(ch);
+  for (let i = 1; i < n; i++) {
+    const p = cs[i - 1], c = cs[i];
+    if (/[・ーンャュョッァィゥェォ、」]/.test(c)) continue;
+    if (p === " " || p === "・" || c === " " || c === "第") cut.push([i, 2]);
+    else if (p === "の" || kata(p) !== kata(c)) cut.push([i, 0]);
+    else if (p === "ー" || (p === "ン" && cs[i - 2] === "ー")) cut.push([i, -1]);   // カタカナの途中は弱い切れ目（3行にするときは使わない）
+  }
+  // 2行と3行を試し、いちばん長い行が短くなるほうを選ぶ（3行は切れ目の候補でだけ切る）
+  const split = (lines, strict) => {
+    const out = []; let from = 0;
+    for (let k = 1; k < lines; k++) {
+      const goal = Math.round(from + (n - from) / (lines - k + 1)), cand = cut.filter(([i, w]) => i > from + 1 && i < n - 1 && (!strict || w >= 0));
+      const best = cand.length ? cand.reduce((a, b) => Math.abs(b[0] - goal) - b[1] < Math.abs(a[0] - goal) - a[1] ? b : a)[0] : null;
+      const ok = best !== null && Math.abs(best - goal) <= Math.max(3, n / 3);
+      if (!ok && strict) return null;
+      const at = ok ? best : goal; out.push(cs.slice(from, at).join("").trim()); from = at;
+    }
+    out.push(cs.slice(from).join("").trim());
+    return out.filter(Boolean);
+  };
+  const two = split(2, false), three = n > 8 ? split(3, true) : null;
+  const len = L => Math.max(...L.map(x => [...x].length));
+  return three && len(three) < len(two) - 1 ? three : two;
+}
+function coverOf(s, lv) {
+  const a = document.createElement("a"); a.href = "#" + s.id; a.className = "book" + (s.priv ? " priv" : ""); a.title = s.title;
+  let hsh = 0; for (const ch of s.id) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
+  // 隣の本と同じ表紙にならないように、曲ごとに決まった色から順にずらす
+  let k = 1 + hsh % 8; for (let j = 0; j < 8 && (k === shelf._last || k === shelf._last2); j++) k = 1 + (k % 8);
+  shelf._last2 = shelf._last; shelf._last = k;
+  a.style.cssText = `--img:url(art/cover-${k}.jpg);--ll:${PLATE.l}%;--lw:${PLATE.w}%;--lt:${PLATE.t}%;--lh:${PLATE.h}%;--fs:18px`;
+  a.setAttribute("aria-label", s.title);
+  // 題名は日本語。（…）の補足と、版の名前は省く
+  const tt = document.createElement("span"); tt.className = "t";
+  // 題名は日本語（2026-11-17 英語と見比べて本人が日本語に決定）。?t=en で英語の表紙も見られる
+  const en = COVER_LANG === "en" && (s.label || LABELS[s.id]); if (en) tt.classList.add("en");
+  jaLines(en || shortTitle(s.title, s.id)).forEach(x => { const d = document.createElement("span"); d.textContent = x; d.style.whiteSpace = "nowrap"; tt.append(d); }); a.append(tt);
+  if (lv) { const m = document.createElement("span"); m.className = "lv"; m.textContent = lv; a.append(m); }
+  if (s.priv) { const k2 = document.createElement("span"); k2.className = "lock"; k2.textContent = "◆"; k2.setAttribute("aria-hidden", "true"); a.prepend(k2); }
+  return a;
+}
 STAGE.forEach((name, i) => {
   // 同じ曲の別の版（group）は1冊にまとめ、代表の版だけを棚に出す
   const list = SONGS.filter(s => s.stage === i && !s.hidden && (!s.group || s.group === s.id)).sort((a, b) => (a.diff || 0) - (b.diff || 0)); if (!list.length) return;
-  const mark = document.createElement("span"); mark.className = "stage-mark"; mark.title = name; mark.setAttribute("aria-label", name);
-  mark.textContent = name;
-  shelfItems.push(mark);
-  list.forEach(s => {
+  list.forEach((s, li) => {
+    if (FLAT) { shelfItems.push(coverOf(s, li === 0 ? name : "")); return; }
+    if (li === 0) { const mark = document.createElement("span"); mark.className = "stage-mark"; mark.title = name; mark.setAttribute("aria-label", name); mark.textContent = name; shelfItems.push(mark); }
     // 背表紙: 題名の（…）は省き、長さで本の高さと厚みを決める。色は曲ごとに決まった夜の色（赤は使わない）
     const a = document.createElement("a"); a.href = "#" + s.id; a.className = "book" + (s.priv ? " priv" : ""); a.title = s.title;
     const t = s.title.replace(/[（(].*$/, "").trim(), n = [...t].length;
@@ -1004,6 +1078,15 @@ const bookcase = document.createElement("div"); bookcase.className = "toc-row bo
 function packShelves() {
   const room = bookcase.clientWidth - 28; if (room <= 0) return;
   bookcase.innerHTML = "";
+  if (FLAT) {   // 平置き: 棚1段に横長は5冊・スマホ（640px 未満）は3冊
+    const per = innerWidth < 640 ? 3 : 5;
+    for (let i = 0; i < shelfItems.length; i += per) {
+      const row = document.createElement("div"); row.className = "shelf flat"; row.style.setProperty("--per", per);
+      shelfItems.slice(i, i + per).forEach(n => row.append(n)); bookcase.append(row);
+    }
+    fitTitles();
+    return;
+  }
   let cur = null, used = 0;
   const open = () => { cur = document.createElement("div"); cur.className = "shelf"; bookcase.append(cur); used = 0; };
   open();
@@ -1018,14 +1101,16 @@ packShelves();
 let packW = bookcase.clientWidth;
 addEventListener("resize", () => { if (Math.abs(bookcase.clientWidth - packW) > 8) { packW = bookcase.clientWidth; packShelves(); } });
 // 札からはみ出す題名は、実際の幅を測って小さくする（字の幅は書体で変わるため）
-requestAnimationFrame(() => document.querySelectorAll(".toc a.book .t").forEach(t => {
-  let fs = parseFloat(getComputedStyle(t).fontSize);
-  for (let i = 0; i < 8 && (t.scrollWidth > t.clientWidth + 0.5 || t.scrollHeight > t.clientHeight + 0.5) && fs > 4.5; i++) { fs -= 0.5; t.style.fontSize = fs + "px"; t.style.letterSpacing = "0"; }
-}));
-document.fonts && document.fonts.ready.then(() => document.querySelectorAll(".toc a.book .t").forEach(t => {
-  let fs = parseFloat(getComputedStyle(t).fontSize);
-  for (let i = 0; i < 8 && (t.scrollWidth > t.clientWidth + 0.5 || t.scrollHeight > t.clientHeight + 0.5) && fs > 4.5; i++) { fs -= 0.5; t.style.fontSize = fs + "px"; t.style.letterSpacing = "0"; }
-}));
+// 平置きは表紙の大きさに合わせて大きい字から始め、札に入るまで小さくする
+function fitTitles() {
+  document.querySelectorAll(".toc a.book .t").forEach(t => {
+    if (!t.clientWidth) return;
+    let fs = FLAT ? Math.min(22, t.clientHeight * 0.34, t.clientWidth / 5.5) :parseFloat(getComputedStyle(t).fontSize); if (FLAT) { t.style.fontSize = fs + "px"; t.style.letterSpacing = ""; }
+    for (let i = 0; i < 40 && (t.scrollWidth > t.clientWidth + 0.5 || t.scrollHeight > t.clientHeight + 0.5) && fs > 6; i++) { fs -= 0.5; t.style.fontSize = fs + "px"; t.style.letterSpacing = "0"; }
+  });
+}
+requestAnimationFrame(fitTitles);
+document.fonts && document.fonts.ready.then(fitTitles);
 // ── 記号と言葉の辞典。記号（abc）は楽譜の形で、言葉（w）は文字で見せる。開いたときに初めて描く ──
 const DICT = [
   ["音符と休符", [
