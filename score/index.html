@@ -891,7 +891,7 @@ let PRIVATE = [];
 try { PRIVATE = ((JSON.parse(localStorage.getItem(PRIV_KEY)) || {}).songs) || []; } catch (e) { PRIVATE = []; }
 if (PRIVATE.length) { STAGE.push("合奏"); PRIVATE.forEach((p, i) => SONGS.push(Object.assign({ diff: i, priv: true }, p, { stage: STAGE.length - 1 }))); }
 // 自分の楽譜の中に、楽譜帳の曲と同じ本（group が楽譜帳の曲の id）の版があれば、楽譜帳の曲を本の代表にして版で切り替える
-const PUBLIC_VERSION = { canon: "旋律と低音（楽譜帳）", "bach-air": "主題（楽譜帳）", "eine-kleine-1": "第1楽章 チェロのパート", "eine-kleine-2": "第2楽章 チェロのパート", "eine-kleine-3": "第3楽章 チェロのパート" };
+const PUBLIC_VERSION = { canon: "旋律と低音（楽譜帳）", "bach-air": "主題（楽譜帳）", "eine-kleine-1": "第1楽章 チェロのパート", "eine-kleine-2": "第2楽章 チェロのパート", "eine-kleine-3": "第3楽章 チェロのパート", "elgar-salut": "主題16小節（楽譜帳）", "bach-jesu-joy": "最初の8小節（楽譜帳）" };
 (() => {
   const gs = new Set(PRIVATE.map(p => p.group).filter(Boolean));
   SONGS.forEach(s => { if (!s.priv && gs.has(s.id) && !s.group) { s.group = s.id; s.version = PUBLIC_VERSION[s.id] || "楽譜帳の版"; } });
@@ -968,7 +968,7 @@ const LABELS = { mary: "Mary Had a Little Lamb", twinkle: "Twinkle Twinkle", kae
   "tchaikovsky-andante": "Andante Cantabile", american: "American", "bach-musette": "Musette", "schumann-happy-farmer": "Happy Farmer", "flies-wiegenlied": "Schlafe, mein Prinzchen",
   "handel-largo": "Ombra mai fù", "gounod-ave-maria": "Ave Maria", "bach-jesu-joy": "Jesu, Joy", "eine-kleine-1": "Nachtmusik I", "eine-kleine-2": "Nachtmusik II", "eine-kleine-3": "Nachtmusik III",
   "ens-noel": "The First Nowell", "ens-hark": "Hark! the Herald", "ens-whitexmas": "White Christmas", "ens-aveverum": "Ave Verum", "ens-andante": "Andante Festivo",
-  "ens-bach1043-1": "Double Concerto", "ens-capriol-1": "Capriol Suite", "ens-irish-irish-washerwoman": "Irish Tunes", "ens-k136-1": "Divertimento K.136", "ens-dancing-1": "Dancing Pieces", "ens-boccherini-1": "Quintetto (Boccherini)", "ens-something": "Something", "ens-yesterday": "Yesterday", "ens-fux-1": "Sonata a tre (Fux)", "ens-schubert-804-1": "Rosamunde Quartet", "ens-ravel-quartet-1": "Quatuor (Ravel)", "ens-serenade-1": "Serenade for Strings" };
+  "ens-bach1043-1": "Double Concerto", "ens-capriol-1": "Capriol Suite", "ens-irish-irish-washerwoman": "Irish Tunes", "ens-k136-1": "Divertimento K.136", "ens-dancing-1": "Dancing Pieces", "ens-boccherini-1": "Quintetto (Boccherini)", "ens-something": "Something", "ens-yesterday": "Yesterday", "ens-fux-1": "Sonata a tre (Fux)", "ens-schubert-804-1": "Rosamunde Quartet", "ens-ravel-quartet-1": "Quatuor (Ravel)", "ens-cavalleria": "Intermezzo (Cavalleria)", "ens-fascinating": "Fascinating Rhythm", "ens-whole-new-world": "A Whole New World", "ens-kimi-wo-nosete": "Carrying You", "ens-wish-upon-star": "When You Wish upon a Star", "ens-lascia": "Lascia ch'io pianga", "ens-hana-wa-saku": "Hana wa Saku", "ens-libertango": "Libertango", "ens-let-it-go": "Let It Go", "ens-waltz-debby": "Waltz for Debby", "ens-merry-go-round": "Merry-Go-Round of Life", "ens-serenade-1": "Serenade for Strings" };
 // 本は段階で棚を分けず、やさしい順に続けて詰める。段階の境目は本1冊分あけて、小さな数字の目印を立てる（2026-11-15 本人指示）
 const shelfItems = [], shelf = {};
 STAGE.forEach((name, i) => {
