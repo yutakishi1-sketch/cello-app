@@ -1960,17 +1960,22 @@ function renderNamed(box, abc, opts) {
   skinBows(box);
   return tune;
 }
-// 弓の記号は、楽譜帳の金色に合わせて作った絵（ChatGPT 製・2026-11-20）に差し替える。位置と大きさは abcjs の記号に合わせる
+// 弓の記号は、楽譜で標準の形（SMuFL の Bravura 書体・SIL OFL）に描き直す。ダウン＝上の横線が太い ⊓、アップ＝細く幅の狭い V。
+// 色は音符と同じ（印刷の楽譜で記号が音符と同じ黒なのと同じ考え）。2026-11-20 本人「シンプルな形でいい・楽譜の感じに」
+const BOW_GLYPH = {
+  down: { d: "M2.6-31.8C1.2-31.8 0-30.6 0-29.2L0-1.2C0-.5.6 0 1.2 0L2.6 0C3.2 0 3.8-.5 3.8-1.2L3.8-17.6C3.8-18.7 9.7-19.3 15.6-19.3C21.5-19.3 27.4-18.7 27.4-17.6L27.4-1.2C27.4-.5 28 0 28.7 0L30 0C30.6 0 31.2-.5 31.2-1.2L31.2-29.2C31.2-30.6 30-31.8 28.6-31.8Z", w: 31.2, h: 31.8 },
+  up: { d: "M12.6-.1C13.4-.1 14.1-.7 14.3-1.5L24.9-47.4L24.9-47.8C24.9-48.6 24.4-49.3 23.5-49.5L23.1-49.5C22.3-49.5 21.6-49 21.4-48.2L12.5-9.7L3.7-48.2C3.4-49 2.7-49.5 1.9-49.5L1.5-49.5C.7-49.3.1-48.6.1-47.9C.1-47.7.1-47.6.2-47.4L10.7-1.5C10.9-.7 11.6-.1 12.6-.1Z", w: 25, h: 49.5 },
+};
 function skinBows(box) {
   box.querySelectorAll('path[data-name="scripts.downbow"], path[data-name="scripts.upbow"]').forEach(p => {
     const b = p.getBBox(); if (!b.width) return;
-    const down = p.getAttribute("data-name") === "scripts.downbow", ratio = down ? 71 / 96 : 73 / 96;
-    const w = Math.max(b.width, b.height / ratio) * 0.95, h = w * ratio;
-    const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
-    im.setAttribute("href", down ? "art/bow-down.png" : "art/bow-up.png");
-    im.setAttribute("x", b.x + b.width / 2 - w / 2); im.setAttribute("y", b.y + b.height - h);
-    im.setAttribute("width", w); im.setAttribute("height", h); im.setAttribute("class", "bow-mark"); im.setAttribute("aria-hidden", "true");
-    p.after(im); p.style.display = "none";
+    const g = BOW_GLYPH[p.getAttribute("data-name") === "scripts.downbow" ? "down" : "up"];
+    const k = b.height / g.h * (g === BOW_GLYPH.down ? 0.9 : 1);   // abcjs の記号と同じ高さ（ダウンは少し小さく、太い横線が重く見えないように）
+    const x = b.x + b.width / 2 - g.w * k / 2, y = b.y + b.height;
+    const np = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    np.setAttribute("d", g.d); np.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${k.toFixed(4)})`);
+    np.setAttribute("class", "bow-mark"); np.setAttribute("fill", "#ebe7dc"); np.setAttribute("aria-hidden", "true");
+    p.after(np); p.style.display = "none";
   });
 }
 const NAMES_KEY = "score-names";
