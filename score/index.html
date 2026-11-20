@@ -219,6 +219,8 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: 21px; letter-sp
 .leaf .back .shade { background: linear-gradient(270deg, rgba(0,0,0,.55), rgba(0,0,0,.15) 40%, rgba(0,0,0,0)); }
 /* 指番号 / ドレミ の切り替え。ドレミのときは指番号・弦・ポジションの字を隠し、音名を出す */
 .names-sw { display: inline-flex; border: 1px solid var(--gold-dim); }
+.controls .bow-sw[aria-pressed="true"] { color: var(--gold) !important; border-color: var(--gold) !important; }
+.controls .bow-sw[aria-pressed="false"] { opacity: .6; }
 .controls .names-sw button { background: none !important; color: var(--gold-soft) !important; border: 0 !important; padding: 0 12px; min-height: 40px; letter-spacing: .08em; }
 .controls .names-sw button[aria-pressed="true"] { background: var(--gold) !important; color: var(--on-gold) !important; font-weight: 700 !important; }
 /* 指番号のときも幅を測れるように、消すのは display ではなく visibility で */
@@ -1584,7 +1586,7 @@ function renderDict() {
       if (it.w) { const w = document.createElement("span"); w.className = "dict-word"; w.textContent = it.w; sym.append(w); return; }
       const head = (it.head || "K:C clef=bass").replace(/\\n/g, "\n");
       const abc = "X:1\nL:1/4\n" + (/^M:/m.test(head) ? "" : "M:none\n") + head + "\n" + (it.abc || "x");
-      try { ABCJS.renderAbc(sym, abc, { responsive: "resize", staffwidth: 150, paddingtop: 0, paddingbottom: 0, paddingleft: 2, paddingright: 2, foregroundColor: "#ebe7dc" }); }
+      try { ABCJS.renderAbc(sym, abc, { responsive: "resize", staffwidth: 150, paddingtop: 0, paddingbottom: 0, paddingleft: 2, paddingright: 2, foregroundColor: "#ebe7dc" }); requestAnimationFrame(() => skinBows(sym)); }
       catch (e) { console.warn("辞典の記号を描けませんでした", it.name, e); }
     });
   });
@@ -1899,8 +1901,52 @@ function addNoteNames(box, tune) {
 // 楽譜を描いてドレミを付ける。ドレミが次の段にぶつかる曲だけ、段の間を広げて描き直す
 // （abcjs の段の間の既定は %%staffsep 46・%%sysstaffsep 36。単位は pt で、画面の 1 は 0.75pt）。
 // 段の間は「中身の高さ」と「最小の間」の大きいほうで決まるので、広げた分が吸収されることがある。そのときは4回まで重ねて広げる
+// 弓の向き（ダウン ⊓・アップ V）の目安を自動で書き足す（2026-11-20 本人「全部に入れて」）。
+// 決まり: スラーとタイでつながった音は1弓。弓ごとにダウンとアップを交互に。曲の頭は、弱起ならアップ・そうでなければダウン。
+// 4分休符以上の休みのあとは、小節の頭ならダウン・途中ならアップで弾き直す。印は「曲の頭・小節の最初の弓・弾き直し」にだけ付ける。
+// もとの楽譜に弓の印がある声部は、そのまま使う（書き足さない）
+const BOW_KEY = "score-bow";
+let bowOn = true;
+try { bowOn = localStorage.getItem(BOW_KEY) !== "0"; } catch (e) { /* 読めないときは出す */ }
+function addBowing(abc) {
+  if (!bowOn || !window.ABCJS) return abc;
+  let tune; try { tune = ABCJS.parseOnly("X:1\n" + abc)[0]; } catch (e) { return abc; }
+  if (!tune || !tune.lines) return abc;
+  const pickup = tune.getPickupLength ? tune.getPickupLength() : 0;
+  const state = new Map(), marks = [];
+  tune.lines.forEach(l => (l.staff || []).forEach((st, si) => (st.voices || []).forEach((v, vi) => {
+    const key = si + ":" + vi;
+    if (!state.has(key)) state.set(key, { dir: null, slur: 0, tie: false, rest: 0, pos: 0, barFirst: true, own: false, first: true });
+    const S = state.get(key);
+    v.forEach(e => {
+      if (e.el_type === "bar") { S.pos = 0; S.barFirst = true; return; }
+      if (e.el_type !== "note") return;
+      if (e.rest || !e.pitches) { S.rest += e.duration || 0; S.pos += e.duration || 0; return; }
+      if ((e.decoration || []).some(d => d === "upbow" || d === "downbow")) S.own = true;
+      const ps = e.pitches, endSl = ps.reduce((n, q) => n + (q.endSlur ? q.endSlur.length : 0), 0) + (e.endSlur ? e.endSlur.length : 0);
+      const startSl = ps.reduce((n, q) => n + (q.startSlur ? q.startSlur.length : 0), 0) + (e.startSlur ? e.startSlur.length : 0);
+      const tied = ps.some(q => q.endTie);
+      const cont = (S.slur > 0 || (S.tie && tied)) && S.rest < 0.25;
+      if (!cont) {
+        const restart = S.rest >= 0.25;
+        if (S.first) S.dir = pickup > 0 ? "up" : "down";
+        else if (restart) S.dir = S.pos < 1e-6 ? "down" : "up";
+        else S.dir = S.dir === "down" ? "up" : "down";
+        if ((S.first || restart || S.barFirst) && e.startChar != null) marks.push({ at: e.startChar - 4, dir: S.dir, key });
+        S.first = false; S.barFirst = false;
+      }
+      S.slur = Math.max(0, S.slur + startSl - endSl);
+      S.tie = ps.some(q => q.startTie);
+      S.rest = 0; S.pos += e.duration || 0;
+    });
+  })));
+  const own = new Set([...state].filter(([, S]) => S.own).map(([k]) => k));
+  let out = abc;
+  marks.filter(m => !own.has(m.key) && m.at >= 0).sort((a, b) => b.at - a.at).forEach(m => { out = out.slice(0, m.at) + "!" + m.dir + "bow!" + out.slice(m.at); });
+  return out;
+}
 function renderNamed(box, abc, opts) {
-  abc = "%%barnumbers 1\n%%partsbox true\n" + abc;
+  abc = addBowing("%%barnumbers 1\n%%partsbox true\n" + abc);
   let tune = ABCJS.renderAbc(box, "X:1\n" + abc, opts)[0];
   let need = addNoteNames(box, tune), sys = 46, inner = 36;
   for (let i = 0; i < 4 && need && (need.in > 0 || need.sys > 0); i++) {
@@ -1911,7 +1957,21 @@ function renderNamed(box, abc, opts) {
     need = addNoteNames(box, tune);
   }
   numberLines(box, tune);
+  skinBows(box);
   return tune;
+}
+// 弓の記号は、楽譜帳の金色に合わせて作った絵（ChatGPT 製・2026-11-20）に差し替える。位置と大きさは abcjs の記号に合わせる
+function skinBows(box) {
+  box.querySelectorAll('path[data-name="scripts.downbow"], path[data-name="scripts.upbow"]').forEach(p => {
+    const b = p.getBBox(); if (!b.width) return;
+    const down = p.getAttribute("data-name") === "scripts.downbow", ratio = down ? 71 / 96 : 73 / 96;
+    const w = Math.max(b.width, b.height / ratio) * 0.95, h = w * ratio;
+    const im = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    im.setAttribute("href", down ? "art/bow-down.png" : "art/bow-up.png");
+    im.setAttribute("x", b.x + b.width / 2 - w / 2); im.setAttribute("y", b.y + b.height - h);
+    im.setAttribute("width", w); im.setAttribute("height", h); im.setAttribute("class", "bow-mark"); im.setAttribute("aria-hidden", "true");
+    p.after(im); p.style.display = "none";
+  });
 }
 const NAMES_KEY = "score-names";
 let namesMode = "finger";
@@ -2299,7 +2359,7 @@ function setupInk(id, sheet, pen, tools, memo) {
   let pat = null, raf = 0;
   function show() {
     raf = 0; if (!g) return;
-    g.clearRect(0, 0, canvas.width, canvas.height); g.drawImage(base, 0, 0);
+    g.clearRect(0, 0, canvas.width, canvas.height); if (base.width && base.height) g.drawImage(base, 0, 0);   // 楽譜を閉じている間は大きさ 0 なので描かない
     if (cur) paintStroke(g, layer, cur, canvas.width, canvas.height, pat);
   }
   function draw() {
@@ -2311,7 +2371,7 @@ function setupInk(id, sheet, pen, tools, memo) {
   function fit() {
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1, w = Math.round(sheet.clientWidth * dpr), h = Math.round(sheet.clientHeight * dpr);
-    if (w === canvas.width && h === canvas.height && pat) return;
+    if (!w || !h || (w === canvas.width && h === canvas.height && pat)) return;
     [canvas, base, layer].forEach(k => { k.width = w; k.height = h; });
     pat = g.createPattern(grainTile(dpr), "repeat"); draw();
   }
@@ -2502,6 +2562,11 @@ SONGS.forEach(s => {
     b.addEventListener("click", () => setNames(mode)); sw.append(b);
   });
   ctr.append(sw);
+  // 弓の向き（自動の目安）を出すか。全曲に効く。切り替えたら描き直す
+  const bowBtn = document.createElement("button"); bowBtn.type = "button"; bowBtn.className = "ghost bow-sw"; bowBtn.textContent = "⊓V 弓"; bowBtn.title = "弓の向き（目安）";
+  bowBtn.setAttribute("aria-pressed", String(bowOn));
+  bowBtn.addEventListener("click", () => { try { localStorage.setItem(BOW_KEY, bowOn ? "0" : "1"); } catch (e) { /* 覚えられなくても今回は切り替える */ } location.reload(); });
+  ctr.append(bowBtn);
   if (!s.split) {
     const standBtn = document.createElement("button"); standBtn.type = "button"; standBtn.className = "ghost icon"; standBtn.textContent = "▯▯"; standBtn.title = "譜面台"; standBtn.setAttribute("aria-label", "譜面台");
     standBtn.addEventListener("click", () => { prepare(); if (s.tune) Stand.open(s, btn); });
