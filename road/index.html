@@ -205,6 +205,14 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 .pr-box h4 { margin: 0; font-size: var(--fs-sm); font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
 .pr-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .focus-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.assign-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.assign-list li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-width: 0; padding: 6px 6px 6px 10px; background: var(--panel-2); border: 1px solid var(--gold-dim); }
+.assign-list .as-lv { font-size: var(--fs-sm); font-weight: 700; color: var(--gold); text-align: center; white-space: nowrap; }
+.assign-list .as-lv.none { color: var(--ink-soft, #b9ad94); font-weight: 400; }
+.assign-list .as-name { min-width: 0; font-size: var(--fs-md); font-weight: 700; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.assign-list a.as-name:hover { text-decoration: underline; }
+.as-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.as-add input { min-width: 0; font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--gold-dim); padding: 8px 10px; }
 .focus-list li { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 8px; align-items: center; min-width: 0; padding: 6px 6px 6px 12px; background: var(--panel-2); border: 1px solid var(--gold-dim); }
 .focus-list textarea { width: 100%; min-width: 0; resize: none; line-height: 1.5; font-family: inherit; background: transparent; color: var(--ink); border: 0; padding: 2px 0; font-size: var(--fs-md); font-weight: 700; }
 .focus-list textarea:focus-visible { outline: 1px dashed var(--gold-dim); outline-offset: 2px; }
@@ -564,6 +572,7 @@ footer { padding-block: 84px 48px; }
         <p class="sec-lead">できたことに印を付けると、カレンダーにスタンプが押されます。1つで銅、3つで銀、5つで金。チェックの候補は、先生と相談して入れ替えていきましょう。</p>
       </div>
       <div class="practice ornate">
+        <div class="pr-box" id="pr-assign"></div>
         <div class="pr-box" id="pr-focus"></div>
         <div class="pr-grid">
           <div class="pr-box" id="pr-today"></div>
@@ -880,7 +889,8 @@ const BOOKS = {
   3: { name: "その先", text: "高いポジション、テナー記号、親指ポジション（教本の続きや曲集で）" },
 };
 let werner = { book: 1, no: "", pos: 0, next: "", mine: "", schedule: [], chapters: {}, ties: {} }, lessons = [];
-const LV_NAME = { 1: "Lv1 ・ 第1ポジションで弾ける", 2: "Lv2 ・ 第4ポジションまで", 3: "Lv3 ・ ビブラートで歌う", 4: "Lv4 ・ 高い音域の原曲", 5: "Lv5 ・ 最高峰" };
+// レベルは楽譜帳と同じ物差し（2026-11-20 本人「ランク別に・楽譜と整合を」）。楽譜帳にある曲は楽譜帳の Lv を使う
+const LV_NAME = { 0: "Lv0 ・ 開放弦と最初の指", 1: "Lv1 ・ 第1ポジション（2本の弦）", 2: "Lv2 ・ 第1ポジション（3〜4本の弦）", 3: "Lv3 ・ 指を広げる・少し上へ", 4: "Lv4 ・ 第4ポジションまで", 5: "Lv5 ・ 高いポジション" };
 // 道に並べる順番（易しい順）
 const ORDER = ["kodokei", "longtone", "silentnight", "amazing", "largo8", "dotted", "humoresque", "greensleeves", "slavonic", "shift", "canon", "largo", "mother", "vibrato", "rusalka", "american", "highpos", "silentwoods", "rondo", "thumb", "concerto2"];
 const DEFAULT_TARGETS = ["largo8", "humoresque", "largo", "mother"];
@@ -978,6 +988,48 @@ MORE.forEach(m => {
 [...MORE].reverse().forEach(m => { const i = ORDER.indexOf(MORE_AFTER[m.lv]); ORDER.splice(i + 1, 0, m.id); });
 // 楽譜帳に書き起こした曲は、IMSLP の検索ではなく楽譜帳を開く
 ["brahms-lullaby", "gossec-gavotte", "bach-air", "elgar-salut", "bach-prelude", "saint-saens-swan", "schumann-traumerei", "faure-apres", "rachmaninoff-vocalise", "tchaikovsky-andante", "american", "bach-musette", "schumann-happy-farmer", "flies-wiegenlied", "handel-largo", "gounod-ave-maria", "bach-jesu-joy"].forEach(id => { if (POOL[id]) { POOL[id].score = SB + "#" + id; POOL[id].scoreLabel = "楽譜帳で開く（音つき）"; POOL[id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; } });
+
+// ── 楽譜帳と曲選びをそろえる（2026-11-20 本人「メインの曲選びと楽譜が合っていない。整合性を」）
+// BOOK はアプリのビルドが楽譜帳から書き込む（id・題名・Lv）。合奏の本（鍵つき）は、この端末で開いていれば楽譜帳の保存から読む
+const BOOK = [{"id": "mary", "title": "メリーさんの羊", "lv": 0}, {"id": "twinkle", "title": "キラキラ星", "lv": 1}, {"id": "kaeru", "title": "カエルの歌", "lv": 1}, {"id": "chocho", "title": "ちょうちょう", "lv": 1}, {"id": "london", "title": "ロンドン橋", "lv": 1}, {"id": "birthday", "title": "ハッピーバースデー", "lv": 1}, {"id": "kodokei", "title": "大きな古時計", "lv": 3}, {"id": "joy", "title": "歓喜の歌（第九）", "lv": 2}, {"id": "saints", "title": "聖者の行進", "lv": 0}, {"id": "minuet", "title": "メヌエット（バッハ）", "lv": 4}, {"id": "amazing-duet", "title": "アメイジング・グレイス（二重奏）", "lv": 1}, {"id": "silentnight", "title": "きよしこの夜", "lv": 2}, {"id": "greensleeves", "title": "グリーンスリーブス", "lv": 3}, {"id": "gymnopedie", "title": "ジムノペディ 第1番（サティ）", "lv": 2}, {"id": "humoresque", "title": "ユーモレスク（ドヴォルザーク）", "lv": 3}, {"id": "mother", "title": "我が母の教えたまいし歌（ドヴォルザーク）", "lv": 3}, {"id": "largofull", "title": "家路（新世界より 第2楽章の主題）", "lv": 3}, {"id": "rusalka", "title": "月に寄せる歌（歌劇「ルサルカ」）", "lv": 3}, {"id": "slavonic", "title": "スラヴ舞曲 第10番（主題）", "lv": 4}, {"id": "rondo", "title": "ロンド ト短調（主題）", "lv": 4}, {"id": "brahms-lullaby", "title": "子守歌（ブラームス）", "lv": 4}, {"id": "gossec-gavotte", "title": "ガヴォット（ゴセック）", "lv": 2}, {"id": "bach-air", "title": "G線上のアリア（主題・バッハ）", "lv": 5}, {"id": "elgar-salut", "title": "愛の挨拶（エルガー）", "lv": 3}, {"id": "bach-prelude", "title": "無伴奏チェロ組曲第1番 プレリュード（1〜22小節）", "lv": 4}, {"id": "saint-saens-swan", "title": "白鳥（サン＝サーンス）", "lv": 4}, {"id": "schumann-traumerei", "title": "トロイメライ（シューマン）", "lv": 5}, {"id": "faure-apres", "title": "夢のあとに（フォーレ）", "lv": 5}, {"id": "rachmaninoff-vocalise", "title": "ヴォカリーズ（前半・ラフマニノフ）", "lv": 5}, {"id": "tchaikovsky-andante", "title": "アンダンテ・カンタービレ（チャイコフスキー）", "lv": 5}, {"id": "american", "title": "「アメリカ」第2楽章の主題（チェロのパート）", "lv": 4}, {"id": "bach-musette", "title": "ミュゼット ニ長調（バッハ）", "lv": 4}, {"id": "schumann-happy-farmer", "title": "楽しき農夫（シューマン）", "lv": 4}, {"id": "flies-wiegenlied", "title": "子守歌（フリース／伝モーツァルト）", "lv": 3}, {"id": "handel-largo", "title": "ラルゴ「オンブラ・マイ・フ」（ヘンデル）", "lv": 4}, {"id": "gounod-ave-maria", "title": "アヴェ・マリア（バッハ／グノー）", "lv": 5}, {"id": "bach-jesu-joy", "title": "主よ、人の望みの喜びよ（最初の8小節・バッハ）", "lv": 2}, {"id": "eine-kleine-1", "title": "アイネ・クライネ・ナハトムジーク 第1楽章（チェロのパート）", "lv": 4}, {"id": "eine-kleine-2", "title": "アイネ・クライネ・ナハトムジーク 第2楽章 ロマンツェ（チェロのパート）", "lv": 3}, {"id": "eine-kleine-3", "title": "アイネ・クライネ・ナハトムジーク 第3楽章 メヌエットとトリオ（チェロのパート）", "lv": 2}, {"id": "bach-arioso", "title": "アリオーソ（バッハ）", "lv": 3}, {"id": "bach-suite3-bourree", "title": "無伴奏チェロ組曲第3番 ブーレ I（バッハ）", "lv": 3}, {"id": "beethoven-minuet-g", "title": "メヌエット ト長調（ベートーヴェン）", "lv": 3}, {"id": "beethoven-sonata3", "title": "チェロ・ソナタ第3番 第1楽章（冒頭主題・ベートーヴェン）", "lv": 5}, {"id": "brahms-hungarian5", "title": "ハンガリー舞曲第5番（主題・ブラームス）", "lv": 3}, {"id": "brahms-waltz", "title": "ワルツ 作品39の15（ブラームス）", "lv": 3}, {"id": "concerto2", "title": "チェロ協奏曲 第2楽章の主題（ドヴォルザーク）", "lv": 3}, {"id": "debussy-clair", "title": "月の光（前半・ドビュッシー）", "lv": 4}, {"id": "elgar-concerto", "title": "チェロ協奏曲 第1楽章の主題（エルガー）", "lv": 5}, {"id": "faure-elegie", "title": "エレジー（主題・フォーレ）", "lv": 5}, {"id": "faure-sicilienne", "title": "シシリエンヌ（主題・フォーレ）", "lv": 4}, {"id": "gluck-melody", "title": "メロディ（精霊の踊り・グルック）", "lv": 4}, {"id": "grieg-morning", "title": "朝（主題・グリーグ）", "lv": 3}, {"id": "hoffstetter-serenade", "title": "セレナーデ（主題・ホフシュテッター／伝ハイドン）", "lv": 3}, {"id": "lully-gavotte", "title": "ガヴォット（リュリ）", "lv": 3}, {"id": "massenet-elegie", "title": "エレジー（マスネ）", "lv": 4}, {"id": "massenet-meditation", "title": "タイスの瞑想曲（主題・マスネ）", "lv": 4}, {"id": "mendelssohn-song-without-words", "title": "無言歌 ニ長調 作品109（主題・メンデルスゾーン）", "lv": 4}, {"id": "mendelssohn-wings", "title": "歌の翼に（メンデルスゾーン）", "lv": 3}, {"id": "offenbach-barcarolle", "title": "舟歌（オッフェンバック）", "lv": 3}, {"id": "pergolesi-nina", "title": "ニーナ（3日たっても・伝ペルゴレージ）", "lv": 3}, {"id": "popper-rhapsody", "title": "ハンガリー狂詩曲（Presto の主題・ポッパー）", "lv": 5}, {"id": "rimsky-bumblebee", "title": "熊蜂の飛行（冒頭・リムスキー＝コルサコフ）", "lv": 5}, {"id": "saint-saens-concerto1", "title": "チェロ協奏曲第1番（冒頭の主題・サン＝サーンス）", "lv": 5}, {"id": "schubert-ave-maria", "title": "アヴェ・マリア（シューベルト）", "lv": 4}, {"id": "schubert-serenade", "title": "セレナーデ（シューベルト）", "lv": 4}, {"id": "tchaikovsky-nocturne", "title": "ノクターン 作品19-4（主題・チャイコフスキー）", "lv": 3}, {"id": "tchaikovsky-old-french", "title": "古いフランスの歌（チャイコフスキー）", "lv": 3}, {"id": "vivaldi-winter", "title": "「冬」第2楽章 ラルゴ（ヴィヴァルディ）", "lv": 3}, {"id": "weber-hunters", "title": "狩人の合唱（ウェーバー）", "lv": 2}, {"id": "canon", "title": "カノン（パッヘルベル）", "lv": 4}];
+const PRIV_BOOKS = (() => {
+  try {
+    const ss = ((JSON.parse(localStorage.getItem("score-private-v1")) || {}).songs) || [];
+    // 本の中の版（第3楽章など）も、つなぎ先としては持っておく（rep=棚に出る代表の本）
+    return ss.map(p => ({ id: p.id, title: String(p.title || "").replace(/（合奏）$/, ""), lv: Number.isInteger(p.stage) ? p.stage : 3, priv: true, rep: !p.group || p.group === p.id }));
+  } catch (e) { return []; }
+})();
+const BOOK_ALL = [...BOOK, ...PRIV_BOOKS.filter(b => b.rep)], BOOK_OF = Object.fromEntries([...BOOK, ...PRIV_BOOKS].map(b => [b.id, b]));
+const LV_NEEDS = { 0: ["longtone"], 1: ["longtone", "amazing"], 2: ["silentnight"], 3: ["greensleeves", "shift"], 4: ["shift", "vibrato"], 5: ["vibrato", "highpos"] };
+const LV_WEEKS = { 0: 2, 1: 3, 2: 5, 3: 8, 4: 14, 5: 24 };
+const LV_AFTER = { 0: "longtone", 1: "amazing", 2: "greensleeves", 3: "mother", 4: "american", 5: "rondo" };
+(() => {
+  const bookId = id => { const sc = POOL[id] && POOL[id].score || ""; return sc.startsWith(SB + "#") ? sc.slice(SB.length + 1) : null; };
+  // 合奏の本にしかない曲は、合奏の本を開く
+  [["piazzolla-libertango", "ens-libertango"], ["boccherini-minuet", "ens-boccherini-3"]].forEach(([id, b]) => {
+    if (POOL[id] && BOOK_OF[b]) { POOL[id].score = SB + "#" + b; POOL[id].scoreLabel = "楽譜帳で開く（合奏・鍵つき）"; POOL[id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; }
+  });
+  // 楽譜帳に同じ id の本があれば、原曲の楽譜（IMSLP）ではなく楽譜帳を開く
+  CATALOG.forEach(c => { if (BOOK_OF[c.id] && POOL[c.id] && !bookId(c.id)) { POOL[c.id].score = SB + "#" + c.id; POOL[c.id].scoreLabel = "楽譜帳で開く（音つき）"; POOL[c.id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; } });
+  // 楽譜帳にある曲は、楽譜帳の Lv にそろえる
+  const linked = new Set();
+  CATALOG.forEach(c => { const b = bookId(c.id); if (b) linked.add(b); if (b && BOOK_OF[b]) c.lv = BOOK_OF[b].lv; });
+  // 楽譜帳にあるのに選べなかった曲を足す（道の関門になっている曲は除く）
+  BOOK_ALL.forEach(b => {
+    if (linked.has(b.id) || (POOL[b.id] && !CATALOG.some(c => c.id === b.id))) return;
+    if (CATALOG.some(c => c.id === b.id)) return;
+    const cm = (b.title.match(/（([^（）]+)）$/) || [])[1];
+    const composer = b.priv ? "合奏" : cm && !/[0-9０-９]|版|パート|楽章|主題/.test(cm) ? cm : "楽譜帳";
+    const name = b.priv ? b.title : b.title.replace(/（[^（）]+）$/, "") || b.title;
+    POOL[b.id] = { kind: "BOSS", title: name, op: composer, trains: b.priv ? "合奏のチェロのパート" : "楽譜帳の曲", weeks: LV_WEEKS[b.lv], score: SB + "#" + b.id,
+      scoreLabel: b.priv ? "楽譜帳で開く（合奏・鍵つき）" : "楽譜帳で開く（音つき）", task: b.priv ? "合奏のチェロのパートを通す。" : "楽譜帳の楽譜で通す。",
+      checks: ["楽譜帳の楽譜で、音を聞いた", "難しい所を部分練習した", "全体を通せる", "3回続けて止まらない"],
+      boost: "楽譜帳にある曲。音を聞きながら練習できます。", today: ["楽譜帳で音を聞く", "難しい小節だけをゆっくり", "通して1回"] };
+    CATALOG.push({ id: b.id, lv: b.lv, composer, name, src: b.priv ? "自分の楽譜（合奏・鍵つき）" : "楽譜帳", text: "", needs: LV_NEEDS[b.lv] });
+    WERNER_OF[b.id] = b.lv <= 2 ? 1 : b.lv <= 4 ? 2 : 3;
+    const i = ORDER.indexOf(LV_AFTER[b.lv]); ORDER.splice(i + 1, 0, b.id);
+  });
+})();
 
 // ── 作曲家たちの読み物（人となりと、チェロとの関わり）
 const COMPOSERS = [
@@ -1348,6 +1400,42 @@ function celebrate(tier, date) {
   clearTimeout(celebrate.t); celebrate.t = setTimeout(() => { box.hidden = true; }, 2600);
 }
 
+// ── 今月の課題曲（先生から出た曲。楽譜帳の本から選ぶ。楽譜帳に無い曲は名前だけでも入れられる）2026-11-20 本人
+let assign = { items: [] };
+async function saveAssign() {
+  if (!db || !canWrite) { $("msg").textContent = "保存先につながっていないため、この端末の表示だけ変わりました。"; return; }
+  try { await db.doc("settings/assign").set(assign); }
+  catch (e) { $("msg").textContent = "課題曲を保存できませんでした（" + (e && e.code || "不明") + "）。"; }
+}
+function renderAssign() {
+  const box = $("pr-assign"); if (!box) return; box.innerHTML = "";
+  box.append(el("h4", null, (new Date().getMonth() + 1) + "月の課題曲"));
+  const ul = el("ul", "assign-list");
+  assign.items.forEach((it, i) => {
+    const li = el("li"), b = BOOK_OF[it.id];
+    li.append(el("span", "as-lv" + (b ? "" : " none"), b ? "Lv" + b.lv : "楽譜なし"));
+    if (b) { const a = el("a", "as-name", it.title); a.href = SB + "#" + it.id; a.target = "_blank"; a.rel = "noopener"; li.append(a); }
+    else li.append(el("span", "as-name", it.title));
+    const x = el("button", "btn ghost as-x", "外す"); x.type = "button"; x.setAttribute("aria-label", it.title + "を外す");
+    x.addEventListener("click", () => { assign.items.splice(i, 1); renderAssign(); saveAssign(); });
+    li.append(x); ul.append(li);
+  });
+  box.append(ul);
+  const row = el("div", "as-add"), inp = el("input"); inp.type = "text"; inp.placeholder = "＋ 曲名で探す"; inp.setAttribute("list", "as-books"); inp.id = "as-input";
+  const dl = el("datalist"); dl.id = "as-books";
+  BOOK_ALL.filter(b => !assign.items.some(it => it.id === b.id)).forEach(b => { const o = el("option"); o.value = b.title; o.label = "Lv" + b.lv + (b.priv ? " ・ 合奏" : ""); dl.append(o); });
+  const add = el("button", "btn", "入れる"); add.type = "button";
+  const put = () => {
+    const v = inp.value.trim(); if (!v) return;
+    const b = BOOK_ALL.find(x => x.title === v) || BOOK_ALL.find(x => normQ(x.title).includes(normQ(v)));
+    if (b && assign.items.some(it => it.id === b.id)) { inp.value = ""; return; }
+    assign.items.push(b ? { id: b.id, title: b.title } : { id: "", title: v }); renderAssign(); saveAssign();
+    setTimeout(() => $("as-input")?.focus(), 0);
+  };
+  add.addEventListener("click", put);
+  inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); put(); } });
+  row.append(inp, add, dl); box.append(row);
+}
 function renderFocus() {
   const box = $("pr-focus"); box.innerHTML = "";
   box.append(el("h4", null, "いまの課題（これに専念する）"));
@@ -1514,7 +1602,7 @@ function renderGrowth() {
 
 function renderPractice() {
   if (document.activeElement && /^(pr-no|focus-\d)$/.test(document.activeElement.id)) return;
-  renderFocus(); renderToday(); renderCalendar(); renderGrowth();
+  renderAssign(); renderFocus(); renderToday(); renderCalendar(); renderGrowth();
 }
 
 /* ── 教本とレッスン ── */
@@ -1749,7 +1837,7 @@ document.addEventListener("input", e => { if (e.target.id === "pick-q" || e.targ
 function renderPlan() {
   const lv = $("levels"); lv.innerHTML = "";
   let shownCount = 0;
-  [1, 2, 3, 4, 5].forEach(n => {
+  [0, 1, 2, 3, 4, 5].forEach(n => {
     const box = el("div", "level"); box.append(el("h3", null, LV_NAME[n]));
     const cards = el("div", "cards");
     const shown = CATALOG.filter(c => c.lv === n && pickMatch(c));
@@ -2049,6 +2137,9 @@ let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(layoutRoad,
   db.doc("settings/focus").onSnapshot(d => {
     if (!d.exists) return; const v = d.data();
     focus = { items: Array.isArray(v.items) ? v.items : DEFAULT_FOCUS, grads: Array.isArray(v.grads) ? v.grads : [] }; renderPractice();
+  }, () => {});
+  db.doc("settings/assign").onSnapshot(d => {
+    if (!d.exists) return; const v = d.data(); assign = { items: Array.isArray(v.items) ? v.items.filter(x => x && x.title) : [] }; renderAssign();
   }, () => {});
   db.doc("settings/werner").onSnapshot(d => {
     if (!d.exists) return;
