@@ -205,6 +205,7 @@ h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(25px, 3.8
 .pr-box h4 { margin: 0; font-size: var(--fs-sm); font-weight: 700; letter-spacing: .08em; color: var(--gold-soft); }
 .pr-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .focus-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.lvtag { margin-left: 8px; font-size: var(--fs-sm); font-weight: 700; color: var(--gold); letter-spacing: .04em; white-space: nowrap; }
 .assign-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .assign-list li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-width: 0; padding: 6px 6px 6px 10px; background: var(--panel-2); border: 1px solid var(--gold-dim); }
 .assign-list .as-lv { font-size: var(--fs-sm); font-weight: 700; color: var(--gold); text-align: center; white-space: nowrap; }
@@ -1004,16 +1005,30 @@ const LV_NEEDS = { 0: ["longtone"], 1: ["longtone", "amazing"], 2: ["silentnight
 const LV_WEEKS = { 0: 2, 1: 3, 2: 5, 3: 8, 4: 14, 5: 24 };
 const LV_AFTER = { 0: "longtone", 1: "amazing", 2: "greensleeves", 3: "mother", 4: "american", 5: "rondo" };
 (() => {
-  const bookId = id => { const sc = POOL[id] && POOL[id].score || ""; return sc.startsWith(SB + "#") ? sc.slice(SB.length + 1) : null; };
+  // 楽譜帳でまとめた本（家路8小節→家路、カノンの各版→カノン など）は、まとめた先の本を指す
+  const ALIAS = { goinghome: "largofull", amazing: "amazing-duet", "amazing-duet1": "amazing-duet", "amazing-duet2": "amazing-duet",
+    "canon-melody": "canon", "canon-var": "canon", "canon-bass": "canon", "canon-easy1": "canon", "canon-easy2": "canon" };
+  const bookId = id => {
+    const sc = POOL[id] && POOL[id].score || ""; if (!sc.startsWith(SB + "#")) return null;
+    const raw = sc.slice(SB.length + 1), to = ALIAS[raw] || raw;
+    if (to !== raw) POOL[id].score = SB + "#" + to;
+    return to;
+  };
   // 合奏の本にしかない曲は、合奏の本を開く
   [["piazzolla-libertango", "ens-libertango"], ["boccherini-minuet", "ens-boccherini-3"]].forEach(([id, b]) => {
     if (POOL[id] && BOOK_OF[b]) { POOL[id].score = SB + "#" + b; POOL[id].scoreLabel = "楽譜帳で開く（合奏・鍵つき）"; POOL[id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; }
   });
   // 楽譜帳に同じ id の本があれば、原曲の楽譜（IMSLP）ではなく楽譜帳を開く
   CATALOG.forEach(c => { if (BOOK_OF[c.id] && POOL[c.id] && !bookId(c.id)) { POOL[c.id].score = SB + "#" + c.id; POOL[c.id].scoreLabel = "楽譜帳で開く（音つき）"; POOL[c.id].checks[0] = "楽譜帳の楽譜で、音を聞いた"; } });
+  // 道の関門（今日の曲）も、楽譜帳の本の題名と Lv にそろえる（2026-11-20 本人「今日の曲と楽譜の種類を統一」）。家路の8小節は本の一部なので名前を残す
+  Object.keys(POOL).forEach(id => { const b = BOOK_OF[bookId(id)]; if (!b) return; POOL[id].lv = b.lv; if (id !== "largo8") POOL[id].title = b.title; });
   // 楽譜帳にある曲は、楽譜帳の Lv にそろえる
   const linked = new Set();
-  CATALOG.forEach(c => { const b = bookId(c.id); if (b) linked.add(b); if (b && BOOK_OF[b]) c.lv = BOOK_OF[b].lv; });
+  CATALOG.forEach(c => {
+    const b = bookId(c.id); if (b) linked.add(b); if (!b || !BOOK_OF[b]) return;
+    c.lv = BOOK_OF[b].lv;
+    if (c.id !== "largo8") c.name = BOOK_OF[b].title.replace("（" + c.composer + "）", "").replace(/（[^（）]*・[^（）]*）$/, m => m.replace("・" + c.composer, ""));   // 作曲家の名前は札（cmp-tag）に出るので題名からは外す
+  });
   // 楽譜帳にあるのに選べなかった曲を足す（道の関門になっている曲は除く）
   BOOK_ALL.forEach(b => {
     if (linked.has(b.id) || (POOL[b.id] && !CATALOG.some(c => c.id === b.id))) return;
@@ -1987,7 +2002,7 @@ function renderRows() {
     const no = el("div", "no"); no.append(el("small", null, KIND[s.kind]), el("b", null, num(i))); li.append(no);
     li.append(img(ICON[s.kind], "ico"));
     const mid = el("div");
-    const nm = el("div", "nm"); nm.append(s.title);
+    const nm = el("div", "nm"); nm.append(s.title); if (Number.isInteger(s.lv)) nm.append(el("span", "lvtag", "Lv" + s.lv));
     nm.append(el("span", "wbook" + (wLocked(s) ? " lock" : ""), wLabel(s)));
     if (i === hereIdx) nm.append(el("span", "now-tag", "NOW"));
     mid.append(nm);
@@ -2028,7 +2043,8 @@ function renderQuest(hereIdx) {
   const s = STATIONS[hereIdx], day = new Date().toISOString().slice(0, 10);
   const l = el("div", "quest-l");
   const lbl = el("span", "lbl"); lbl.append(img("art/ui/lantern.png"), (s.kind === "BOSS" ? "Boss " : "Stage ") + num(hereIdx) + " / " + STATIONS.length);
-  l.append(lbl, el("span", "nt", s.title), el("p", null, s.task));
+  const nt = el("span", "nt", s.title); if (Number.isInteger(s.lv)) nt.append(el("span", "lvtag", "Lv" + s.lv));
+  l.append(lbl, nt, el("p", null, s.task));
   if (s.score) { const a = el("a", null, (s.scoreLabel || "楽譜を開く") + " →"); a.href = s.score; a.target = "_blank"; a.rel = "noopener"; a.style.fontWeight = "700"; l.append(a); }
   // 進めるボタン：押すと記録され、道の上のピンが次へ動く
   const adv = el("div", "advance");
